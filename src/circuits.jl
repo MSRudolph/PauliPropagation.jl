@@ -1,3 +1,12 @@
+function countparameters(circuit::AbstractVector)
+    n_params = 0
+    for gate in circuit
+        n_params += isa(gate, ParametrizedGate)
+    end
+    return n_params
+end
+
+
 function bricklayertopology(nq::Int; periodic=false)
     return bricklayertopology(1:nq; periodic=periodic)
 end

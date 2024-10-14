@@ -1,4 +1,4 @@
-struct CliffordGate <: Gate
+struct CliffordGate <: StaticGate
     symbol::Symbol
     qinds::Vector{Int}
 end
@@ -23,6 +23,10 @@ end
 
 
 ### Applying Clifford gates
+
+function apply(gate::CliffordGate, operator, theta, coefficient) # TODO: write tests for this
+    return apply(gate, operator, coefficient)
+end
 
 function apply(gate::CliffordGate, operator, coefficient=1.0) # TODO: write tests for this
     map_array = default_clifford_map[gate.symbol]
