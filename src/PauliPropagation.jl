@@ -23,7 +23,8 @@ export
     DepolarizingNoise,
     PauliXNoise,
     PauliYNoise,
-    PauliZNoise
+    PauliZNoise,
+    AmplitudeDampingNoise
 
 
 include("circuits.jl")

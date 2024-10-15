@@ -37,7 +37,7 @@ end
 
 ### Apply Pauli gates  
 
-function apply(gate::PauliGateUnion, operator, theta, coefficient=1.0)  # TODO: make order of arguments consistent with other apply functions
+function apply(gate::PauliGateUnion, operator, theta, coefficient=1.0)
     if commutes(gate, operator)
         return operator, coefficient
     else
@@ -50,9 +50,8 @@ function applynoncummuting(gate::PauliGateUnion, operator, theta, coefficient=1.
     sign, new_oper = getnewoperator(gate, operator)
     coeff2 = applysin(coefficient, theta; sign=sign, param_idx=param_idx)
 
-    return operator, coeff1, new_oper, coeff2   # TODO: when does this ever not allocate memory?
+    return operator, coeff1, new_oper, coeff2
 end
-
 
 function applysin(old_coeff::Number, theta; sign=1, kwargs...)
     return old_coeff * sin(theta) * sign

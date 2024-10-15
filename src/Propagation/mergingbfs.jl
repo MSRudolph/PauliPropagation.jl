@@ -88,10 +88,40 @@ end
 @inline function applygatetoone!(gate::PauliGateUnion, operator, coefficient, theta, param_idx, operator_dict, new_operator_dict, args...; kwargs...)
 
     if commutes(gate, operator)
-        return operator_dict, new_operator_dict
+        return
     end
 
-    operator, coeff1, new_oper, coeff2 = applynoncummuting(gate, operator, theta, coefficient; param_idx=param_idx)
+    operator, coeff1, new_oper, coeff2 = applynoncummuting(gate, operator, theta, coefficient; param_idx=param_idx)  # TODO: remove the param_idx from here because it is only specific to the Surrogate
+
+    operator_dict[operator] = coeff1
+    new_operator_dict[new_oper] = coeff2
+
+    return
+end
+
+
+### Amplitude Damping Noise
+
+function applygatetoall!(gate::AmplitudeDampingNoise, thetas, param_idx, operator_dict, new_operator_dict, args...; kwargs...)  # TODO: there is a lot of code duplication. Can we write a more general function?
+    theta = thetas[param_idx]
+    for (operator, coeff) in operator_dict
+        applygatetoone!(gate, operator, coeff, theta, param_idx, operator_dict, new_operator_dict; kwargs...)
+    end
+
+    param_idx -= 1
+
+    return operator_dict, new_operator_dict, param_idx
+end
+
+@inline function applygatetoone!(gate::AmplitudeDampingNoise, operator, coefficient, theta, param_idx, operator_dict, new_operator_dict, args...; kwargs...)
+
+    if actsdiagonally(gate, operator)
+        operator, coeff = diagonalapply(gate, operator, theta, coefficient)
+        operator_dict[operator] = coeff
+        return
+    end
+
+    operator, coeff1, new_oper, coeff2 = splitapply(gate, operator, theta, coefficient)
 
     operator_dict[operator] = coeff1
     new_operator_dict[new_oper] = coeff2
@@ -101,32 +131,8 @@ end
 
 ### Clifford gates
 
-## NOTE: Currently, this slightly more optimized function that gets the map_array once is not significantly faster than the general function
+## NOTE: Currently, a slightly more optimized applygatetoall! function that gets the map_array once and passes that to applygatetoone! is not significantly faster than the general function
 
-# function applygatetoall!(gate::CliffordGate, thetas, param_idx, operator_dict, new_operator_dict, args...; max_weight::Real=Inf, kwargs...)
-
-#     map_array = default_clifford_map[gate.symbol]
-
-#     for (oper, coeff) in operator_dict
-#         applygatetoone!(gate, oper, coeff, thetas, param_idx, map_array, operator_dict, new_operator_dict; kwargs...)
-#     end
-#     empty!(operator_dict)
-#     return new_operator_dict, operator_dict, param_idx
-# end
-
-# @inline function applygatetoone!(gate::CliffordGate, operator, coefficient, theta, param_idx, map_array, operator_dict, new_operator_dict, args...; kwargs...)
-#     operator = copy(operator)
-#     qinds = gate.qinds
-#     lookup_op = _extractlookupop(operator, qinds)
-#     sign, new_op = map_array[lookup_op+1]  # +1 because Julia is 1-indexed and lookup_op is 0-indexed
-#     operator = _insertnewop!(operator, new_op, qinds)
-
-#     coefficient = _multiplysign!(coefficient, sign)
-
-#     new_operator_dict[operator] = coefficient
-
-#     return
-# end
 
 ### MERGE
 
