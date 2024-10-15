@@ -15,11 +15,11 @@ function paulinoise(nq, nl, W, min_abs_coeff)
 
     where_ind = rand(1:m)
     q_ind = rand(1:nq)
-    noise_p = randn() * 0.1
-    insert!(depolarizing_circ, where_ind, DepolarizingNoise([q_ind]))
-    insert!(pauli_circ, where_ind, PauliZNoise([q_ind]))
-    insert!(pauli_circ, where_ind, PauliYNoise([q_ind]))
-    insert!(pauli_circ, where_ind, PauliXNoise([q_ind]))
+    noise_p = randn() * 0.2
+    insert!(depolarizing_circ, where_ind, DepolarizingNoise(q_ind))
+    insert!(pauli_circ, where_ind, PauliZNoise(q_ind))
+    insert!(pauli_circ, where_ind, PauliYNoise(q_ind))
+    insert!(pauli_circ, where_ind, PauliXNoise(q_ind))
 
     Random.seed!(42)
     thetas1 = randn(m)
