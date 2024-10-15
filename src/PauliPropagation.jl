@@ -49,7 +49,16 @@ include("Propagation/Propagation.jl")
 export mergingbfs, applygatetoall!, applygatetoone!
 
 include("stateoverlap.jl")
-export evalagainstzero, evalagainsinitial, zerofilter
+export
+    evalwithfilterfunction,
+    evalagainstzero,
+    evalagainstplus,
+    annihilatesatzero,
+    annihilatesatplus,
+    filteroperators,
+    zerofilter,
+    evaluateagainstdict,
+    getnumcoeff
 
 include("surrogate.jl")
 export operatortopathdict, PauliGateNode, gettraceevalorder, expectation, resetnodes
