@@ -3,7 +3,12 @@ module PauliPropagation
 using Base.Threads
 
 include("datatypes.jl")
-export PathProperties, NumericPathProperties
+export
+    PauliSum,
+    PauliString,
+    add!,
+    PathProperties,
+    NumericPathProperties
 
 
 include("Gates/Gates.jl")
