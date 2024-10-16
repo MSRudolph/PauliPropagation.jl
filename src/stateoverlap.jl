@@ -1,11 +1,10 @@
 ### This file contains the functions to calculate the overlap between between backpropagated operators and the initial state.
 
 ## Evaluate with a rule 
-function evalwithfilterfunction(op_dict, filterfunc)
+function overlapbyorthogonality(op_dict, orthogonalfunc)
     val = 0.0
-    for (symbs, coeff) in op_dict
-        contributes = !filterfunc(symbs)
-        if contributes
+    for (operator, coeff) in op_dict
+        if !orthogonalfunc(operator)
             val += getnumcoeff(coeff)
         end
     end
@@ -13,24 +12,28 @@ function evalwithfilterfunction(op_dict, filterfunc)
 end
 
 ## For the typical |0> case
-evalagainstzero(op_dict) = evalwithfilterfunction(op_dict, containsXorY)
-annihilatesatzero(op) = containsXorY(op)
+overlapwithzero(op_dict) = overlapbyorthogonality(op_dict, orthogonaltozero)
+orthogonaltozero(op) = containsXorY(op)
 
-evalagainstplus(op_dict) = evalwithfilterfunction(op_dict, containsYorZ)
-annihilatesatplus(op) = containsYorZ(op)
+overlapwithplus(op_dict) = overlapbyorthogonality(op_dict, orthogonaltoplus)
+orthogonaltoplus(op) = containsYorZ(op)
 
 # eval against |±i> not implemented
 
+# TODO: Implement with overlap maximally mixed once we have the operator interface
+
+
 ## Filter backpropagated operators
-function filteroperators(op_dict, filterfunc)
+function filterdict(op_dict, filterfunc)
     return Dict(k => v for (k, v) in op_dict if !filterfunc(k))
 end
 
-zerofilter(op_dict) = filteroperators(op_dict, containsXorY)
+# returns a new filtered dictionary, but doesn't overlap with anything
+zerofilter(op_dict) = filterdict(op_dict, containsXorY)
+plusfilter(op_dict) = filterdict(op_dict, containsYorZ)
 
 ## Evaluate against initial state in dict form
-
-function evalagainstdict(op_dict, initstate_dict)
+function overlapwithdict(op_dict, initstate_dict)  # TODO: change name and functionality to operator interface
     val = 0.0
 
     d1 = op_dict
@@ -43,14 +46,13 @@ function evalagainstdict(op_dict, initstate_dict)
 
     # looping over d2 (default initstate_dict) because we know that this one is sparser
     for operator in keys(d2)
-        val += getnum(get(d1, operator, 0.0)) * getnum(get(d2, operator, 0.0))
+        val += getnumcoeff(get(d1, operator, 0.0)) * getnumcoeff(get(d2, operator, 0.0))
     end
     return val
 end
 
 
 ## Interface functions for extracting the numerical coefficients
-
 function getnumcoeff(val::Real)
     return val
 end

@@ -50,12 +50,12 @@ export mergingbfs, applygatetoall!, applygatetoone!
 
 include("stateoverlap.jl")
 export
-    evalwithfilterfunction,
-    evalagainstzero,
-    evalagainstplus,
-    annihilatesatzero,
-    annihilatesatplus,
-    filteroperators,
+    overlapbyorthogonality,
+    overlapwithzero,
+    overlapwithplus,
+    orthogonaltozero,
+    orthogonaltoplus,
+    filterdict,
     zerofilter,
     evaluateagainstdict,
     getnumcoeff
