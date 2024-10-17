@@ -17,7 +17,8 @@ export
     CliffordGate,
     default_clifford_map,
     reset_clifford_map!,
-    applywithmap
+    applywithmap,
+    create_clifford_map
 
 include("circuits.jl")
 export

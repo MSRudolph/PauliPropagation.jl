@@ -17,4 +17,6 @@ using Test
     @test hybridPP(8, 4, Inf, 0.0, Inf) ≈ 0.21720058439757214
     @test surrogatePP(8, 4, Inf, Inf) ≈ 0.21720058439757214
 
+    include("test_gate.jl")
+
 end
