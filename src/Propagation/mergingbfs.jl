@@ -163,9 +163,7 @@ end
 
 function checktruncationonall!(operator_dict; max_weight::Real=Inf, min_abs_coeff=0.0, max_freq::Real=Inf, max_sins::Real=Inf, kwargs...)
     # TODO: This does currently hinder performance, even if we don't truncated
-    # approx 55ms -> 66ms
-    @show max_weight
-    @show min_abs_coeff
+    # approx 55ms -> 66ms for the test case
     for (operator, coeff) in operator_dict
         checktruncationonone!(operator_dict, operator, coeff; max_weight=max_weight, min_abs_coeff=min_abs_coeff, max_freq=max_freq, max_sins=max_sins, kwargs...)
     end

@@ -23,7 +23,6 @@ end
 
 
 ### Applying Clifford gates
-
 function apply(gate::CliffordGate, operator, theta, coefficient) # TODO: write tests for this
     return apply(gate, operator, coefficient)
 end

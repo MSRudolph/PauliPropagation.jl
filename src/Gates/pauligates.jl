@@ -45,10 +45,10 @@ function apply(gate::PauliGateUnion, operator, theta, coefficient=1.0)
     end
 end
 
-function applynoncummuting(gate::PauliGateUnion, operator, theta, coefficient=1.0; param_idx=0)
-    coeff1 = applycos(coefficient, theta; param_idx=param_idx)
+function applynoncummuting(gate::PauliGateUnion, operator, theta, coefficient=1.0; kwargs...)
+    coeff1 = applycos(coefficient, theta; kwargs...)
     sign, new_oper = getnewoperator(gate, operator)
-    coeff2 = applysin(coefficient, theta; sign=sign, param_idx=param_idx)
+    coeff2 = applysin(coefficient, theta; sign=sign, kwargs...)
 
     return operator, coeff1, new_oper, coeff2
 end
