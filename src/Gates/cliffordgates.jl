@@ -12,6 +12,11 @@ const _default_clifford_map = Dict(
     :S => [(1, 0x00), (-1, 0x02), (1, 0x01), (1, 0x03)],
     :CNOT => [(1, 0x00), (1, 0x05), (1, 0x06), (1, 0x03), (1, 0x04), (1, 0x01), (1, 0x02), (1, 0x07), (1, 0x0b), (1, 0x0e), (-1, 0x0d), (1, 0x08), (1, 0x0f), (-1, 0x0a), (1, 0x09), (1, 0x0c)],
     :ZZpihalf => [(1, 0x00), (1, 0x0e), (-1, 0x0d), (1, 0x03), (1, 0x0b), (1, 0x05), (1, 0x06), (1, 0x08), (-1, 0x07), (1, 0x09), (1, 0x0a), (-1, 0x04), (1, 0x0c), (1, 0x02), (-1, 0x01), (1, 0x0f)],
+    :SWAP => [
+        (1, 0x00), (1, 0x04), (1, 0x08), (1, 0x0c), (1, 0x01), (1, 0x05), 
+        (1, 0x09), (1, 0x0d), (1, 0x02), (1, 0x06), (1, 0x0a), (1, 0x0e), 
+        (1, 0x03), (1, 0x07), (1, 0x0b), (1, 0x0f)
+    ],
 )
 
 const default_clifford_map = deepcopy(_default_clifford_map)
@@ -21,6 +26,44 @@ function reset_clifford_map!()
     return
 end
 
+
+# Generalized function to create a gate map for any gate
+function createcliffordmap(gate_relations::Dict)
+  """Convert gate relations to a Clifford gate map.
+  
+  Args:
+  gate_relations: Dict{Tuple, Tuple} - A dictionary of gate relations
+
+  Returns:
+  mapped_gate: Vector{Tuple} - A vector of tuples representing the gate map.
+  """
+  # check that number of qubits are less than 5 (supported by UInt8)
+  if maximum([length(k) for k in keys(gate_relations)]) > 4
+      throw(ArgumentError(
+          "Number of qubits less than 5 is supported for UInt8 type."
+      ))
+  end
+
+  gate_keys = collect(keys(gate_relations))
+  order_indices = [symboltoint(collect(k)) for k in gate_keys]
+  
+  # Initialize arrays for reordered keys and values
+  reordered_gate_vals = Vector{
+      Tuple{Int, typeof(gate_keys[1]).parameters...}
+  }(undef, length(gate_keys))
+  for (i, idx) in enumerate(order_indices)
+      reordered_gate_vals[idx + 1] = gate_relations[gate_keys[i]]
+  end
+  
+  mapped_gate = Vector{
+      Tuple{Int, typeof(symboltoint(collect(gate_keys[1])))}
+  }(undef, length(gate_keys))
+  for (i, v) in enumerate(reordered_gate_vals)
+      mapped_gate[i] = v[1], symboltoint(collect(v[2:end]))
+  end
+  
+  return mapped_gate
+end
 
 ### Applying Clifford gates
 function apply(gate::CliffordGate, operator, theta, coefficient) # TODO: write tests for this

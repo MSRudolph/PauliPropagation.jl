@@ -19,6 +19,7 @@ export
     CliffordGate,
     default_clifford_map,
     reset_clifford_map!,
+    createcliffordmap,
     applywithmap,
     DepolarizingNoise,
     PauliXNoise,
