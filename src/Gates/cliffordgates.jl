@@ -37,7 +37,13 @@ function createcliffordmap(gate_relations::Dict)
   Returns:
   mapped_gate: Vector{Tuple} - A vector of tuples representing the gate map.
   """
-  
+  # check that number of qubits are less than 5 (supported by UInt8)
+  if maximum([length(k) for k in keys(gate_relations)]) > 4
+      throw(ArgumentError(
+          "Number of qubits less than 5 is supported for UInt8 type."
+      ))
+  end
+
   gate_keys = collect(keys(gate_relations))
   order_indices = [symboltoint(collect(k)) for k in gate_keys]
   
@@ -45,7 +51,6 @@ function createcliffordmap(gate_relations::Dict)
   reordered_gate_vals = Vector{
       Tuple{Int, typeof(gate_keys[1]).parameters...}
   }(undef, length(gate_keys))
-  
   for (i, idx) in enumerate(order_indices)
       reordered_gate_vals[idx + 1] = gate_relations[gate_keys[i]]
   end
