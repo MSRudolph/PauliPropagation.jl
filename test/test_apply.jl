@@ -1,3 +1,5 @@
+# TODO: Should be test gates
+
 function applypauligate(pauli_generator, qinds, theta)
     nq = 5
     symbs = [:I for _ in 1:nq]

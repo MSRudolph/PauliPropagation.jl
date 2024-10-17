@@ -7,19 +7,31 @@ end
 
 
 function PauliString(nq, symbol::Symbol, qind::Int, coeff=1.0)
-    temp_op = [:I for _ in 1:nq]
-    temp_op[qind] = symbol
+    inttype = getinttype(nq)
+    temp_op = inttype(0)
+    temp_op = setelement!(temp_op, qind, symboltoint(symbol))
 
     return PauliString(nq, symboltoint(temp_op), coeff)
 end
 
 function PauliString(nq, symbols::Vector{Symbol}, qinds::Vector{Int}, coeff=1.0)
-    temp_op = [:I for _ in 1:nq]
+
+    inttype = getinttype(nq)
+    temp_op = inttype(0)
     for (op, qind) in zip(symbols, qinds)
-        temp_op[qind] = op
+        temp_op = setelement!(temp_op, qind, symboltoint(op))
     end
 
-    return PauliString(nq, symboltoint(temp_op), coeff)
+    return PauliString(nq, temp_op, coeff)
+end
+
+import Base.show
+function show(io::IO, pstr::PauliString)
+    pauli_string = inttostring(pstr.operator, pstr.nqubits)
+    if length(pauli_string) > 20
+        pauli_string = pauli_string[1:20] * "..."
+    end
+    print(io, "PauliString(nqubits: $(pstr.nqubits), $(round(pstr.coeff, sigdigits=5)) * $(pauli_string))")
 end
 
 ## PauliSum that is a sum of PauliString
@@ -30,7 +42,7 @@ end
 
 PauliSum(nq::Int) = PauliSum(nq, Dict{getinttype(nq),Float64}())
 
-PauliSum(nq::Int, coeff_type::DataType) = PauliSum(nq, Dict{getinttype(nq),coeff_type}())
+# PauliSum(nq::Int, coeff_type::DataType) = PauliSum(nq, Dict{getinttype(nq),coeff_type}())  # TODO: figure out how to use the numeric wrapper type :) 
 
 function PauliSum(nq::Int, pstr::PauliString)
     # there is a possible downfall here nq != pauli_string.nqubits
@@ -38,7 +50,7 @@ function PauliSum(nq::Int, pstr::PauliString)
     return PauliSum(nq, Dict{getinttype(nq),Float64}(pstr.operator => pstr.coeff))
 end
 
-function PauliSum(nq::Int, pstr::Vector{PauliString})
+function PauliSum(nq::Int, pstr::Vector{PauliString{T}}) where {T}
     # there is a possible downfall here nq != pauli_string.nqubits
     # this will convert to nq and consequently potentially truncate bits
     op_dict = Dict{getinttype(nq),Float64}(
@@ -47,6 +59,20 @@ function PauliSum(nq::Int, pstr::Vector{PauliString})
     return PauliSum(nq, op_dict)
 end
 
+import Base.show
+function show(io::IO, psum::PauliSum)
+    if length(psum.op_dict) == 0
+        dict_string = "(no operators)"
+    else
+        dict_string = getprettystr(psum.op_dict, psum.nqubits)
+    end
+    print(io, "PauliSum(nqubits: $(psum.nqubits), $dict_string)")
+end
+
+import Base.length
+length(psum::PauliSum) = length(psum.op_dict)
+
+## Adding to PauliSum
 function add!(psum::PauliSum, pstr::PauliString)
     # there is a possible downfall here nq != pauli_string.nqubits
     # this will convert to nq and consequently potentially truncate bits
@@ -60,7 +86,7 @@ function add!(psum::PauliSum, pstr::PauliString)
     return psum
 end
 
-function add!(psum::PauliSum, pstr::Vector{PauliString})
+function add!(psum::PauliSum, pstr::Vector{PauliString{T}}) where {T}
     # there is a possible downfall here nq != pauli_string.nqubits
     # this will convert to nq and consequently potentially truncate bits
 
@@ -83,8 +109,7 @@ function add!(psum, symbols::Vector{Symbol}, qinds::Vector{Int}, coeff=1.0)
     return add!(psum, PauliString(psum.nqubits, symbols, qinds, coeff))
 end
 
-
-
+## PathProperties # TODO: make compatible with PauliString and PauliSum
 abstract type PathProperties end
 
 mutable struct NumericPathProperties <: PathProperties

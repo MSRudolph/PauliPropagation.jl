@@ -51,7 +51,11 @@ export
 include("truncations.jl")
 
 include("Propagation/Propagation.jl")
-export mergingbfs, applygatetoall!, applygatetoone!
+export
+    mergingbfs,
+    mergingbfs!,
+    applygatetoall!,
+    applygatetoone!
 
 include("stateoverlap.jl")
 export

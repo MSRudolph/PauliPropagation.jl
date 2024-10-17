@@ -1,5 +1,5 @@
 
-const pauli_ops::Vector{Symbol} = [:I, :X, :Y, :Z]
+const pauli_ops::Vector{Symbol} = [:I, :X, :Y, :Z]   # maps to 0 1 2 3
 
 symboltoint(sym::Symbol) = findfirst(s -> s == sym, pauli_ops) - 1
 symboltoint(i::Integer) = i
@@ -25,6 +25,7 @@ end
 
 
 inttostring(op::Unsigned) = prod("$(inttosymbol(getelement(op, ii)))" for ii in 1:Int(bitsize(op) / 2))
+inttostring(op::Unsigned, nq) = prod("$(inttosymbol(getelement(op, ii)))" for ii in 1:nq)
 
 import Base.show
 function show(op::Integer)
@@ -47,15 +48,53 @@ function show(d::Dict; max_lines=20)
 
 end
 
-function show(d::Dict, n::Int; max_lines=20)
-    header = "$(typeof(d)) with $(length(d)) entries:"
-    println(header)
+function show(d::Dict, nq::Int; max_lines=20)
+    println(getdictstr(d, nq; max_lines=max_lines))
+
+end
+
+function getdictstr(d::Dict, nq::Int; max_lines=20)
+    str = ""
+    header = "$(typeof(d)) with " * (length(d) == 1 ? "1 entry:\n" : "$(length(d)) entries:\n")
+    str *= header
+
     for (ii, (op, coeff)) in enumerate(d)
         if ii > max_lines
-            println("  ⋮")
+            new_str = "  ⋮"
+            str *= new_str
             break
         end
-        println("  ", inttostring(op), " => ", coeff)
+        pauli_string = inttostring(op, nq)
+        if length(pauli_string) > 20
+            pauli_string = pauli_string[1:20] * "..."
+        end
+        new_str = "  $(pauli_string) => $coeff \n"
+        str *= new_str
     end
+
+    return str
+
+end
+
+function getprettystr(d::Dict, nq::Int; max_lines=20)
+    str = ""
+    header = length(d) == 1 ? "1 Pauli term: \n" : "$(length(d)) Pauli terms:\n"
+    str *= header
+
+    for (ii, (op, coeff)) in enumerate(d)
+        if ii > max_lines
+            new_str = "  ⋮"
+            str *= new_str
+            break
+        end
+        pauli_string = inttostring(op, nq)
+        if length(pauli_string) > 20
+            pauli_string = pauli_string[1:20] * "..."
+        end
+        new_str = " $(round(coeff, sigdigits=5)) * $(pauli_string)\n"
+        str *= new_str
+    end
+
+    return str
 
 end

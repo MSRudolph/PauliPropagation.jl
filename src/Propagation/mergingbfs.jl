@@ -1,18 +1,26 @@
 
-function mergingbfs(circ, op::Union{Vector{Symbol},Integer}, thetas; kwargs...)
-    val = 1.0
-    etype = eltype(thetas)
-    d = Dict{typeof(op),etype}(deepcopy(op) => val)
-    return mergingbfs(circ, d, thetas; kwargs...)
+function mergingbfs(circ, pstr::PauliString, thetas; kwargs...)
+    psum = PauliSum(pstr.nqubits, pstr)
+    return mergingbfs(circ, psum, thetas; kwargs...)
 end
 
-function mergingbfs(circ, op, path_properties::PathProperties, thetas; kwargs...)
-    d = Dict{typeof(op),typeof(path_properties)}(deepcopy(op) => path_properties)
-    return mergingbfs(circ, d, thetas; kwargs...)
+function mergingbfs!(circ, pstr::PauliString, thetas; kwargs...)
+    return mergingbfs(circ, pstr, thetas; kwargs...)
+end
+
+function mergingbfs(circ, psum::PauliSum, thetas; kwargs...)
+    pauli_dict = mergingbfs!(circ, deepcopy(psum.op_dict), thetas; kwargs...)
+    return PauliSum(psum.nqubits, pauli_dict)
+end
+
+function mergingbfs!(circ, psum::PauliSum, thetas; kwargs...)
+    pauli_dict = mergingbfs!(circ, psum.op_dict, thetas; kwargs...)
+    return PauliSum(psum.nqubits, pauli_dict)
 end
 
 
-function mergingbfs(circ, d, thetas; kwargs...)
+function mergingbfs!(circ, d, thetas; kwargs...)
+    # TODO: Should we have a version of this that doesn't require thetas and uses surrogate code?
     param_idx = length(thetas)
 
     second_d = typeof(d)()  # pre-allocating somehow doesn't do anything

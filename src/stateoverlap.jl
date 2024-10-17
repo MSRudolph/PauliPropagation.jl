@@ -1,7 +1,15 @@
 ### This file contains the functions to calculate the overlap between between backpropagated operators and the initial state.
 
 ## Evaluate with a rule 
-function overlapbyorthogonality(op_dict, orthogonalfunc)
+function overlapbyorthogonality(psum::PauliSum, orthogonalfunc)
+    return overlapbyorthogonality(psum.op_dict, orthogonalfunc)
+end
+
+function overlapbyorthogonality(pstr::PauliString, orthogonalfunc)
+    return !orthogonalfunc(operator) * getnumcoeff(pstr.coeff)
+end
+
+function overlapbyorthogonality(op_dict::Dict, orthogonalfunc)
     val = 0.0
     for (operator, coeff) in op_dict
         if !orthogonalfunc(operator)
@@ -11,7 +19,7 @@ function overlapbyorthogonality(op_dict, orthogonalfunc)
     return val
 end
 
-## For the typical |0> case
+## For the typical |0> or |+> cases
 overlapwithzero(op_dict) = overlapbyorthogonality(op_dict, orthogonaltozero)
 orthogonaltozero(op) = containsXorY(op)
 
@@ -22,18 +30,12 @@ orthogonaltoplus(op) = containsYorZ(op)
 
 # TODO: Implement with overlap maximally mixed once we have the operator interface
 
-
-## Filter backpropagated operators
-function filterdict(op_dict, filterfunc)
-    return Dict(k => v for (k, v) in op_dict if !filterfunc(k))
+## Evaluate the overlap (or trace) between two PauliSum objects
+function overlapwithpaulisum(psum1::PauliSum, psum2::PauliSum)
+    return overlapwithdict(psum1.op_dict, psum2.op_dict)
 end
 
-# returns a new filtered dictionary, but doesn't overlap with anything
-zerofilter(op_dict) = filterdict(op_dict, containsXorY)
-plusfilter(op_dict) = filterdict(op_dict, containsYorZ)
-
-## Evaluate against initial state in dict form
-function overlapwithdict(op_dict, initstate_dict)  # TODO: change name and functionality to operator interface
+function overlapwithdict(op_dict::Dict, initstate_dict::Dict)
     val = 0.0
 
     d1 = op_dict
@@ -50,6 +52,21 @@ function overlapwithdict(op_dict, initstate_dict)  # TODO: change name and funct
     end
     return val
 end
+
+
+## Filter backpropagated operators
+function filterdict(op_dict::Dict, filterfunc)
+    return Dict(k => v for (k, v) in op_dict if !filterfunc(k))
+end
+
+function filterpaulisum(psum::PauliSum, filterfunc)
+    op_dict = filterdict(psum.op_dict, filterfunc)
+    return PauliSum(psum.nqubits, op_dict)
+end
+
+# returns a new filtered dictionary, but doesn't overlap with anything
+zerofilter(psum) = filterdict(psum, containsXorY)
+plusfilter(psum) = filterdict(psum, containsYorZ)
 
 
 ## Interface functions for extracting the numerical coefficients
