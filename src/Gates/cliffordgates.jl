@@ -28,7 +28,7 @@ end
 
 
 # Generalized function to create a gate map for any gate
-function create_clifford_map(gate_relations::Dict)
+function createcliffordmap(gate_relations::Dict)
   """Convert gate relations to a Clifford gate map.
   
   Args:
@@ -42,15 +42,17 @@ function create_clifford_map(gate_relations::Dict)
   order_indices = [symboltoint(collect(k)) for k in gate_keys]
   
   # Initialize arrays for reordered keys and values
-  reordered_gate_keys = Vector{Tuple}(undef, length(gate_keys))
-  reordered_gate_vals = Vector{Tuple}(undef, length(gate_keys))
+  reordered_gate_vals = Vector{
+      Tuple{Int, typeof(gate_keys[1]).parameters...}
+  }(undef, length(gate_keys))
   
   for (i, idx) in enumerate(order_indices)
-      reordered_gate_keys[idx + 1] = gate_keys[i]  # Reorder based on index 1
       reordered_gate_vals[idx + 1] = gate_relations[gate_keys[i]]
   end
   
-  mapped_gate = Vector{Tuple}(undef, length(gate_keys))
+  mapped_gate = Vector{
+      Tuple{Int, typeof(symboltoint(collect(gate_keys[1])))}
+  }(undef, length(gate_keys))
   for (i, v) in enumerate(reordered_gate_vals)
       mapped_gate[i] = v[1], symboltoint(collect(v[2:end]))
   end

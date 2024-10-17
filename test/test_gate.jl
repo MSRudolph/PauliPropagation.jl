@@ -21,7 +21,7 @@ using Test
         (:Z, :Y) => (1, :I, :Y),
         (:Z, :Z) => (1, :I, :Z),
     )    
-    mapped_CNOT = create_clifford_map(CNOT_relations)
+    mapped_CNOT = createcliffordmap(CNOT_relations)
     # Check we get the same result 
     @test mapped_CNOT == default_clifford_map[:CNOT]
 
@@ -32,7 +32,7 @@ using Test
         (:Y,) => (-1, :Y),
         (:Z,) => (1, :X),
     )
-    mapped_H = create_clifford_map(H_relations)
+    mapped_H = createcliffordmap(H_relations)
     # Check we get the same result
     @test mapped_H == default_clifford_map[:H]
 end
