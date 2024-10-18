@@ -35,7 +35,7 @@ function mergingbfs!(circ, d, thetas; kwargs...)
 end
 
 
-function mergingapply(gate, operator_dict::Dict, new_operator_dict::Dict, thetas, param_idx, args...; customtruncationfunction=nothing, min_abs_coeff=0.0, kwargs...)
+function mergingapply(gate, operator_dict::Dict, new_operator_dict::Dict, thetas, param_idx, args...; customtruncationfunction=nothing, kwargs...)
 
     # param_idx is decremented by one if the gate is a Pauli gate
     operator_dict, new_operator_dict, param_idx = applygatetoall!(gate, thetas, param_idx, operator_dict, new_operator_dict)
@@ -54,62 +54,93 @@ end
 ### APPLY
 
 function applygatetoall!(gate, thetas, param_idx, operator_dict, new_operator_dict, args...; kwargs...)
-    theta = 0.0  # This gate seems to not use parameters
-    for (operator, coeff) in operator_dict
-        applygatetoone!(gate, operator, coeff, theta, param_idx, operator_dict, new_operator_dict; kwargs...)  #  max_weight=here_max_weight, 
-    end
-    return operator_dict, new_operator_dict, param_idx
-end
-
-function applygatetoall!(gate::PauliGateUnion, thetas, param_idx, operator_dict, new_operator_dict, args...; kwargs...)
     theta = thetas[param_idx]
     for (operator, coeff) in operator_dict
-        applygatetoone!(gate, operator, coeff, theta, param_idx, operator_dict, new_operator_dict; kwargs...)  #  max_weight=here_max_weight, 
+        applygatetoone!(gate, operator, coeff, theta, param_idx, operator_dict, new_operator_dict; kwargs...)
     end
-    return operator_dict, new_operator_dict, param_idx - 1  # decrement parameter index by one
+
+    if isa(gate, ParametrizedGate)  # decrement parameter index by one
+        param_idx -= 1
+    end
+
+    empty!(operator_dict)  # empty old dict because next generation of operators should by default stored in new_operator_dict (unless this is a overwritten by a custom function)
+
+    return new_operator_dict, operator_dict, param_idx  # swap dicts around
 end
 
-function applygatetoall!(gate::CliffordGate, thetas, param_idx, operator_dict, new_operator_dict, args...; max_weight::Real=Inf, kwargs...)
+@inline function applygatetoone!(gate, operator, coefficient, theta, param_idx, operator_dict, new_operator_dict, args...; kwargs...)
 
-    map_array = default_clifford_map[gate.symbol]
+    ops_and_coeffs = apply(gate, operator, theta, coefficient)
 
-    for (oper, coeff) in operator_dict
-        applygatetoone!(gate, oper, coeff, thetas, param_idx, map_array, operator_dict, new_operator_dict; kwargs...)
+    for ii in 1:2:length(ops_and_coeffs)
+        op, coeff = ops_and_coeffs[ii], ops_and_coeffs[ii+1]
+        new_operator_dict[ops_and_coeffs[ii]] = get(new_operator_dict, op, 0.0) + coeff
     end
-    empty!(operator_dict)
-    return new_operator_dict, operator_dict, param_idx
+
+    return
 end
 
+### PAULI GATES
+
+function applygatetoall!(gate::PauliGateUnion, thetas, param_idx, operator_dict, new_operator_dict, args...; kwargs...)  # TODO: there is a lot of code duplication. Can we write a more general function?
+    theta = thetas[param_idx]
+    for (operator, coeff) in operator_dict
+        applygatetoone!(gate, operator, coeff, theta, param_idx, operator_dict, new_operator_dict; kwargs...)
+    end
+
+    param_idx -= 1
+
+    return operator_dict, new_operator_dict, param_idx
+end
 
 @inline function applygatetoone!(gate::PauliGateUnion, operator, coefficient, theta, param_idx, operator_dict, new_operator_dict, args...; kwargs...)
 
     if commutes(gate, operator)
-        return operator_dict, new_operator_dict
+        return
     end
 
-    coeff1 = applycos(coefficient, theta; param_idx=param_idx)
-    sign, new_oper = getnewoperator(gate, operator)
-    coeff2 = applysin(coefficient, theta; sign=sign, param_idx=param_idx)
+    operator, coeff1, new_oper, coeff2 = applynoncummuting(gate, operator, theta, coefficient; param_idx=param_idx)  # TODO: remove the param_idx from here because it is only specific to the Surrogate
+
     operator_dict[operator] = coeff1
     new_operator_dict[new_oper] = coeff2
 
     return
 end
 
-@inline function applygatetoone!(gate::CliffordGate, operator, coefficient, theta, param_idx, map_array, operator_dict, new_operator_dict, args...; kwargs...)
-    # TODO: use more of the apply function here. This requires rewriting those.
-    operator = copy(operator)
-    qinds = gate.qinds
-    lookup_op = _extractlookupop(operator, qinds)
-    sign, new_op = map_array[lookup_op+1]  # +1 because Julia is 1-indexed and lookup_op is 0-indexed
-    operator = _insertnewop!(operator, new_op, qinds)
 
-    coefficient = _multiplysign!(coefficient, sign)
+### Amplitude Damping Noise
 
-    new_operator_dict[operator] = coefficient
+function applygatetoall!(gate::AmplitudeDampingNoise, thetas, param_idx, operator_dict, new_operator_dict, args...; kwargs...)  # TODO: there is a lot of code duplication. Can we write a more general function?
+    theta = thetas[param_idx]
+    for (operator, coeff) in operator_dict
+        applygatetoone!(gate, operator, coeff, theta, param_idx, operator_dict, new_operator_dict; kwargs...)
+    end
+
+    param_idx -= 1
+
+    return operator_dict, new_operator_dict, param_idx
+end
+
+@inline function applygatetoone!(gate::AmplitudeDampingNoise, operator, coefficient, theta, param_idx, operator_dict, new_operator_dict, args...; kwargs...)
+
+    if actsdiagonally(gate, operator)
+        operator, coeff = diagonalapply(gate, operator, theta, coefficient)
+        operator_dict[operator] = coeff
+        return
+    end
+
+    operator, coeff1, new_oper, coeff2 = splitapply(gate, operator, theta, coefficient)
+
+    operator_dict[operator] = coeff1
+    new_operator_dict[new_oper] = coeff2
 
     return
 end
+
+### Clifford gates
+
+## NOTE: Currently, a slightly more optimized applygatetoall! function that gets the map_array once and passes that to applygatetoone! is not significantly faster than the general function
+
 
 ### MERGE
 
@@ -140,7 +171,7 @@ end
 
 function checktruncationonall!(operator_dict; max_weight::Real=Inf, min_abs_coeff=0.0, max_freq::Real=Inf, max_sins::Real=Inf, kwargs...)
     # TODO: This does currently hinder performance, even if we don't truncated
-    # approx 55ms -> 66ms
+    # approx 55ms -> 66ms for the test case
     for (operator, coeff) in operator_dict
         checktruncationonone!(operator_dict, operator, coeff; max_weight=max_weight, min_abs_coeff=min_abs_coeff, max_freq=max_freq, max_sins=max_sins, kwargs...)
     end

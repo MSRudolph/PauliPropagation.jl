@@ -1,9 +1,9 @@
-struct PauliGate <: Gate
+struct PauliGate <: ParametrizedGate
     symbols::Vector{Symbol}
     qinds::Vector{Int}
 end
 
-struct FastPauliGate{T} <: Gate where {T<:Integer}
+struct FastPauliGate{T} <: ParametrizedGate where {T<:Integer}
     symbols::Vector{Symbol}
     qinds::Vector{Int}
     bitoperator::T
@@ -45,14 +45,13 @@ function apply(gate::PauliGateUnion, operator, theta, coefficient=1.0)
     end
 end
 
-function applynoncummuting(gate::PauliGateUnion, operator, theta, coefficient=1.0)
-    coeff1 = applycos(coefficient, theta)
+function applynoncummuting(gate::PauliGateUnion, operator, theta, coefficient=1.0; kwargs...)
+    coeff1 = applycos(coefficient, theta; kwargs...)
     sign, new_oper = getnewoperator(gate, operator)
-    coeff2 = applysin(coefficient, theta; sign=sign)
+    coeff2 = applysin(coefficient, theta; sign=sign, kwargs...)
 
-    return operator, coeff1, new_oper, coeff2   # TODO: when does this ever not allocate memory?
+    return operator, coeff1, new_oper, coeff2
 end
-
 
 function applysin(old_coeff::Number, theta; sign=1, kwargs...)
     return old_coeff * sin(theta) * sign

@@ -15,6 +15,8 @@ export
 include("Gates/Gates.jl")
 export
     Gate,
+    ParametrizedGate,
+    StaticGate,
     PauliGate,
     FastPauliGate,
     tofastgates,
@@ -23,10 +25,18 @@ export
     CliffordGate,
     default_clifford_map,
     reset_clifford_map!,
-    applywithmap
+    createcliffordmap,
+    applywithmap,
+    DepolarizingNoise,
+    PauliXNoise,
+    PauliYNoise,
+    PauliZNoise,
+    AmplitudeDampingNoise
+
 
 include("circuits.jl")
 export
+    countparameters,
     bricklayertopology,
     get2dtopology,
     get2dstaircasetopology,
