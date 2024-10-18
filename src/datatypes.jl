@@ -1,11 +1,11 @@
 ## PauliString that is a Pauli Operator
-struct PauliString{Optype<:Integer}
+struct PauliString{OpType<:Integer,CoeffType}
     nqubits::Int
-    operator::Optype
-    coeff::Float64
+    operator::OpType
+    coeff::CoeffType
 end
 
-
+# TODO: Do things go wrong if people provide integer coefficients?
 function PauliString(nq, symbol::Symbol, qind::Int, coeff=1.0)
     inttype = getinttype(nq)
     temp_op = inttype(0)
@@ -31,26 +31,35 @@ function show(io::IO, pstr::PauliString)
     if length(pauli_string) > 20
         pauli_string = pauli_string[1:20] * "..."
     end
-    print(io, "PauliString(nqubits: $(pstr.nqubits), $(round(pstr.coeff, sigdigits=5)) * $(pauli_string))")
+    if isa(pstr.coeff, Number)
+        coeff_str = round(pstr.coeff, sigdigits=5)
+    elseif isa(pstr.coeff, PathProperties)
+        if isa(pstr.coeff, Number)
+            coeff_str = "PathProperty($(round(pstr.coeff, sigdigits=5)))"
+        else
+            coeff_str = "PathProperty($(typeof(pstr.coeff)))"
+        end
+    else
+        coeff_str = "($(typeof(pstr.coeff)))"
+    end
+    print(io, "PauliString(nqubits: $(pstr.nqubits), $(coeff_str) * $(pauli_string))")
 end
 
 ## PauliSum that is a sum of PauliString
-struct PauliSum{OpType<:Integer}
+struct PauliSum{OpType<:Integer,CoeffType}
     nqubits::Int
-    op_dict::Dict{OpType,Float64}
+    op_dict::Dict{OpType,CoeffType}
 end
 
 PauliSum(nq::Int) = PauliSum(nq, Dict{getinttype(nq),Float64}())
 
-# PauliSum(nq::Int, coeff_type::DataType) = PauliSum(nq, Dict{getinttype(nq),coeff_type}())  # TODO: figure out how to use the numeric wrapper type :) 
-
 function PauliSum(nq::Int, pstr::PauliString)
     # there is a possible downfall here nq != pauli_string.nqubits
     # this will convert to nq and consequently potentially truncate bits
-    return PauliSum(nq, Dict{getinttype(nq),Float64}(pstr.operator => pstr.coeff))
+    return PauliSum(nq, Dict{getinttype(nq),typeof(pstr.coeff)}(pstr.operator => pstr.coeff))
 end
 
-function PauliSum(nq::Int, pstr::Vector{PauliString{T}}) where {T}
+function PauliSum(nq::Int, pstr::Vector{PauliString{T1,T2}}) where {T1,T2}
     # there is a possible downfall here nq != pauli_string.nqubits
     # this will convert to nq and consequently potentially truncate bits
     op_dict = Dict{getinttype(nq),Float64}(
@@ -58,6 +67,9 @@ function PauliSum(nq::Int, pstr::Vector{PauliString{T}}) where {T}
     )
     return PauliSum(nq, op_dict)
 end
+
+Base.iterate(psum::PauliSum, state=1) = iterate(psum.op_dict, state)
+
 
 import Base.show
 function show(io::IO, psum::PauliSum)
@@ -86,7 +98,7 @@ function add!(psum::PauliSum, pstr::PauliString)
     return psum
 end
 
-function add!(psum::PauliSum, pstr::Vector{PauliString{T}}) where {T}
+function add!(psum::PauliSum, pstr::Vector{PauliString{T1,T2}}) where {T1,T2}
     # there is a possible downfall here nq != pauli_string.nqubits
     # this will convert to nq and consequently potentially truncate bits
 
@@ -109,9 +121,11 @@ function add!(psum, symbols::Vector{Symbol}, qinds::Vector{Int}, coeff=1.0)
     return add!(psum, PauliString(psum.nqubits, symbols, qinds, coeff))
 end
 
-## PathProperties # TODO: make compatible with PauliString and PauliSum
+
+## This type can be used to wrap coefficients and record custom properties
 abstract type PathProperties end
 
+## Specific PathProperties
 mutable struct NumericPathProperties <: PathProperties
     coeff::Float64
     nsins::Int
@@ -119,9 +133,8 @@ mutable struct NumericPathProperties <: PathProperties
     freq::Int
 end
 
+## This 1-argument constructor needs to be defined for any PathProperties type
 NumericPathProperties(coeff) = NumericPathProperties(coeff, 0, 0, 0)
-
-
 
 import Base: *
 function *(pth::PathProperties, val::Number)
@@ -136,3 +149,10 @@ end
 Base.show(io::IO, pth::PathProperties) = print(io, "PathProperties($(typeof(pth.coeff)), nsins=$(pth.nsins), ncos=$(pth.ncos), freq=$(pth.freq))")
 
 Base.show(io::IO, pth::NumericPathProperties) = print(io, "NumericPathProperties($(pth.coeff), nsins=$(pth.nsins), ncos=$(pth.ncos), freq=$(pth.freq))")
+
+
+## Wrapping PauliString and PauliSum in PathProperties
+function wrapcoefficients(pstr::PauliString, PathPropertiesType::Type{PP}) where {PP<:PathProperties}
+    # the one-argument constructor of your PathProperties type must be defined
+    return PauliString(pstr.nqubits, pstr.operator, PathPropertiesType(pstr.coeff))
+end

@@ -8,7 +8,8 @@ export
     PauliString,
     add!,
     PathProperties,
-    NumericPathProperties
+    NumericPathProperties,
+    wrapcoefficients
 
 
 include("Gates/Gates.jl")
@@ -64,12 +65,18 @@ export
     overlapwithplus,
     orthogonaltozero,
     orthogonaltoplus,
-    filterdict,
+    filter,
     zerofilter,
     evaluateagainstdict,
     getnumcoeff
 
 include("surrogate.jl")
-export operatortopathdict, PauliGateNode, gettraceevalorder, expectation, resetnodes
+export
+    NodePathProperties,
+    EvalEndNode,
+    PauliGateNode,
+    gettraceevalorder,
+    expectation,
+    resetnodes
 
 end

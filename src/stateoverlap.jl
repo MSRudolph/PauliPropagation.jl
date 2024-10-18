@@ -55,18 +55,18 @@ end
 
 
 ## Filter backpropagated operators
-function filterdict(op_dict::Dict, filterfunc)
+function filter(op_dict::Dict, filterfunc)
     return Dict(k => v for (k, v) in op_dict if !filterfunc(k))
 end
 
-function filterpaulisum(psum::PauliSum, filterfunc)
-    op_dict = filterdict(psum.op_dict, filterfunc)
+function filter(psum::PauliSum, filterfunc)
+    op_dict = filter(psum.op_dict, filterfunc)
     return PauliSum(psum.nqubits, op_dict)
 end
 
 # returns a new filtered dictionary, but doesn't overlap with anything
-zerofilter(psum) = filterdict(psum, containsXorY)
-plusfilter(psum) = filterdict(psum, containsYorZ)
+zerofilter(psum) = filter(psum, containsXorY)
+plusfilter(psum) = filter(psum, containsYorZ)
 
 
 ## Interface functions for extracting the numerical coefficients

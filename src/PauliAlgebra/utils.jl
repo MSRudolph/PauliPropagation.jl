@@ -91,7 +91,18 @@ function getprettystr(d::Dict, nq::Int; max_lines=20)
         if length(pauli_string) > 20
             pauli_string = pauli_string[1:20] * "..."
         end
-        new_str = " $(round(coeff, sigdigits=5)) * $(pauli_string)\n"
+        if isa(coeff, Number)
+            coeff_str = round(coeff, sigdigits=5)
+        elseif isa(coeff, PathProperties)
+            if isa(coeff.coeff, Number)
+                coeff_str = "PathProperty($(round(coeff.coeff, sigdigits=5)))"
+            else
+                coeff_str = "PathProperty($(typeof(coeff.coeff)))"
+            end
+        else
+            coeff_str = "($(typeof(coeff)))"
+        end
+        new_str = " $(coeff_str) * $(pauli_string)\n"
         str *= new_str
     end
 
