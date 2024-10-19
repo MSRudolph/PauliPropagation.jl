@@ -93,3 +93,19 @@ function applycos(path_properties::PathProperties, theta; sign=1, kwargs...)
     path_properties.coeff = applycos(path_properties.coeff, theta; sign, kwargs...)
     return path_properties
 end
+
+
+function getnewoperator(gate::PauliGate, oper)
+    new_oper = copy(oper)
+    total_sign = -1
+    for (qind, gate_sym) in zip(gate.qinds, gate.symbols)
+        sign, new_partial_op = pauliprod(gate_sym, getelement(new_oper, qind))
+        total_sign *= sign
+        new_oper = setelement!(new_oper, qind, new_partial_op)
+    end
+    return total_sign, new_oper
+end
+
+function getnewoperator(gate::FastPauliGate, oper)
+    return pauliprod(gate.bitoperator, oper, gate.qinds)
+end
