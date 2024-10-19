@@ -43,7 +43,12 @@ function addtopaulisum(nq)
     symbols = rand([:I, :X, :Y, :Z], min(nq, 4))
     qinds = rand(1:nq, min(nq, 4))
     coeff = randn()
-    add!(psum, symbols, qinds, coeff)
+    psum2 = createpaulisum(nq)
+    add!(psum2, symbols, qinds, coeff)
     print(psum)
+
+    psum3 = add(psum, psum2)
+    subtract(psum2, psum3)
+
     return psum
 end

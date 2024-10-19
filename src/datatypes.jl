@@ -68,6 +68,8 @@ function PauliSum(nq::Int, pstr::Vector{PauliString{T1,T2}}) where {T1,T2}
     return PauliSum(nq, op_dict)
 end
 
+Base.copy(psum::PauliSum) = PauliSum(psum.nqubits, copy(psum.op_dict))
+
 Base.iterate(psum::PauliSum, state=1) = iterate(psum.op_dict, state)
 
 
@@ -98,6 +100,31 @@ function add!(psum::PauliSum, pstr::PauliString)
     return psum
 end
 
+function add(psum1::PauliSum, psum2::PauliSum)
+    # adds psum2 to psum1. Non-mutating version only defined between two PauliSum objects
+
+    psum1 = copy(psum1) # or deepcopy?
+
+    add!(psum1, psum2)
+
+    return psum1
+end
+
+function add!(psum1::PauliSum, psum2::PauliSum)
+    # there is a possible downfall here nq != pauli_string.nqubits
+    # this will use nq from psum1
+
+    for (operator, coeff) in psum2.op_dict
+        if haskey(psum1.op_dict, operator)
+            psum1.op_dict[operator] += coeff
+        else
+            psum1.op_dict[operator] = coeff
+        end
+    end
+
+    return psum1
+end
+
 function add!(psum::PauliSum, pstr::Vector{PauliString{T1,T2}}) where {T1,T2}
     # there is a possible downfall here nq != pauli_string.nqubits
     # this will convert to nq and consequently potentially truncate bits
@@ -119,6 +146,30 @@ end
 
 function add!(psum, symbols::Vector{Symbol}, qinds::Vector{Int}, coeff=1.0)
     return add!(psum, PauliString(psum.nqubits, symbols, qinds, coeff))
+end
+
+function subtract(psum1::PauliSum, psum2::PauliSum)
+    # subtracts psum2 from psum1
+
+    psum1 = copy(psum1) # or deepcopy?
+
+    subtract!(psum1, psum2)
+
+    return psum1
+end
+
+function subtract!(psum1::PauliSum, psum2::PauliSum)
+    # subtracts psum2 from psum1
+
+    for (operator, coeff) in psum2.op_dict
+        if haskey(psum1.op_dict, operator)
+            psum1.op_dict[operator] -= coeff
+        else
+            psum1.op_dict[operator] = -coeff
+        end
+    end
+
+    return psum1
 end
 
 

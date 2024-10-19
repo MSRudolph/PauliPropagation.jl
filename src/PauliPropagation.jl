@@ -6,7 +6,10 @@ include("datatypes.jl")
 export
     PauliSum,
     PauliString,
+    add,
     add!,
+    subtract,
+    subtract!,
     PathProperties,
     NumericPathProperties,
     wrapcoefficients

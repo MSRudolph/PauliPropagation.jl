@@ -28,7 +28,16 @@ orthogonaltoplus(op) = containsYorZ(op)
 
 # eval against |±i> not implemented
 
-# TODO: Implement with overlap maximally mixed once we have the operator interface
+
+# overlap maximally mixed
+function overlapwithmaxmixed(psum::PauliSum)
+    return overlapwithmaxmixed(psum.op_dict)
+end
+
+function overlapwithmaxmixed(op_dict::Dict)
+    IntType = keytype(op_dict)
+    return get(op_dict, IntType(0), 0.0)
+end
 
 ## Evaluate the overlap (or trace) between two PauliSum objects
 function overlapwithpaulisum(psum1::PauliSum, psum2::PauliSum)
@@ -59,14 +68,30 @@ function filter(op_dict::Dict, filterfunc)
     return Dict(k => v for (k, v) in op_dict if !filterfunc(k))
 end
 
+function filter!(op_dict::Dict, filterfunc)
+    for (k, v) in op_dict
+        if filterfunc(k)
+            delete!(op_dict, k)
+        end
+    end
+    return op_dict
+end
+
 function filter(psum::PauliSum, filterfunc)
     op_dict = filter(psum.op_dict, filterfunc)
     return PauliSum(psum.nqubits, op_dict)
 end
 
+function filter!(psum::PauliSum, filterfunc)
+    psum.op_dict = filter!(psum.op_dict, filterfunc)
+    return psum
+end
+
 # returns a new filtered dictionary, but doesn't overlap with anything
 zerofilter(psum) = filter(psum, containsXorY)
+zerofilter!(psum) = filter!(psum, containsXorY)
 plusfilter(psum) = filter(psum, containsYorZ)
+plusfilter!(psum) = filter!(psum, containsYorZ)
 
 
 ## Interface functions for extracting the numerical coefficients
