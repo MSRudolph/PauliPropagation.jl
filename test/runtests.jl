@@ -1,5 +1,6 @@
 using PauliPropagation
 using Test
+using Random
 
 @testset "PauliPropagation.jl" begin
     # Write your tests here.

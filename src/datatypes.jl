@@ -1,4 +1,5 @@
 ## PauliString that is a Pauli Operator
+# TODO: change OpType to Unsigned
 struct PauliString{OpType<:Integer,CoeffType}
     nqubits::Int
     operator::OpType
@@ -6,10 +7,15 @@ struct PauliString{OpType<:Integer,CoeffType}
 end
 
 # TODO: Do things go wrong if people provide integer coefficients?
+# Add a wrapper type `WrappedPauliString` that can hold `PathProperties` vs keep them separate as currently done?
 function PauliString(nq, symbol::Symbol, qind::Int, coeff=1.0)
     inttype = getinttype(nq)
     temp_op = inttype(0)
     temp_op = setelement!(temp_op, qind, symboltoint(symbol))
+    #TODO: find a better way to handle integer coefficients
+    if isa(coeff, Int)  # Convert it to Float64 to have a stable type
+        coeff = Float64(coeff) 
+    end
 
     return PauliString(nq, symboltoint(temp_op), coeff)
 end
@@ -53,9 +59,31 @@ end
 
 PauliSum(nq::Int) = PauliSum(nq, Dict{getinttype(nq),Float64}())
 
+function PauliSum(nq::Int, sym_dict::Dict{Vector{Symbol}, Float64})
+    """
+    Construct a PauliSum from a dictionary of {symbols, coefficients}
+
+    Args:
+        nq: number of qubits
+        sym_dict: dictionary of {symbols, coefficients}
+
+    Returns:
+        PauliSum
+    """
+    int_dict = Dict(symboltoint(k) => v for (k, v) in sym_dict)
+
+    return PauliSum(nq, int_dict)
+end
+
 function PauliSum(nq::Int, pstr::PauliString)
-    # there is a possible downfall here nq != pauli_string.nqubits
-    # this will convert to nq and consequently potentially truncate bits
+    if nq != pstr.nqubits
+        throw(
+            ArgumentError(
+                "Number of qubits $nq must equal Pauli string $(pstr.nqubits)"
+            )
+        )
+    end
+
     return PauliSum(nq, Dict{getinttype(nq),typeof(pstr.coeff)}(pstr.operator => pstr.coeff))
 end
 
@@ -85,6 +113,16 @@ end
 
 import Base.length
 length(psum::PauliSum) = length(psum.op_dict)
+
+import Base: ==
+# Define equality for PauliSum
+function ==(ps1::PauliSum, ps2::PauliSum)
+    if ps1.nqubits != ps2.nqubits
+        return false
+    end
+
+    return ps1.op_dict == ps2.op_dict
+end
 
 ## Adding to PauliSum
 function add!(psum::PauliSum, pstr::PauliString)
@@ -148,28 +186,33 @@ function add!(psum, symbols::Vector{Symbol}, qinds::Vector{Int}, coeff=1.0)
     return add!(psum, PauliString(psum.nqubits, symbols, qinds, coeff))
 end
 
-function subtract(psum1::PauliSum, psum2::PauliSum)
+#TODO: add support to subtract PauliString from PauliSum
+function subtract(psum1::PauliSum, psum2::PauliSum; precision::Float64=1e-10)
     # subtracts psum2 from psum1
 
     psum1 = copy(psum1) # or deepcopy?
 
-    subtract!(psum1, psum2)
+    subtract!(psum1, psum2, precision=precision)
 
     return psum1
 end
 
-function subtract!(psum1::PauliSum, psum2::PauliSum)
-    # subtracts psum2 from psum1
+function subtract!(psum1::PauliSum, psum2::PauliSum; precision::Float64=1e-10)
+  for (operator, coeff) in psum2.op_dict
+      if haskey(psum1.op_dict, operator)
+          psum1.op_dict[operator] -= coeff
+          
+          # Remove the operator if the resulting coefficient is small
+          if abs(psum1.op_dict[operator]) < precision
+              delete!(psum1.op_dict, operator)
+          end
 
-    for (operator, coeff) in psum2.op_dict
-        if haskey(psum1.op_dict, operator)
-            psum1.op_dict[operator] -= coeff
-        else
-            psum1.op_dict[operator] = -coeff
-        end
-    end
+      else
+          psum1.op_dict[operator] = -coeff
+      end
+  end
 
-    return psum1
+  return psum1
 end
 
 
