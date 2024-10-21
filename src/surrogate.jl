@@ -3,13 +3,15 @@ abstract type CircuitNode end
 
 
 @kwdef mutable struct EvalEndNode <: CircuitNode
-    operator::Union{Vector{Symbol},<:Integer}
+    operator::Integer
     coefficient::Real # eventually symbolic?
     # func::Function = x->1.0
     cummulative_value::Float64 = 0.0
     is_evaluated::Bool = false
 
 end
+
+EvalEndNode(operator) = EvalEndNode(operator, 1.0)
 
 @kwdef mutable struct PauliGateNode <: CircuitNode #where {T<:Real}
     parents::Union{Vector{EvalEndNode},Vector{PauliGateNode}}
@@ -28,6 +30,12 @@ mutable struct NodePathProperties <: PathProperties
 end
 
 NodePathProperties(coeff) = NodePathProperties(coeff, 0, 0, 0)
+
+function wrapcoefficients(pstr::PauliString, ::Type{NodePathProperties})
+    node = NodePathProperties(EvalEndNode(pstr.operator, pstr.coeff, 0.0, false))
+    return PauliString(pstr.nqubits, pstr.operator, node)
+end
+
 
 function _multiplysign!(path_property::NodePathProperties, sign)
     _multiplysign!(path_property.coeff, sign)

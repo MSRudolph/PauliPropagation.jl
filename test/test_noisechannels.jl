@@ -1,8 +1,6 @@
 function paulinoise(nq, nl, W, min_abs_coeff)
-    symbs = [:I for _ in 1:nq]
-    symbs[rand(1:nq)] = :Z
 
-    obsint = symboltoint(symbs)
+    op = PauliString(nq, :Z, round(Int, nq / 2))
 
     topo = bricklayertopology(nq; periodic=false)
     circ = hardwareefficientcircuit(nq, nl; topology=topo)
@@ -28,9 +26,9 @@ function paulinoise(nq, nl, W, min_abs_coeff)
     insert!(thetas2, where_ind, noise_p)
     insert!(thetas2, where_ind, noise_p)
 
-    dnum1 = mergingbfs(depolarizing_circ, obsint, thetas1; max_weight=W, min_abs_coeff=min_abs_coeff)
+    dnum1 = mergingbfs(depolarizing_circ, op, thetas1; max_weight=W, min_abs_coeff=min_abs_coeff)
 
-    dnum2 = mergingbfs(pauli_circ, obsint, thetas2; max_weight=W, min_abs_coeff=min_abs_coeff)
+    dnum2 = mergingbfs(pauli_circ, op, thetas2; max_weight=W, min_abs_coeff=min_abs_coeff)
 
     return overlapwithzero(dnum1) ≈ overlapwithzero(dnum2)
 end
