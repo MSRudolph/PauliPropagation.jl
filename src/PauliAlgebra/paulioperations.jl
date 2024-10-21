@@ -53,8 +53,6 @@ function commutes(oper1::Integer, oper2::Integer)
 end
 
 ### Code for the product of pauli_ops
-
-
 function pauliprod(pstr1::PauliString, pstr2::PauliString)
     sign, new_operator = pauliprod(pstr1.operator, pstr2.operator, pstr1.nqubits)
     return PauliString(pstr1.nqubits, new_operator, pstr1.coeff * pstr2.coeff * sign)
@@ -64,20 +62,17 @@ function pauliprod(op1::Integer, op2::Integer, nq::Int)
     return pauliprod(op1, op2, 1:nq)
 end
 
-function pauliprod(op1::Integer, op2::Integer, changed_indices) # TODO: find a way to circumvent changed_indices being passed
-    op3 = bitpauliprod(op1, op2)
-    sign = calculatesign(op1, op2, op3, changed_indices)
-    return sign, op3
-end
-
-
 function pauliprod(op1::Symbol, op2::Integer) # assume that just one qubit is involved, TODO: This must change to one bit operation on all qubits
     return pauliprod(symboltoint(op1), op2, 1:1)
 end
 
 function singlepauliprod(op1::Integer, op2::Integer)
-    op3 = getelement(op1, 1) ⊻ getelement(op2, 1)
-    sign = calculatesign(op1, op2, op3, 1:1)
+    return pauliprod(getelement(op1, 1), getelement(op2, 1), 1:1)
+end
+
+function pauliprod(op1::Integer, op2::Integer, changed_indices) # TODO: find a way to circumvent changed_indices being passed
+    op3 = bitpauliprod(op1, op2)
+    sign = calculatesign(op1, op2, op3, changed_indices)
     return sign, op3
 end
 
@@ -93,66 +88,11 @@ function calculatesign(op1::Integer, op2::Integer, op3::Integer, changed_indices
     return sign
 end
 
-
-# function paulimult(sym1::Symbol, sym2::Symbol)
-#     ind1 = symboltoint(sym1)
-#     ind2 = symboltoint(sym2)
-#     sign, ind3 = paulimult(ind1, ind2)
-#     return sign, inttosymbol(ind3)
-# end
-
-# function paulimult(sym::Symbol, pauli_ind::Integer)
-#     ind = symboltoint(sym)
-#     sign, ind3 = paulimult(ind, pauli_ind)
-#     return sign, ind3
-# end
-
-# function paulimult(pauli1::Integer, pauli2::Integer)
-#     if pauli1 == 0
-#         return 1, pauli2
-#     elseif pauli2 == 0
-#         return 1, pauli1
-#     elseif pauli1 == pauli2
-#         return 1, 0
-#     else
-#         new_pauli = 0
-#         for ii in 1:3
-#             if ii != pauli1 && ii != pauli2
-#                 new_pauli = ii
-#                 break
-#             end
-#         end
-#         sign = levicivita(pauli1, pauli2, new_pauli)
-#         return sign, new_pauli
-#     end
-# end
-
-# function paulimult(op1::AbstractArray{T}, op2::AbstractArray{T}) where {T}  # TODO: should we even support this?
-#     total_sign = -1
-#     new_op = [:I for _ in eachindex(op1)]
-#     for (ii, (o1, o2)) in enumerate(zip(op1, op2))
-#         sign, new_o = paulimult(o1, o2)
-#         total_sign *= sign
-#         new_op[ii] = new_o
-#     end
-#     return total_sign, new_op
-# end
-
-# const levicivita_matrix = cat([0 0 0; 0 0 1; 0 -1 0],
-#     [0 0 -1; 0 0 0; 1 0 0],
-#     [0 1 0; -1 0 0; 0 0 0];
-#     dims=3)
-
-# function levicivita(n1::Integer, n2::Integer, n3::Integer)
-#     return levicivita_matrix[n1, n2, n3]
-# end
-
-
 const generalized_levicivita_matrix = cat(
     [1 0 0 0; 0 1 0 0; 0 0 1 0; 0 0 0 1], # first arg is I
-    [0 1 0 0; 1 0 0 0; 0 0 0 1; 0 0 -1 0], # first arg is X
-    [0 0 1 0; 0 0 0 -1; 1 0 0 0; 0 1 0 0], # first arg is Y
-    [0 0 0 1; 0 0 1 0; 0 -1 0 0; 1 0 0 0]; # first arg is Z
+    [0 1im 0 0; 1 0 0 0; 0 0 0 1im; 0 0 -1im 0], # first arg is X
+    [0 0 1im 0; 0 0 0 -1im; 1 0 0 0; 0 1im 0 0], # first arg is Y
+    [0 0 0 1im; 0 0 1im 0; 0 -1im 0 0; 1 0 0 0]; # first arg is Z
     dims=3)
 
 function generalizedlevicivita(n1::Integer, n2::Integer, n3::Integer)

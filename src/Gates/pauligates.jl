@@ -97,18 +97,19 @@ end
 
 function getnewoperator(gate::PauliGate, oper)
     new_oper = copy(oper)
-    # Heisenberg picture gets a minus sign
-    total_sign = -1
+
+    total_sign = 1  # this coefficient will be imaginary
     for (qind, gate_sym) in zip(gate.qinds, gate.symbols)
         sign, new_partial_op = pauliprod(gate_sym, getelement(new_oper, qind))
-        total_sign *= sign
+        # if two different Paulis multiply, we can an imaginary i, which gets canceled by the i in expansion of a Pauli Gate
+        # TODO: This cannot be the most efficient and clear way to do this
+        total_sign *= imag(sign) == 0.0 ? sign : 1im * sign
         new_oper = setelement!(new_oper, qind, new_partial_op)
     end
-    return total_sign, new_oper
+    return real(total_sign), new_oper
 end
 
 function getnewoperator(gate::FastPauliGate, oper)
-    # Heisenberg picture gets a minus sign
     sign, new_op = pauliprod(gate.bitoperator, oper, gate.qinds)
-    return -1 * sign, new_op
+    return real(1im * sign), new_op
 end
