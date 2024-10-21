@@ -42,7 +42,8 @@ export
     setelement!,
     show,
     containsXorY,
-    containsYorZ
+    containsYorZ, 
+    getnewoperator
 
 include("truncations.jl")
 

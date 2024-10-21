@@ -77,6 +77,50 @@ function getnewoperator(gate::FastPauliGate, oper)
     return total_sign, new_oper
 end
 
+## Matrix multiplication for integer integer
+function getnewoperator(oper1::T, oper2::T) where {T <: Integer}
+    new_oper = zero(typeof(oper1))
+
+    total_sign = -1
+
+    qind = 1
+
+    while oper1 > 0 || oper2 > 0
+        sign, new_pauli_op = paulimult(oper1%4, oper2%4)
+
+        new_oper += new_pauli_op*4^(qind -1)
+        total_sign *= sign
+        qind += 1
+
+        oper1 = oper1 ÷ 4
+        oper2 = oper2 ÷ 4 
+    end 
+
+    return total_sign, new_oper
+end
+
+
+function getnewoperator(ps1::Dict{T, Float64}, ps2::Dict{T, Float64}) where {T <: Integer}
+    new_ps = Dict{typeof(first(keys(ps1))), typeof(first(values(ps1)))}()
+
+    for (pw1, coeff1) in ps1, (pw2, coeff2) in ps2 
+        if !commutes(pw1, pw2) 
+            sign, pauli = getnewoperator(pw1, pw2)
+
+            if pauli ∉ Set(keys(new_ps)) 
+                new_ps[pauli] = sign*coeff1*coeff2
+            else 
+                new_ps[pauli] = new_ps[pauli] + coeff*coeff1*coeff2
+            end 
+        end
+    end
+
+    # Get rid of the pauli strings with zero coeffs
+    new_ps = Dict(k=>v for (k,v) in new_ps if abs(v) != 0.) 
+
+    return new_ps
+end 
+
 
 function paulimult(sym1::Symbol, sym2::Symbol)
     ind1 = symboltoint(sym1)
