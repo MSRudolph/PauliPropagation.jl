@@ -101,12 +101,10 @@ function getnewoperator(gate::PauliGate, oper)
     total_sign = 1  # this coefficient will be imaginary
     for (qind, gate_sym) in zip(gate.qinds, gate.symbols)
         sign, new_partial_op = pauliprod(gate_sym, getelement(new_oper, qind))
-        # if two different Paulis multiply, we can an imaginary i, which gets canceled by the i in expansion of a Pauli Gate
-        # TODO: This cannot be the most efficient and clear way to do this
-        total_sign *= imag(sign) == 0.0 ? sign : 1im * sign
+        total_sign *= sign
         new_oper = setelement!(new_oper, qind, new_partial_op)
     end
-    return real(total_sign), new_oper
+    return real(1im * total_sign), new_oper
 end
 
 function getnewoperator(gate::FastPauliGate, oper)
