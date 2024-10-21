@@ -1,5 +1,5 @@
 
-const pauli_ops::Vector{Symbol} = [:I, :X, :Y, :Z]
+const pauli_ops::Vector{Symbol} = [:I, :X, :Y, :Z]   # maps to 0 1 2 3
 
 symboltoint(sym::Symbol) = findfirst(s -> s == sym, pauli_ops) - 1
 symboltoint(i::Integer) = i
@@ -23,39 +23,39 @@ function inttosymbol(int::Integer, n_qubits::Integer)
     return symbs
 end
 
+## Helper functions for pretty printing
+inttostring(op::Unsigned, nq) = prod("$(inttosymbol(getelement(op, ii)))" for ii in 1:nq)
 
-inttostring(op::Unsigned) = prod("$(inttosymbol(getelement(op, ii)))" for ii in 1:Int(bitsize(op) / 2))
+function getprettystr(d::Dict, nq::Int; max_lines=20)
+    str = ""
+    header = length(d) == 1 ? "1 Pauli term: \n" : "$(length(d)) Pauli terms:\n"
+    str *= header
 
-import Base.show
-function show(op::Integer)
-    println(inttostring(op))
-
-end
-
-function show(op::Integer, n::Int)
-    max_qubits_in_integer = round(Int, bitsize(typeof(op)) / 2)
-    nind = min(max_qubits_in_integer, n)
-
-    print_string = inttostring(op)[1:nind]
-    println(print_string)
-
-end
-
-
-function show(d::Dict; max_lines=20)
-    show(d, Int(bitsize(first(d)[1]) / 2); max_lines=max_lines)
-
-end
-
-function show(d::Dict, n::Int; max_lines=20)
-    header = "$(typeof(d)) with $(length(d)) entries:"
-    println(header)
     for (ii, (op, coeff)) in enumerate(d)
         if ii > max_lines
-            println("  ⋮")
+            new_str = "  ⋮"
+            str *= new_str
             break
         end
-        println("  ", inttostring(op), " => ", coeff)
+        pauli_string = inttostring(op, nq)
+        if length(pauli_string) > 20
+            pauli_string = pauli_string[1:20] * "..."
+        end
+        if isa(coeff, Number)
+            coeff_str = round(coeff, sigdigits=5)
+        elseif isa(coeff, PathProperties)
+            if isa(coeff.coeff, Number)
+                coeff_str = "PathProperty($(round(coeff.coeff, sigdigits=5)))"
+            else
+                coeff_str = "PathProperty($(typeof(coeff.coeff)))"
+            end
+        else
+            coeff_str = "($(typeof(coeff)))"
+        end
+        new_str = " $(coeff_str) * $(pauli_string)\n"
+        str *= new_str
     end
+
+    return str
 
 end

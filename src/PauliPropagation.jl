@@ -3,12 +3,23 @@ module PauliPropagation
 using Base.Threads
 
 include("datatypes.jl")
-export PathProperties, NumericPathProperties
+export
+    PauliSum,
+    PauliString,
+    add,
+    add!,
+    subtract,
+    subtract!,
+    PathProperties,
+    NumericPathProperties,
+    wrapcoefficients
 
 
 include("Gates/Gates.jl")
 export
     Gate,
+    ParametrizedGate,
+    StaticGate,
     PauliGate,
     FastPauliGate,
     tofastgates,
@@ -17,11 +28,18 @@ export
     CliffordGate,
     default_clifford_map,
     reset_clifford_map!,
+    createcliffordmap,
     applywithmap,
-    createcliffordmap
+    DepolarizingNoise,
+    PauliXNoise,
+    PauliYNoise,
+    PauliZNoise,
+    AmplitudeDampingNoise
+
 
 include("circuits.jl")
 export
+    countparameters,
     bricklayertopology,
     get2dtopology,
     get2dstaircasetopology,
@@ -37,7 +55,6 @@ include("./PauliAlgebra/PauliAlgebra.jl")
 export
     inttosymbol,
     symboltoint,
-    inttostring,
     getelement,
     setelement!,
     show,
@@ -48,7 +65,11 @@ export
 include("truncations.jl")
 
 include("Propagation/Propagation.jl")
-export mergingbfs, applygatetoall!, applygatetoone!
+export
+    mergingbfs,
+    mergingbfs!,
+    applygatetoall!,
+    applygatetoone!
 
 include("stateoverlap.jl")
 export
@@ -57,12 +78,18 @@ export
     overlapwithplus,
     orthogonaltozero,
     orthogonaltoplus,
-    filterdict,
+    filter,
     zerofilter,
     evaluateagainstdict,
     getnumcoeff
 
 include("surrogate.jl")
-export operatortopathdict, PauliGateNode, gettraceevalorder, expectation, resetnodes
+export
+    NodePathProperties,
+    EvalEndNode,
+    PauliGateNode,
+    gettraceevalorder,
+    expectation,
+    resetnodes
 
 end
