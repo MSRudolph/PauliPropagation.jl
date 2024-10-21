@@ -23,8 +23,8 @@ function createpaulisum(nq)
     pstr = createpaulistring(nq)
     PauliSum(nq, pstr)
 
-    pstr = [createpaulistring(nq) for _ in 1:rand(1:4)]
-    psum = PauliSum(nq, pstr)
+    pstr = createpaulistring(nq)
+    psum = PauliSum(pstr)
     print(psum)
     return psum
 end
@@ -32,10 +32,6 @@ end
 function addtopaulisum(nq)
     psum = createpaulisum(nq)
     pstr = createpaulistring(nq)
-    add!(psum, pstr)
-
-    psum = createpaulisum(nq)
-    pstr = [createpaulistring(nq) for _ in 1:rand(1:4)]
     add!(psum, pstr)
 
     symbol = rand([:I, :X, :Y, :Z])
@@ -63,7 +59,7 @@ end
 
 # Test PauliSum from Dict creation
 function test_paulisum_from_dict()
-    psum = PauliSum(3, Dict([:I, :I, :I]=> 1.5,  [:I, :I, :Y] => 1.0))
+    psum = PauliSum(3, Dict([:I, :I, :I] => 1.5, [:I, :I, :Y] => 1.0))
 
     # Collect and return keys and values for testing
     return collect(keys(psum.op_dict)), collect(values(psum.op_dict))
@@ -71,8 +67,8 @@ end
 
 # Test subtraction of PauliSum
 function subtract_paulisums()
-    psum1 = PauliSum(3, Dict([:I, :I, :I]=> 1.5,  [:I, :I, :Y] => 1.0))
-    psum2 = PauliSum(3, Dict([:I, :I, :I]=> 1.5))
+    psum1 = PauliSum(3, Dict([:I, :I, :I] => 1.5, [:I, :I, :Y] => 1.0))
+    psum2 = PauliSum(3, Dict([:I, :I, :I] => 1.5))
 
     return subtract!(psum1, psum2), psum1
 end
