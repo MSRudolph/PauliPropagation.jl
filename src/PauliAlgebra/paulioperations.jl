@@ -51,7 +51,60 @@ function commutes(oper1::Integer, oper2::Integer)
     return bitcommutes(oper1, oper2)
 end
 
+function commutator(oper1::T, oper2::T) where {T <: Integer}
+    new_oper = zero(typeof(oper1))
+
+    total_sign = -1
+
+    qind = 1
+
+    while oper1 > 0 || oper2 > 0
+        sign, new_pauli_op = paulimult(oper1%4, oper2%4)
+
+        new_oper += new_pauli_op*4^(qind -1)
+        total_sign *= sign
+        qind += 1
+
+        oper1 = oper1 ÷ 4
+        oper2 = oper2 ÷ 4 
+    end 
+
+    return total_sign, new_oper
+end
+
 ### Code for the product of pauli_ops
+function commutator(oper1::Dict{T, Float64}, oper2::Dict{T, Float64}) where {T <: Integer}
+    new_oper = Dict{typeof(first(keys(oper1))), typeof(first(values(oper1)))}()
+
+    for (pw1, coeff1) in oper1, (pw2, coeff2) in oper2 
+        if !commutes(pw1, pw2) 
+            sign, pauli = commutator(pw1, pw2)
+
+            if pauli ∉ Set(keys(new_oper)) && pauli > 0 
+                new_oper[pauli] = sign*coeff1*coeff2
+            else 
+                new_oper[pauli] = new_oper[pauli] + sign*coeff1*coeff2
+            end 
+        end
+    end
+
+    # Get rid of the pauli strings with zero coeffs
+    new_oper = Dict(k=>v for (k,v) in new_oper if abs(v) != 0.) 
+
+    return new_oper
+end 
+
+function commutator(oper1::Dict{T, Float64}, oper2::T) where {T <: Integer}
+    oper2 = Dict(oper2 => 1.)
+    
+    return commutator(oper1, oper2)
+end 
+
+function commutator(oper1::T, oper2::Dict{T, Float64}) where {T <: Integer}
+    oper1 = Dict(oper1 => 1.)
+    
+    return commutator(oper1, oper2)
+end 
 
 
 function getnewoperator(gate::PauliGateUnion, oper)
@@ -77,64 +130,8 @@ function getnewoperator(gate::FastPauliGate, oper)
     return total_sign, new_oper
 end
 
-## Matrix multiplication for integer integer
-function getnewoperator(oper1::T, oper2::T) where {T <: Integer}
-    new_oper = zero(typeof(oper1))
-
-    total_sign = -1
-
-    qind = 1
-
-    while oper1 > 0 || oper2 > 0
-        sign, new_pauli_op = paulimult(oper1%4, oper2%4)
-
-        new_oper += new_pauli_op*4^(qind -1)
-        total_sign *= sign
-        qind += 1
-
-        oper1 = oper1 ÷ 4
-        oper2 = oper2 ÷ 4 
-    end 
-
-    return total_sign, new_oper
-end
-
 
 ## Matrix multiplication between Pauli sums 
-function getnewoperator(oper1::Dict{T, Float64}, oper2::Dict{T, Float64}) where {T <: Integer}
-    new_oper = Dict{typeof(first(keys(oper1))), typeof(first(values(oper1)))}()
-
-    for (pw1, coeff1) in oper1, (pw2, coeff2) in oper2 
-        if !commutes(pw1, pw2) 
-            sign, pauli = getnewoperator(pw1, pw2)
-
-            if pauli ∉ Set(keys(new_oper)) 
-                new_oper[pauli] = sign*coeff1*coeff2
-            else 
-                new_oper[pauli] = new_oper[pauli] + coeff*coeff1*coeff2
-            end 
-        end
-    end
-
-    # Get rid of the pauli strings with zero coeffs
-    new_oper = Dict(k=>v for (k,v) in new_oper if abs(v) != 0.) 
-
-    return new_oper
-end 
-
-function getnewoperator(oper1::Dict{T, Float64}, oper2::T) where {T <: Integer}
-    oper2 = Dict(oper2 => 1.)
-    
-    return getnewoperator(oper1, oper2)
-end 
-
-function getnewoperator(oper1::T, oper2::Dict{T, Float64}) where {T <: Integer}
-    oper1 = Dict(oper1 => 1.)
-    
-    return getnewoperator(oper1, oper2)
-end 
-
-
 function paulimult(sym1::Symbol, sym2::Symbol)
     ind1 = symboltoint(sym1)
     ind2 = symboltoint(sym2)

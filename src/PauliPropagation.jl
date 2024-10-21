@@ -60,7 +60,7 @@ export
     show,
     containsXorY,
     containsYorZ, 
-    getnewoperator
+    commutator
 
 include("truncations.jl")
 
