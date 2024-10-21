@@ -68,6 +68,14 @@ function applynoncummuting(gate::PauliGateUnion, operator, theta, coefficient=1.
     return operator, coeff1, new_oper, coeff2
 end
 
+function commutes(gate::PauliGateUnion, oper)
+    return sum(!commutes(gate_sym, getelement(oper, qind)) for (qind, gate_sym) in zip(gate.qinds, gate.symbols)) % 2 == 0
+end
+
+function commutes(gate::FastPauliGate, oper::Integer)
+    return commutes(gate.bitoperator, oper)
+end
+
 function applysin(old_coeff::Number, theta; sign=1, kwargs...)
     return old_coeff * sin(theta) * sign
 end

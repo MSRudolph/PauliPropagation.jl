@@ -40,17 +40,12 @@ function commutes(sym1::Symbol, pauli_ind::Integer)::Bool
     return commutes(sym1, inttosymbol(pauli_ind))
 end
 
-function commutes(gate::PauliGateUnion, oper)
-    return sum(!commutes(gate_sym, getelement(oper, qind)) for (qind, gate_sym) in zip(gate.qinds, gate.symbols)) % 2 == 0
-end
-
-function commutes(gate::FastPauliGate, oper::Integer)
-    return commutes(gate.bitoperator, oper)
-end
-
 function commutes(oper1::Integer, oper2::Integer)
     return bitcommutes(oper1, oper2)
 end
+
+## Commutator
+# TODO: add here
 
 ### Code for the product of pauli_ops
 function pauliprod(pstr1::PauliString, pstr2::PauliString)
