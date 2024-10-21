@@ -70,6 +70,7 @@ function bitcommutes(op1::Integer, op2::Integer)
     return (count_ones(flags) % 2) == 0
 end
 
+bitpauliprod(op1::Integer, op2::Integer) = op1 ⊻ op2
 
 function getbitelement(oper::Integer, index::Integer)
     bitindex = 2 * (index - 1)

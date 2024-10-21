@@ -97,6 +97,7 @@ end
 
 function getnewoperator(gate::PauliGate, oper)
     new_oper = copy(oper)
+    # Heisenberg picture gets a minus sign
     total_sign = -1
     for (qind, gate_sym) in zip(gate.qinds, gate.symbols)
         sign, new_partial_op = pauliprod(gate_sym, getelement(new_oper, qind))
@@ -107,5 +108,7 @@ function getnewoperator(gate::PauliGate, oper)
 end
 
 function getnewoperator(gate::FastPauliGate, oper)
-    return pauliprod(gate.bitoperator, oper, gate.qinds)
+    # Heisenberg picture gets a minus sign
+    sign, new_op = pauliprod(gate.bitoperator, oper, gate.qinds)
+    return -1 * sign, new_op
 end

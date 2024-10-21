@@ -58,8 +58,13 @@ export
     getelement,
     setelement!,
     show,
+    countweight,
+    countxy,
+    countyz,
     containsXorY,
-    containsYorZ
+    containsYorZ,
+    pauliprod,
+    commutes
 
 include("truncations.jl")
 

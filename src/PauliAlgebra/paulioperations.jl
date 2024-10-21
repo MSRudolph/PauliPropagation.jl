@@ -55,37 +55,34 @@ end
 ### Code for the product of pauli_ops
 
 
-# function pauliprod(pstr1::PauliString, pstr2::PauliString)
-#     sign, new_operator = pauliprod(pstr1.operator, pstr2.operator, 1:pstr1.nq)
-#     return PauliString(pstr1.nq, new_operator, pstr1.coefficient * pstr2.coefficient * sign)
-# end
+function pauliprod(pstr1::PauliString, pstr2::PauliString)
+    sign, new_operator = pauliprod(pstr1.operator, pstr2.operator, pstr1.nqubits)
+    return PauliString(pstr1.nqubits, new_operator, pstr1.coeff * pstr2.coeff * sign)
+end
 
 function pauliprod(op1::Integer, op2::Integer, nq::Int)
     return pauliprod(op1, op2, 1:nq)
 end
 
 function pauliprod(op1::Integer, op2::Integer, changed_indices) # TODO: find a way to circumvent changed_indices being passed
-    op3 = op1 ⊻ op2
+    op3 = bitpauliprod(op1, op2)
     sign = calculatesign(op1, op2, op3, changed_indices)
     return sign, op3
 end
 
 
-function pauliprod(op1::Symbol, op2::Integer) # TODO: find a way to circumvent changed_indices being passed
-    op1 = symboltoint(op1)
-    op3 = getelement(op1, 1) ⊻ getelement(op2, 1)
-    sign = calculatesign(op1, op2, op3, 1:1)
-    return sign, op3
+function pauliprod(op1::Symbol, op2::Integer) # assume that just one qubit is involved, TODO: This must change to one bit operation on all qubits
+    return pauliprod(symboltoint(op1), op2, 1:1)
 end
 
-function singlepauliprod(op1::Integer, op2::Integer) # TODO: find a way to circumvent changed_indices being passed
+function singlepauliprod(op1::Integer, op2::Integer)
     op3 = getelement(op1, 1) ⊻ getelement(op2, 1)
     sign = calculatesign(op1, op2, op3, 1:1)
     return sign, op3
 end
 
 function calculatesign(op1::Integer, op2::Integer, op3::Integer, changed_indices)
-    sign = -1 # for Heisenberg picutre
+    sign = 1
     for qind in changed_indices
         sign *= generalizedlevicivita(
             getelement(op1, qind),
