@@ -20,7 +20,7 @@ function overlapbyorthogonality(op_dict::Dict, orthogonalfunc)
 end
 
 ## For the typical |0> or |+> cases
-overlapwithzero(psum) = overlapbyorthogonality(psum, orthogonaltozero)
+overlapwithzero(op_dict) = overlapbyorthogonality(op_dict, orthogonaltozero)
 orthogonaltozero(op) = containsXorY(op)
 
 overlapwithplus(psum) = overlapbyorthogonality(psum, orthogonaltoplus)
