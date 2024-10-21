@@ -11,7 +11,7 @@ end
 
 PauliGateUnion = Union{PauliGate,FastPauliGate}
 
-tofastgates(gate::Gate, nq::Integer) = gate
+tofastgates(gate::Gate, nq::Integer) = gate  # TODO: move this to a more general place
 
 function tofastgates(pauli_gate::PauliGate, nq::Integer)
     base_ops = [:I for _ in 1:nq]
@@ -21,17 +21,32 @@ function tofastgates(pauli_gate::PauliGate, nq::Integer)
     return FastPauliGate(pauli_gate.symbols, pauli_gate.qinds, symboltoint(base_ops))
 end
 
-function tofastgates(circ::AbstractVector)
+function tofastgates(circ::Vector{G}) where {G<:Gate}
+    # Find the maximum number of qubits
     nq = 1
     for gate in circ
         nq = max(nq, maximum(gate.qinds))
     end
-    fast_circ = Gate[]
 
-    for gate in circ
-        push!(fast_circ, tofastgates(gate, nq))
+    fast_circ = similar(circ)
+    for (ii, gate) in enumerate(circ)
+        fast_circ[ii] = tofastgates(gate, nq)
     end
     return fast_circ
+end
+
+function tofastgates!(circ::Vector{G}) where {G<:Gate}
+    # Find the maximum number of qubits
+    nq = 1
+    for gate in circ
+        nq = max(nq, maximum(gate.qinds))
+    end
+
+    # TODO: This could fail if circ is too concretely typed
+    for (ii, gate) in enumerate(circ)
+        circ[ii] = tofastgates(gate, nq)
+    end
+    return circ
 end
 
 

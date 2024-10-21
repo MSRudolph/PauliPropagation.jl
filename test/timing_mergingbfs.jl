@@ -15,17 +15,17 @@ function timingnumericalPP()
     topo = bricklayertopology(nq; periodic=false)
     # topo = get2dtopology(4, 4)
     circ = hardwareefficientcircuit(nq, nl; topology=topo)
-    fastcirc = tofastgates(circ)
-    m = length(fastcirc)
+
+    m = length(circ)
 
     Random.seed!(42)
     thetas = randn(m)
 
-    res1 = mergingbfs(fastcirc, op, thetas; max_weight=W, min_abs_coeff=min_abs_coeff)
-    res2 = mergingbfs(fastcirc, opsum, thetas; max_weight=W, min_abs_coeff=min_abs_coeff)
+    res1 = mergingbfs(circ, op, thetas; max_weight=W, min_abs_coeff=min_abs_coeff)
+    res2 = mergingbfs(circ, opsum, thetas; max_weight=W, min_abs_coeff=min_abs_coeff)
     @show overlapwithzero(res1), overlapwithzero(res2)
-    @btime mergingbfs($fastcirc, $op, $thetas; max_weight=$W, min_abs_coeff=$min_abs_coeff)
-    @btime mergingbfs($fastcirc, $opsum, $thetas; max_weight=$W, min_abs_coeff=$min_abs_coeff)
+    @btime mergingbfs($circ, $op, $thetas; max_weight=$W, min_abs_coeff=$min_abs_coeff)
+    @btime mergingbfs($circ, $opsum, $thetas; max_weight=$W, min_abs_coeff=$min_abs_coeff)
 
     return
 end

@@ -91,7 +91,7 @@ function hardwareefficientcircuit(n_qubits, n_layers; topology=nothing)
     for jj in 1:n_layers
         for ii in 1:n_qubits
             # RX
-            push!(circuit, PauliGate([:X], [ii]))  # TODO: make fast gates
+            push!(circuit, PauliGate([:X], [ii]))
 
             # RZ
             push!(circuit, PauliGate([:Z], [ii]))
@@ -106,6 +106,7 @@ function hardwareefficientcircuit(n_qubits, n_layers; topology=nothing)
         end
     end
 
+    tofastgates!(circuit)
     return circuit
 end
 
@@ -132,6 +133,7 @@ function efficientsu2circuit(n_qubits, n_layers; topology=nothing)
         end
     end
 
+    tofastgates!(circuit)
     return circuit
 end
 
@@ -161,6 +163,7 @@ function tfitrottercircuit(n_qubits, n_layers; topology=nothing, start_with_ZZ=t
         zzlayer(circuit)
     end
 
+    tofastgates!(circuit)
     return circuit
 end
 
@@ -185,6 +188,7 @@ function heisenbergtrottercircuit(n_qubits, n_layers; topology=nothing)
         end
     end
 
+    tofastgates!(circuit)
     return circuit
 end
 
@@ -202,6 +206,26 @@ function su4ansatz(n_qubits, n_layers; topology=nothing)
         end
     end
 
+    tofastgates!(circuit)
+    return circuit
+end
+
+function qcnnansatz(n_qubits; periodic=false)
+    circuit::Vector{Gate} = []
+
+    qselection = 1:n_qubits
+    topology = []
+    while length(qselection) > 1
+        # @show qselection
+        append!(topology, bricklayertopology(qselection; periodic=periodic))
+        qselection = qselection[1:2:end]
+    end
+
+    for pair in topology
+        appendSU4!(circuit, pair)
+    end
+
+    tofastgates!(circuit)
     return circuit
 end
 
@@ -232,23 +256,4 @@ function appendSU4!(circuit, pair)
     push!(circuit, PauliGate([:Z], [pair[2]]))
     push!(circuit, PauliGate([:X], [pair[2]]))
     push!(circuit, PauliGate([:Z], [pair[2]]))
-end
-
-
-function qcnnansatz(n_qubits; periodic=false)
-    circuit::Vector{Gate} = []
-
-    qselection = 1:n_qubits
-    topology = []
-    while length(qselection) > 1
-        # @show qselection
-        append!(topology, bricklayertopology(qselection; periodic=periodic))
-        qselection = qselection[1:2:end]
-    end
-
-    for pair in topology
-        appendSU4!(circuit, pair)
-    end
-
-    return circuit
 end
