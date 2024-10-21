@@ -100,25 +100,38 @@ function getnewoperator(oper1::T, oper2::T) where {T <: Integer}
 end
 
 
-function getnewoperator(ps1::Dict{T, Float64}, ps2::Dict{T, Float64}) where {T <: Integer}
-    new_ps = Dict{typeof(first(keys(ps1))), typeof(first(values(ps1)))}()
+## Matrix multiplication between Pauli sums 
+function getnewoperator(oper1::Dict{T, Float64}, oper2::Dict{T, Float64}) where {T <: Integer}
+    new_oper = Dict{typeof(first(keys(oper1))), typeof(first(values(oper1)))}()
 
-    for (pw1, coeff1) in ps1, (pw2, coeff2) in ps2 
+    for (pw1, coeff1) in oper1, (pw2, coeff2) in oper2 
         if !commutes(pw1, pw2) 
             sign, pauli = getnewoperator(pw1, pw2)
 
-            if pauli ∉ Set(keys(new_ps)) 
-                new_ps[pauli] = sign*coeff1*coeff2
+            if pauli ∉ Set(keys(new_oper)) 
+                new_oper[pauli] = sign*coeff1*coeff2
             else 
-                new_ps[pauli] = new_ps[pauli] + coeff*coeff1*coeff2
+                new_oper[pauli] = new_oper[pauli] + coeff*coeff1*coeff2
             end 
         end
     end
 
     # Get rid of the pauli strings with zero coeffs
-    new_ps = Dict(k=>v for (k,v) in new_ps if abs(v) != 0.) 
+    new_oper = Dict(k=>v for (k,v) in new_oper if abs(v) != 0.) 
 
-    return new_ps
+    return new_oper
+end 
+
+function getnewoperator(oper1::Dict{T, Float64}, oper2::T) where {T <: Integer}
+    oper2 = Dict(oper2 => 1.)
+    
+    return getnewoperator(oper1, oper2)
+end 
+
+function getnewoperator(oper1::T, oper2::Dict{T, Float64}) where {T <: Integer}
+    oper1 = Dict(oper1 => 1.)
+    
+    return getnewoperator(oper1, oper2)
 end 
 
 
