@@ -129,37 +129,20 @@ end
 function add(pobj1::Union{PauliSum,PauliString}, pobj2::Union{PauliSum,PauliString})
     # adds pobj2 to pobj1 in place
     checknumberofqubits(pobj1, pobj2)
-
     pobj1 = copy(pobj1) # or deepcopy?
-
     add!(pobj1, pobj1)
-
     return pobj1
 end
 
 function add!(psum::PauliSum, pstr::PauliString)
     checknumberofqubits(psum, pstr)
-
-    if haskey(psum.op_dict, pstr.operator)
-        psum.op_dict[pstr.operator] += pstr.coeff
-    else
-        psum.op_dict[pstr.operator] = pstr.coeff
-    end
-
+    psum.op_dict[pstr.operator] = get(psum.op_dict, pstr.operator, keytype(psum.op_dict)(0.0)) + pstr.coeff
     return psum
 end
 
 function add!(psum1::PauliSum, psum2::PauliSum)
     checknumberofqubits(psum1, psum2)
-
-    for (operator, coeff) in psum2.op_dict
-        if haskey(psum1.op_dict, operator)
-            psum1.op_dict[operator] += coeff
-        else
-            psum1.op_dict[operator] = coeff
-        end
-    end
-
+    mergewith!(+, psum1.op_dict, psum2.op_dict)
     return psum1
 end
 
@@ -176,18 +159,14 @@ function subtract(psum1::PauliSum, psum2::PauliSum; precision::Float64=1e-10)
     # subtracts psum2 from psum1
     checknumberofqubits(psum1, psum2)
     psum1 = copy(psum1) # or deepcopy?
-
     subtract!(psum1, psum2, precision=precision)
-
     return psum1
 end
 
 function subtract(psum::PauliSum, pstr::PauliString; precision::Float64=1e-10)
     # subtracts psum2 from psum1
     checknumberofqubits(psum, pstr)
-
     subtract(psum, PauliSum(pstr), precision=precision)
-
     return psum1
 end
 
