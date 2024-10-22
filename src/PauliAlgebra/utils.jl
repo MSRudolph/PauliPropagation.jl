@@ -8,11 +8,27 @@ inttosymbol(s::Symbol) = s
 
 function symboltoint(oper::Vector{Symbol})
     nq = length(oper)
-    intoper = getinttype(nq)(0)
+    intop = getinttype(nq)(0)
     for (ii, symb) in enumerate(oper)
-        intoper = setelement!(intoper, ii, symboltoint(symb))
+        intop = setelement!(intop, ii, symboltoint(symb))
     end
-    return intoper
+    return intop
+end
+
+function symboltoint(nq::Integer, symbols::Vector{Symbol}, qinds)
+    inttype = getinttype(nq)
+    intop = inttype(0)
+    for (op, qind) in zip(symbols, qinds)
+        intop = setelement!(intop, qind, symboltoint(op))
+    end
+    return intop
+end
+
+function symboltoint(nq::Integer, symbol::Symbol, qind::Integer)
+    inttype = getinttype(nq)
+    intop = inttype(0)
+    intop = setelement!(intop, qind, symboltoint(symbol))
+    return intop
 end
 
 function inttosymbol(int::Integer, n_qubits::Integer)

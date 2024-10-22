@@ -44,95 +44,87 @@ function commutes(oper1::Integer, oper2::Integer)
     return bitcommutes(oper1, oper2)
 end
 
-function commutes(oper1::Dict{T, Float64}, oper2::Dict{T, Float64}, nq::Integer) where {T <: Integer} 
-    comm = commutator(oper1, oper2, nq) 
+function commutes(oper1::Dict{T,Float64}, oper2::Dict{T,Float64}) where {T<:Integer}
+    comm = commutator(oper1, oper2)
     return isempty(comm)
-end 
-
-function commutator(oper1::T, oper2::T) where {T <: Integer}
-    new_oper = zero(T)
-
-    if commutes(oper1, oper2) 
-        total_sign = 0. 
-    else 
-        total_sign = -1
-
-        pw4 = 1 
-
-        while oper1 > 0 || oper2 > 0
-            sign, new_pauli_op = pauliprod(oper1&3, oper2&3, 1)
-
-            new_oper += new_pauli_op*pw4
-            total_sign *= sign
-            
-            pw4 = pw4 << 2
-            oper1 = oper1 >> 2
-            oper2 = oper2 >>2 
-        end 
-    end 
-    return 2*total_sign, new_oper
 end
 
-function commutator(oper1::T, oper2::T, nq::Integer) where {T <: Integer}
-    new_oper = zero(T)
-
-    if commutes(oper1, oper2) 
-        total_sign = 0. 
-    else 
-        total_sign, new_oper = pauliprod(oper1, oper2, nq)
-    end 
-    return 2*total_sign, new_oper
+## Commutator
+function commutator(psum1::PauliSum, psum2::PauliSum)
+    new_op_dict = commutator(psum1.op_dict, psum2.op_dict)
+    return PauliSum(psum1.nqubits, new_op_dict)
 end
 
-function commutator(oper1::Union{T, Dict{T, Float64}}, oper2::Union{T, Dict{T, Float64}}, nq::Integer) where {T <: Integer}
-    oper1 = isa(oper1, Dict) ? oper1 : Dict(oper1 => 1.0)
-    oper2 = isa(oper1, Dict) ? oper2 : Dict(oper1 => 1.0)
-    
-    new_oper = Dict{typeof(first(keys(oper1))), typeof(first(values(oper1)))}()
+function commutator(pstr1::PauliString, pstr2::PauliString)
+    new_coeff, new_op = commutator(pstr1.operator, pstr2.operator)
+    return PauliString(pstr1.nqubits, new_op, new_coeff)
+end
 
-    for (pw1, coeff1) in oper1, (pw2, coeff2) in oper2 
-        if !commutes(pw1, pw2) 
-            sign, pauli = commutator(pw1, pw2, nq)
+commutator(psum::PauliSum, pstr::PauliString) = commutator(psum, PauliSum(pstr))
+commutator(pstr::PauliString, psum::PauliSum) = commutator(PauliSum(pstr), psum)
 
-            if pauli ∉ keys(new_oper) 
-                new_oper[pauli] = sign*coeff1*coeff2
-            else 
-                new_oper[pauli] = new_oper[pauli] + sign*coeff1*coeff2
-            end 
+function commutator(oper1::T, oper2::T) where {T<:Integer}
+    new_oper = zero(T)
+
+    if commutes(oper1, oper2)
+        total_sign = ComplexF64(0.0)
+    else
+        total_sign, new_oper = pauliprod(oper1, oper2)
+    end
+    return 2 * total_sign, new_oper
+end
+
+function commutator(op_dict1::Dict{OpType,CoeffType1}, op_dict2::Dict{OpType,CoeffType2}) where {OpType,CoeffType1,CoeffType2}
+    # different types of coefficients are allowed but not different types of operators
+
+    new_op_dict = Dict{OpType,ComplexF64}()
+
+    for (op1, coeff1) in op_dict1, (op2, coeff2) in op_dict2
+        if !commutes(op1, op2)
+            sign, new_op = commutator(op1, op2)
+            new_op_dict[new_op] = get(new_op_dict, new_op, ComplexF64(0.0)) + sign * coeff1 * coeff2
         end
     end
 
     # Get rid of the pauli strings with zero coeffs
-    new_oper = Dict(k=>v for (k,v) in new_oper if abs(v) != 0.) 
+    for (k, v) in new_op_dict
+        if abs(v) ≈ 0.0
+            delete!(new_op_dict, k)
+        end
+    end
 
-    return new_oper
-end 
-
-function commutator(oper1::PauliSum, oper2::PauliSum) 
-    new_oper = commutator(oper1.op_dict, oper2.op_dict, oper1.nqubits)
-    return PauliSum(oper1.nq, new_oper)
-end 
-
-function pauliprod(op1::Integer, op2::Integer, nq::Int)
-    return pauliprod(op1, op2, 1:nq)
+    return new_op_dict
 end
 
-function pauliprod(op1::Symbol, op2::Integer) # assume that just one qubit is involved, TODO: This must change to one bit operation on all qubits
+## Pauli product
+function pauliprod(op1::Integer, op2::Integer)
+    # TODO: Can this be done with a few bit operations?
+    sign = Complex{Int64}(1)
+    new_op = bitpauliprod(op1, op2)
+    op3 = new_op
+
+    # Calculate the sign of the product, loop as long as neither of the operators are Identity
+    while op1 > 0 || op2 > 0
+        sign *= PauliPropagation.calculatesign(op1, op2, op3, 1:1)
+        op1 = bitshiftright(op1)
+        op2 = bitshiftright(op2)
+        op3 = bitshiftright(op3)
+    end
+    return sign, new_op
+end
+
+function pauliprod(op1::Symbol, op2::Integer) # assume that just one qubit is involved
     return pauliprod(symboltoint(op1), op2, 1:1)
 end
 
-function singlepauliprod(op1::Integer, op2::Integer)
-    return pauliprod(getelement(op1, 1), getelement(op2, 1), 1:1)
-end
-
-function pauliprod(op1::Integer, op2::Integer, changed_indices) # TODO: find a way to circumvent changed_indices being passed
+function pauliprod(op1::Integer, op2::Integer, changed_indices)
     op3 = bitpauliprod(op1, op2)
     sign = calculatesign(op1, op2, op3, changed_indices)
     return sign, op3
 end
 
 function calculatesign(op1::Integer, op2::Integer, op3::Integer, changed_indices)
-    sign = 1
+    sign = Complex{Int64}(1)
     for qind in changed_indices
         sign *= generalizedlevicivita(
             getelement(op1, qind),

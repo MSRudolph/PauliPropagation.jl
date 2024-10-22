@@ -33,20 +33,23 @@ function addtopaulisum(nq)
     psum = createpaulisum(nq)
     pstr = createpaulistring(nq)
     add!(psum, pstr)
+    @test getcoeff(psum, pstr.operator) == pstr.coeff
 
     symbol = rand([:I, :X, :Y, :Z])
     qind = rand(1:nq)
     coeff = randn()
     add!(psum, symbol, qind, coeff)
+    @test getcoeff(psum, symbol, qind) == coeff
 
     symbols = rand([:I, :X, :Y, :Z], min(nq, 4))
     qinds = rand(1:nq, min(nq, 4))
     coeff = randn()
     psum2 = createpaulisum(nq)
     add!(psum2, symbols, qinds, coeff)
-    print(psum)
+    @test getcoeff(psum2, symbols, qinds) == coeff
 
     psum3 = add(psum, psum2)
+    print(getpaulistrings(psum3))
     subtract(psum2, psum3)
 
     return psum

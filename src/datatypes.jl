@@ -7,24 +7,14 @@ struct PauliString{OpType<:Integer,CoeffType}
 end
 
 function PauliString(nq, symbol::Symbol, qind::Int, coeff=1.0)
-    inttype = getinttype(nq)
-    temp_op = inttype(0)
-    temp_op = setelement!(temp_op, qind, symboltoint(symbol))
-    #TODO: find a better way to handle integer coefficients
+    temp_op = symboltoint(nq, symbol, qind)
     coeff = convertcoefficients(coeff)
-
-    return PauliString(nq, symboltoint(temp_op), coeff)
+    return PauliString(nq, temp_op, coeff)
 end
 
 function PauliString(nq, symbols::Vector{Symbol}, qinds::Vector{Int}, coeff=1.0)
-
-    inttype = getinttype(nq)
-    temp_op = inttype(0)
-    for (op, qind) in zip(symbols, qinds)
-        temp_op = setelement!(temp_op, qind, symboltoint(op))
-    end
+    temp_op = symboltoint(nq, symbols, qinds)
     coeff = convertcoefficients(coeff)
-
     return PauliString(nq, temp_op, coeff)
 end
 
@@ -76,11 +66,32 @@ end
 
 PauliSum(pstr::PauliString) = PauliSum(pstr.nqubits, pstr)
 
+PauliSum(psum::PauliSum) = psum
+
 function PauliSum(nq::Int, pstr::PauliString{OpType,CoeffType}) where {OpType,CoeffType}
     checknumberofqubits(nq, pstr)
 
     return PauliSum(nq, Dict{OpType,CoeffType}(pstr.operator => pstr.coeff))
 end
+
+# get coefficients or terms in the PauliSum
+function getcoeff(psum::PauliSum{OpType,CoeffType}, operator::Integer) where {OpType,CoeffType}
+    return get(psum.op_dict, operator, CoeffType(0))
+end
+
+function getcoeff(psum::PauliSum{OpType,CoeffType}, operator::Symbol, qind::Int) where {OpType,CoeffType}
+    return getcoeff(psum, symboltoint(psum.nqubits, operator, qind))
+end
+
+function getcoeff(psum::PauliSum{OpType,CoeffType}, operator::Vector{Symbol}, qinds) where {OpType,CoeffType}
+    return getcoeff(psum, symboltoint(psum.nqubits, operator, qinds))
+end
+
+function getcoeff(psum::PauliSum{OpType,CoeffType}, operator::Vector{Symbol}) where {OpType,CoeffType}
+    return getcoeff(psum, symboltoint(operator))
+end
+
+getpaulistrings(psum::PauliSum) = [PauliString(psum.nqubits, op, coeff) for (op, coeff) in psum.op_dict]
 
 Base.copy(psum::PauliSum) = PauliSum(psum.nqubits, copy(psum.op_dict))
 

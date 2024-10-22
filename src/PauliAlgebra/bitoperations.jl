@@ -72,6 +72,8 @@ end
 
 bitpauliprod(op1::Integer, op2::Integer) = op1 ⊻ op2
 
+bitshiftright(op::Integer) = op >> 2  # this will truncate the first encoded Pauli string
+
 function getbitelement(oper::Integer, index::Integer)
     bitindex = 2 * (index - 1)
     return ((oper >> bitindex) & UInt8(3))
