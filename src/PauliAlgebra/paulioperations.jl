@@ -44,36 +44,57 @@ function commutes(oper1::Integer, oper2::Integer)
     return bitcommutes(oper1, oper2)
 end
 
+function commutes(oper1::Dict{T, Float64}, oper2::Dict{T, Float64}, nq::Integer) where {T <: Integer} 
+    comm = commutator(oper1, oper2, nq) 
+    return isempty(comm)
+end 
+
 function commutator(oper1::T, oper2::T) where {T <: Integer}
-    new_oper = zero(typeof(oper1))
+    new_oper = zero(T)
 
-    total_sign = -1
+    if commutes(oper1, oper2) 
+        total_sign = 0. 
+    else 
+        total_sign = -1
 
-    qind = 1
+        pw4 = 1 
 
-    while oper1 > 0 || oper2 > 0
-        sign, new_pauli_op = paulimult(oper1%4, oper2%4)
+        while oper1 > 0 || oper2 > 0
+            sign, new_pauli_op = pauliprod(oper1&3, oper2&3, 1)
 
-        new_oper += new_pauli_op*4^(qind -1)
-        total_sign *= sign
-        qind += 1
-
-        oper1 = oper1 ÷ 4
-        oper2 = oper2 ÷ 4 
+            new_oper += new_pauli_op*pw4
+            total_sign *= sign
+            
+            pw4 = pw4 << 2
+            oper1 = oper1 >> 2
+            oper2 = oper2 >>2 
+        end 
     end 
-
-    return total_sign, new_oper
+    return 2*total_sign, new_oper
 end
 
-### Code for the product of pauli_ops
-function commutator(oper1::Dict{T, Float64}, oper2::Dict{T, Float64}) where {T <: Integer}
+function commutator(oper1::T, oper2::T, nq::Integer) where {T <: Integer}
+    new_oper = zero(T)
+
+    if commutes(oper1, oper2) 
+        total_sign = 0. 
+    else 
+        total_sign, new_oper = pauliprod(oper1, oper2, nq)
+    end 
+    return 2*total_sign, new_oper
+end
+
+function commutator(oper1::Union{T, Dict{T, Float64}}, oper2::Union{T, Dict{T, Float64}}, nq::Integer) where {T <: Integer}
+    oper1 = isa(oper1, Dict) ? oper1 : Dict(oper1 => 1.0)
+    oper2 = isa(oper1, Dict) ? oper2 : Dict(oper1 => 1.0)
+    
     new_oper = Dict{typeof(first(keys(oper1))), typeof(first(values(oper1)))}()
 
     for (pw1, coeff1) in oper1, (pw2, coeff2) in oper2 
         if !commutes(pw1, pw2) 
-            sign, pauli = commutator(pw1, pw2)
+            sign, pauli = commutator(pw1, pw2, nq)
 
-            if pauli ∉ Set(keys(new_oper)) && pauli > 0 
+            if pauli ∉ keys(new_oper) 
                 new_oper[pauli] = sign*coeff1*coeff2
             else 
                 new_oper[pauli] = new_oper[pauli] + sign*coeff1*coeff2
@@ -87,16 +108,9 @@ function commutator(oper1::Dict{T, Float64}, oper2::Dict{T, Float64}) where {T <
     return new_oper
 end 
 
-function commutator(oper1::Dict{T, Float64}, oper2::T) where {T <: Integer}
-    oper2 = Dict(oper2 => 1.)
-    
-    return commutator(oper1, oper2)
-end 
-
-function commutator(oper1::T, oper2::Dict{T, Float64}) where {T <: Integer}
-    oper1 = Dict(oper1 => 1.)
-    
-    return commutator(oper1, oper2)
+function commutator(oper1::PauliSum, oper2::PauliSum) 
+    new_oper = commutator(oper1.op_dict, oper2.op_dict, oper1.nqubits)
+    return PauliSum(oper1.nq, new_oper)
 end 
 
 function pauliprod(op1::Integer, op2::Integer, nq::Int)

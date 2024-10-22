@@ -65,7 +65,8 @@ export
     containsXorY,
     containsYorZ,
     pauliprod,
-    commutes
+    commutes, 
+    commutator
 
 include("truncations.jl")
 
