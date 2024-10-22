@@ -28,6 +28,7 @@ function mergingbfs!(circ, d, thetas; kwargs...)
     ## TODO:
     # - decide where to reverse the circuit
     # - verbose option  
+    # - more elegant param_idx incrementation
     for gate in reverse(circ)
         d, second_d, param_idx = mergingapply(gate, d, second_d, thetas, param_idx; kwargs...)
     end

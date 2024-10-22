@@ -88,6 +88,11 @@ export
     evaluateagainstdict,
     getnumcoeff
 
+include("numericalcertificates.jl")
+export
+    montecarlosampling,
+    mcapply
+
 include("surrogate.jl")
 export
     NodePathProperties,
