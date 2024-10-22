@@ -24,7 +24,7 @@ function inttosymbol(int::Integer, n_qubits::Integer)
 end
 
 ## Helper functions for pretty printing
-inttostring(op::Unsigned, nq) = prod("$(inttosymbol(getelement(op, ii)))" for ii in 1:nq)
+inttostring(op::Integer, nq) = prod("$(inttosymbol(getelement(op, ii)))" for ii in 1:nq)
 
 function getprettystr(d::Dict, nq::Int; max_lines=20)
     str = ""

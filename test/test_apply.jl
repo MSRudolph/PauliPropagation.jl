@@ -8,6 +8,6 @@ function applypauligate(pauli_generator, qinds, theta)
 
     gate = PauliGate(pauli_generator, qinds)
     fastgate = tofastgates(gate, nq)
-    apply(gate, op, theta)
+    @test apply(gate, op, theta) == apply(fastgate, op, theta)
     return apply(fastgate, op, theta)
 end

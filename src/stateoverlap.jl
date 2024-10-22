@@ -23,7 +23,7 @@ end
 overlapwithzero(op_dict) = overlapbyorthogonality(op_dict, orthogonaltozero)
 orthogonaltozero(op) = containsXorY(op)
 
-overlapwithplus(op_dict) = overlapbyorthogonality(op_dict, orthogonaltoplus)
+overlapwithplus(psum) = overlapbyorthogonality(psum, orthogonaltoplus)
 orthogonaltoplus(op) = containsYorZ(op)
 
 # eval against |±i> not implemented

@@ -55,12 +55,17 @@ include("./PauliAlgebra/PauliAlgebra.jl")
 export
     inttosymbol,
     symboltoint,
+    inttostring,
     getelement,
     setelement!,
     show,
+    countweight,
+    countxy,
+    countyz,
     containsXorY,
-    containsYorZ, 
-    commutator
+    containsYorZ,
+    pauliprod,
+    commutes
 
 include("truncations.jl")
 
