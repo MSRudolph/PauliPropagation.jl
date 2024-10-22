@@ -79,6 +79,10 @@ function getcoeff(psum::PauliSum{OpType,CoeffType}, operator::Integer) where {Op
     return get(psum.op_dict, operator, CoeffType(0))
 end
 
+function getcoeff(psum::PauliSum{OpType,CoeffType1}, pstr::PauliString{OpType,CoeffType2}) where {OpType,CoeffType1,CoeffType2}
+    return get(psum.op_dict, pstr.operator, CoeffType(0))
+end
+
 function getcoeff(psum::PauliSum{OpType,CoeffType}, operator::Symbol, qind::Int) where {OpType,CoeffType}
     return getcoeff(psum, symboltoint(psum.nqubits, operator, qind))
 end
@@ -159,11 +163,11 @@ function add!(psum1::PauliSum, psum2::PauliSum)
     return psum1
 end
 
-function add!(psum, symbol, qind, coeff=1.0)
+function add!(psum::PauliSum, symbol::Symbol, qind::Integer, coeff=1.0)
     return add!(psum, PauliString(psum.nqubits, symbol, qind, coeff))
 end
 
-function add!(psum, symbols::Vector{Symbol}, qinds::Vector{Int}, coeff=1.0)
+function add!(psum::PauliSum, symbols::Vector{Symbol}, qinds::Vector{Int}, coeff=1.0)
     return add!(psum, PauliString(psum.nqubits, symbols, qinds, coeff))
 end
 
