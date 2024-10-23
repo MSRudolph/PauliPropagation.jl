@@ -135,12 +135,12 @@ function calculatesign(op1::Integer, op2::Integer, op3::Integer, changed_indices
     return sign
 end
 
-const generalized_levicivita_matrix = cat(
+const generalized_levicivita_matrix = permutedims(cat(
     [1 0 0 0; 0 1 0 0; 0 0 1 0; 0 0 0 1], # first arg is I
-    [0 1im 0 0; 1 0 0 0; 0 0 0 1im; 0 0 -1im 0], # first arg is X
-    [0 0 1im 0; 0 0 0 -1im; 1 0 0 0; 0 1im 0 0], # first arg is Y
-    [0 0 0 1im; 0 0 1im 0; 0 -1im 0 0; 1 0 0 0]; # first arg is Z
-    dims=3)
+    [0 1 0 0; 1 0 0 0; 0 0 0 1im; 0 0 -1im 0], # first arg is X
+    [0 0 1 0; 0 0 0 -1im; 1 0 0 0; 0 1im 0 0], # first arg is Y
+    [0 0 0 1; 0 0 1im 0; 0 -1im 0 0; 1 0 0 0]; # first arg is Z
+    dims=3), (2,3,1))
 
 function generalizedlevicivita(n1::Integer, n2::Integer, n3::Integer)
     # acts like levicivita but yields the correct sign for products with I or P^2
