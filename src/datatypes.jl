@@ -1,4 +1,8 @@
 ## PauliString that is a Pauli Operator
+import Base: * 
+import Base: /
+import Base: +
+
 # TODO: change OpType to Unsigned
 struct PauliString{OpType<:Integer,CoeffType}
     nqubits::Int
@@ -193,6 +197,37 @@ function subtract!(psum1::PauliSum, psum2::PauliSum; precision::Float64=1e-10)
     end
 
     return psum1
+end
+
+# Overload * for PauliSum
+function *(ps::PauliSum, c::Number)
+    ps_copy = copy(ps)  #TODO: make sure deepcopy is not needed
+    for (k, v) in ps.op_dict
+      ps_copy.op_dict[k] = v * c
+    end
+
+    return ps_copy
+end
+
+# Overload / for PauliSum
+function /(ps::PauliSum, c::Number)
+    ps_copy = copy(ps)  #TODO: make sure deepcopy is not needed
+    for (k, v) in ps.op_dict
+      ps_copy.op_dict[k] = v / c
+    end
+
+    return ps_copy
+end
+
+# Overload + for PauliSum
+function +(psum::PauliSum, pstr::PauliString)
+  psum_copy = copy(psum)  #TODO: make sure deepcopy is not needed
+  return add!(psum_copy, pstr)
+end
+
+function +(psum1::PauliSum, psum2::PauliSum)
+  psum_copy = copy(psum1)  #TODO: make sure deepcopy is not needed
+  return add!(psum_copy, psum2)
 end
 
 ## Helper functions

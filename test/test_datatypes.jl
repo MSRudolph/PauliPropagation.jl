@@ -73,6 +73,9 @@ function subtract_paulisums()
     return subtract!(psum1, psum2), psum1
 end
 
+# Test overloading methods for PauliSum
+# TODO(YT): Add tests for *, /, + overloading for PauliSum
+
 @testset "PauliSum Tests" begin
     # Subtest for PauliSum from Dict
     pauli_ints, pauli_cs = test_paulisum_from_dict()
