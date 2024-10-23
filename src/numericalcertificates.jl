@@ -1,4 +1,10 @@
-function montecarlosampling(circ, oper::Integer, thetas::AbstractArray, split_probabilities::AbstractArray; is_reversed=false, kwargs...)
+function estimateaverageerrror(circ, pstr::PauliString, thetas::AbstractArray, split_probabilities::AbstractArray, ; kwargs...)
+    ## TODO: implement the loop here, plus the overlap with the initial state, number of monte carlo samples, truncations, ...
+end
+
+
+
+function montecarlopropagation(circ, oper::Integer, thetas::AbstractArray, split_probabilities::AbstractArray; is_reversed=false, kwargs...)
     # length(thetas) should be equal to the number of parametrized gates in the circuit
     # length(split_probabilities) should be equal to the number of total gates in the circuit
 
@@ -29,6 +35,7 @@ end
 # if we don't define an mcapply() function, assume that it doesn't split and that the apply function does the job
 mcapply(gate, oper, theta, coeff=1.0, args...) = apply(gate, oper, theta, coeff)
 
+# mcapply for Pauli gates
 function mcapply(gate::PauliGateUnion, oper, theta, coeff=1.0, split_prob=0.5)  # 
 
     if !commutes(gate, oper)

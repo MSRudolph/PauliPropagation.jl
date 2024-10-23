@@ -90,7 +90,7 @@ export
 
 include("numericalcertificates.jl")
 export
-    montecarlosampling,
+    montecarlopropagation,
     mcapply
 
 include("surrogate.jl")
