@@ -97,6 +97,12 @@ function commutator(op_dict1::Dict{OpType,CoeffType1}, op_dict2::Dict{OpType,Coe
 end
 
 ## Pauli product
+function pauliprod(pstr1::PauliString, pstr2::PauliString)
+    checknumberofqubits(pstr1, pstr2)
+    sign, coeff = pauliprod(pstr1.operator, pstr2.operator)
+    return PauliString(pstr1.nqubits, coeff, sign * pstr1.coeff * pstr2.coeff)
+end
+
 function pauliprod(op1::Integer, op2::Integer)
     # TODO: Can this be done with a few bit operations?
     sign = Complex{Int64}(1)
@@ -136,11 +142,11 @@ function calculatesign(op1::Integer, op2::Integer, op3::Integer, changed_indices
 end
 
 const generalized_levicivita_matrix = permutedims(cat(
-    [1 0 0 0; 0 1 0 0; 0 0 1 0; 0 0 0 1], # first arg is I
-    [0 1 0 0; 1 0 0 0; 0 0 0 1im; 0 0 -1im 0], # first arg is X
-    [0 0 1 0; 0 0 0 -1im; 1 0 0 0; 0 1im 0 0], # first arg is Y
-    [0 0 0 1; 0 0 1im 0; 0 -1im 0 0; 1 0 0 0]; # first arg is Z
-    dims=3), (2,3,1))
+        [1 0 0 0; 0 1 0 0; 0 0 1 0; 0 0 0 1], # first arg is I
+        [0 1 0 0; 1 0 0 0; 0 0 0 1im; 0 0 -1im 0], # first arg is X
+        [0 0 1 0; 0 0 0 -1im; 1 0 0 0; 0 1im 0 0], # first arg is Y
+        [0 0 0 1; 0 0 1im 0; 0 -1im 0 0; 1 0 0 0]; # first arg is Z
+        dims=3), (2, 3, 1))
 
 function generalizedlevicivita(n1::Integer, n2::Integer, n3::Integer)
     # acts like levicivita but yields the correct sign for products with I or P^2

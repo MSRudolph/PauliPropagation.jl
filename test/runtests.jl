@@ -29,4 +29,6 @@ using Random
 
     include("test_gate.jl")
 
+    include("test_paulioperations.jl")
+
 end
