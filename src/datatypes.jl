@@ -1,5 +1,5 @@
 ## PauliString that is a Pauli Operator
-import Base: * 
+import Base: *
 import Base: /
 import Base: +
 
@@ -114,6 +114,31 @@ function ==(ps1::PauliSum, ps2::PauliSum)
     return ps1.op_dict == ps2.op_dict
 end
 
+# define in-place multiplication with a number.
+function mult!(ps::PauliSum, c::Number)
+    # multiply in-place
+    for (k, v) in ps.op_dict
+        ps.op_dict[k] *= c
+    end
+    return ps
+end
+
+# Overload * for PauliSum
+function *(ps::PauliSum, c::Number)
+    ps_copy = copy(ps)  #TODO: make sure deepcopy is not needed
+    mult!(ps_copy, c)
+
+    return ps_copy
+end
+
+# Overload / for PauliSum
+function /(ps::PauliSum, c::Number)
+    ps_copy = copy(ps)  #TODO: make sure deepcopy is not needed
+    mult!(ps_copy, 1 / c)
+
+    return ps_copy
+end
+
 ## Adding to PauliSum
 function add(pobj1::Union{PauliSum,PauliString}, pobj2::Union{PauliSum,PauliString})
     # adds pobj2 to pobj1 in place
@@ -160,6 +185,18 @@ function add!(psum, symbols::Vector{Symbol}, qinds::Vector{Int}, coeff=1.0)
     return add!(psum, PauliString(psum.nqubits, symbols, qinds, coeff))
 end
 
+
+# Overload + for PauliSum
+function +(psum::PauliSum, pstr::PauliString)
+    psum_copy = copy(psum)  #TODO: make sure deepcopy is not needed
+    return add!(psum_copy, pstr)
+end
+
+function +(psum1::PauliSum, psum2::PauliSum)
+    psum_copy = copy(psum1)  #TODO: make sure deepcopy is not needed
+    return add!(psum_copy, psum2)
+end
+
 ## Subtracting from PauliSum
 function subtract(psum1::PauliSum, psum2::PauliSum; precision::Float64=1e-10)
     # subtracts psum2 from psum1
@@ -197,37 +234,6 @@ function subtract!(psum1::PauliSum, psum2::PauliSum; precision::Float64=1e-10)
     end
 
     return psum1
-end
-
-# Overload * for PauliSum
-function *(ps::PauliSum, c::Number)
-    ps_copy = copy(ps)  #TODO: make sure deepcopy is not needed
-    for (k, v) in ps.op_dict
-      ps_copy.op_dict[k] = v * c
-    end
-
-    return ps_copy
-end
-
-# Overload / for PauliSum
-function /(ps::PauliSum, c::Number)
-    ps_copy = copy(ps)  #TODO: make sure deepcopy is not needed
-    for (k, v) in ps.op_dict
-      ps_copy.op_dict[k] = v / c
-    end
-
-    return ps_copy
-end
-
-# Overload + for PauliSum
-function +(psum::PauliSum, pstr::PauliString)
-  psum_copy = copy(psum)  #TODO: make sure deepcopy is not needed
-  return add!(psum_copy, pstr)
-end
-
-function +(psum1::PauliSum, psum2::PauliSum)
-  psum_copy = copy(psum1)  #TODO: make sure deepcopy is not needed
-  return add!(psum_copy, psum2)
 end
 
 ## Helper functions
