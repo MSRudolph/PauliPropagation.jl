@@ -41,7 +41,7 @@ end
 """
 Return 'true' if n_sins > max_sins
 """
-function truncatesins(path_properties, max_sins::Real)
+function truncatesins(coeff, max_sins::Real)
     return false
 end
 
