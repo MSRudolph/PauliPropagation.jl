@@ -1,3 +1,8 @@
+# testing type aliases here
+const PauliStringType = Union{UInt8,UInt16,UInt32,UInt64,UInt128,UInt256,BigInt,Int} # to be maintained when we adapt getinttype()
+const SinglePauliType = PauliStringType
+
+
 function getinttype(nq)
     nbits = 2 * nq
     if nbits <= 8
@@ -22,7 +27,7 @@ function getinttype(nq)
     return inttype
 end
 
-function countbitweight(oper::Integer; kwargs...)
+function countbitweight(oper::PauliStringType; kwargs...)
     mask = alternatingmask(oper)
     m1 = oper & mask
     m2 = oper & (mask << 1)
@@ -31,7 +36,7 @@ function countbitweight(oper::Integer; kwargs...)
 end
 
 
-function countbitxy(oper::Integer; kwargs...)
+function countbitxy(oper::PauliStringType; kwargs...)
     mask = alternatingmask(oper)
 
     op = oper ⊻ (oper >> 1)
@@ -40,7 +45,7 @@ function countbitxy(oper::Integer; kwargs...)
     return count_ones(op)
 end
 
-function countbityz(oper::Integer; kwargs...)
+function countbityz(oper::PauliStringType; kwargs...)
     mask = alternatingmask(oper)
 
     op = oper & (mask << 1)
@@ -48,7 +53,7 @@ function countbityz(oper::Integer; kwargs...)
     return count_ones(op)
 end
 
-function bitcommutes(op1::Integer, op2::Integer)
+function bitcommutes(op1::PauliStringType, op2::PauliStringType)
 
     mask0 = alternatingmask(op1)
     mask1 = mask0 << 1
@@ -70,17 +75,19 @@ function bitcommutes(op1::Integer, op2::Integer)
     return (count_ones(flags) % 2) == 0
 end
 
-bitpauliprod(op1::Integer, op2::Integer) = op1 ⊻ op2
+bitpaulimultiply(op1::PauliStringType, op2::PauliStringType) = op1 ⊻ op2
 
-bitshiftright(op::Integer) = op >> 2  # this will truncate the first encoded Pauli string
+paulishiftright(op::PauliStringType) = op >> 2  # this will truncate the first encoded Pauli string
 
-function getbitelement(oper::Integer, index::Integer)
+function getbitpaulielement(oper::PauliStringType, index::Integer)
     bitindex = 2 * (index - 1)
-    return ((oper >> bitindex) & UInt8(3))
+    # shift to the right and mask with 3 (00000011) to get the two bits
+    shifted_oper = (oper >> bitindex)
+    return shifted_oper & UInt8(3)
 end
 
 
-function setbitelement!(oper::Integer, index, element::Integer)
+function setbitpaulielement!(oper::PauliStringType, index::Integer, element::SinglePauliType)
     bitindex = 2 * (index - 1)
 
     b1 = _readbit(element, 0)
@@ -91,7 +98,7 @@ function setbitelement!(oper::Integer, index, element::Integer)
     return oper
 end
 
-function _setbit(oper::Integer, bitindex::Integer, bit::Integer)
+function _setbit(oper::PauliStringType, bitindex::Integer, bit::Integer)
     if bit == true  # set to one
         oper = _setbittoone(oper, bitindex)
     else

@@ -1,24 +1,23 @@
-
 function countweight(pauli_op::Vector{Symbol}, args...; kwargs...)
     return sum(op in (:X, :Y, :Z) for op in pauli_op)
 end
 
-function countweight(oper::Integer; kwargs...)
+function countweight(oper::PauliStringType; kwargs...)
     return countbitweight(oper; kwargs...)
 end
 
 
-function countxy(oper::Integer; kwargs...)
+function countxy(oper::PauliStringType; kwargs...)
     return countbitxy(oper; kwargs...)
 end
 
-function countyz(oper::Integer; kwargs...)
+function countyz(oper::PauliStringType; kwargs...)
     return countbityz(oper; kwargs...)
 end
 
 containsXorY(symbs::AbstractArray{Symbol}, args...) = :X in symbs || :Y in symbs
-containsXorY(int::Integer, args...) = countxy(int) > 0
-containsYorZ(int::Integer, args...) = countyz(int) > 0
+containsXorY(int::PauliStringType, args...) = countxy(int) > 0
+containsYorZ(int::PauliStringType, args...) = countyz(int) > 0
 
 
 ### All the commutation check functions
@@ -36,15 +35,15 @@ function commutes(sym1::Symbol, sym2::Symbol)::Bool
     end
 end
 
-function commutes(sym1::Symbol, pauli_ind::Integer)::Bool
+function commutes(sym1::Symbol, pauli_ind::SinglePauliType)::Bool
     return commutes(sym1, inttosymbol(pauli_ind))
 end
 
-function commutes(oper1::Integer, oper2::Integer)
+function commutes(oper1::PauliStringType, oper2::PauliStringType)
     return bitcommutes(oper1, oper2)
 end
 
-function commutes(oper1::Dict{T,Float64}, oper2::Dict{T,Float64}) where {T<:Integer}
+function commutes(oper1::Dict{T,Float64}, oper2::Dict{T,Float64}) where {T<:PauliStringType}
     comm = commutator(oper1, oper2)
     return isempty(comm)
 end
@@ -63,18 +62,19 @@ end
 commutator(psum::PauliSum, pstr::PauliString) = commutator(psum, PauliSum(pstr))
 commutator(pstr::PauliString, psum::PauliSum) = commutator(PauliSum(pstr), psum)
 
-function commutator(oper1::T, oper2::T) where {T<:Integer}
-    new_oper = zero(T)
+function commutator(oper1::PauliStringType, oper2::PauliStringType)
 
     if commutes(oper1, oper2)
         total_sign = ComplexF64(0.0)
+        new_oper = zero(typeof(oper1))
     else
         total_sign, new_oper = pauliprod(oper1, oper2)
     end
+    # commutator is [A, B] = AB - BA = 2AB for non-commuting (meaning anti-commuting) Paulis
     return 2 * total_sign, new_oper
 end
 
-function commutator(op_dict1::Dict{OpType,CoeffType1}, op_dict2::Dict{OpType,CoeffType2}) where {OpType,CoeffType1,CoeffType2}
+function commutator(op_dict1::Dict{OpType,CoeffType1}, op_dict2::Dict{OpType,CoeffType2}) where {OpType<:PauliStringType,CoeffType1,CoeffType2}
     # different types of coefficients are allowed but not different types of operators
 
     new_op_dict = Dict{OpType,ComplexF64}()
@@ -103,39 +103,45 @@ function pauliprod(pstr1::PauliString, pstr2::PauliString)
     return PauliString(pstr1.nqubits, coeff, sign * pstr1.coeff * pstr2.coeff)
 end
 
-function pauliprod(op1::Integer, op2::Integer)
-    # TODO: Can this be done with a few bit operations?
-    sign = Complex{Int64}(1)
-    new_op = bitpauliprod(op1, op2)
-    op3 = new_op
-
-    # Calculate the sign of the product, loop as long as neither of the operators are Identity
-    while op1 > 0 || op2 > 0
-        sign *= PauliPropagation.calculatesign(op1, op2, op3, 1:1)
-        op1 = bitshiftright(op1)
-        op2 = bitshiftright(op2)
-        op3 = bitshiftright(op3)
-    end
-    return sign, new_op
+function pauliprod(op1::PauliStringType, op2::PauliStringType)
+    # This function is for when we need to globally check the sign of the product (like in general products of Paulis, not local Pauli gates)
+    op3 = bitpaulimultiply(op1, op2)
+    sign = calculatesign(op1, op2, op3)
+    return sign, op3
 end
 
-function pauliprod(op1::Symbol, op2::Integer) # assume that just one qubit is involved
+function pauliprod(op1::Symbol, op2::SinglePauliType)
+    # assume that just one qubit is involved because we check commutation with a single Symbol
     return pauliprod(symboltoint(op1), op2, 1:1)
 end
 
-function pauliprod(op1::Integer, op2::Integer, changed_indices)
-    op3 = bitpauliprod(op1, op2)
+function pauliprod(op1::PauliStringType, op2::PauliStringType, changed_indices)
+    # Calculate the Pauli product when you know on which sites the Paulis differ (changed_indices)
+    op3 = bitpaulimultiply(op1, op2)
     sign = calculatesign(op1, op2, op3, changed_indices)
     return sign, op3
 end
 
-function calculatesign(op1::Integer, op2::Integer, op3::Integer, changed_indices)
+function calculatesign(op1::PauliStringType, op2::PauliStringType, op3::PauliStringType)
+    # Calculate the sign of the product, loop as long as neither of the operators are Identity
+    sign = Complex{Int64}(1)
+    identity_pauli = 0
+    while op1 > identity_pauli || op2 > identity_pauli  # while both are not identity
+        sign *= calculatesign(op1, op2, op3, 1:1)
+        op1 = paulishiftright(op1)
+        op2 = paulishiftright(op2)
+        op3 = paulishiftright(op3)
+    end
+    return sign
+end
+function calculatesign(op1::PauliStringType, op2::PauliStringType, op3::PauliStringType, changed_indices)
+    # Calculate the sign of the product but when you know on which sites the Paulis differ (changed_indices)
     sign = Complex{Int64}(1)
     for qind in changed_indices
         sign *= generalizedlevicivita(
-            getelement(op1, qind),
-            getelement(op2, qind),
-            getelement(op3, qind)
+            getpaulielement(op1, qind),
+            getpaulielement(op2, qind),
+            getpaulielement(op3, qind)
         )
     end
     return sign
@@ -148,7 +154,7 @@ const generalized_levicivita_matrix = permutedims(cat(
         [0 0 0 1; 0 0 1im 0; 0 -1im 0 0; 1 0 0 0]; # first arg is Z
         dims=3), (2, 3, 1))
 
-function generalizedlevicivita(n1::Integer, n2::Integer, n3::Integer)
-    # acts like levicivita but yields the correct sign for products with I or P^2
+function generalizedlevicivita(n1::SinglePauliType, n2::SinglePauliType, n3::SinglePauliType)
+    # acts like levicivita but yields the correct sign for products with I or P^2, and takes care of the imaginary coefficients in Pauli products
     return generalized_levicivita_matrix[n1+1, n2+1, n3+1]
 end
