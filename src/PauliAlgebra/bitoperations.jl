@@ -3,8 +3,13 @@ const PauliStringType = Union{UInt8,UInt16,UInt32,UInt64,UInt128,UInt256,BigInt,
 const SinglePauliType = PauliStringType
 
 
-function getinttype(nq)
-    nbits = 2 * nq
+function getinttype(nqubits)
+    # get the smallest integer type that can hold nq qubits for memory and speed
+
+    # we need 2 bits per qubit
+    nbits = 2 * nqubits
+
+    # select correct UInt type
     if nbits <= 8
         inttype = UInt8
     elseif nbits <= 16
@@ -15,7 +20,7 @@ function getinttype(nq)
         inttype = UInt64
     elseif nbits <= 128
         inttype = UInt128
-    elseif nbits <= 256    # These are super slow to hash
+    elseif nbits <= 256    # These are super slow to hash # TODO: custom hash functions
         inttype = UInt256
         # elseif nbits <= 512
         #     inttype = UInt512
@@ -24,45 +29,72 @@ function getinttype(nq)
     else
         inttype = BigInt  # TODO: get larger Integer types that aren't BigInt
     end
+
     return inttype
 end
 
-function countbitweight(oper::PauliStringType; kwargs...)
-    mask = alternatingmask(oper)
-    m1 = oper & mask
-    m2 = oper & (mask << 1)
+function countbitweight(paulistring_int::PauliStringType; kwargs...)
+    # this function counts the number of 00 bit pairs in the integer representation of the Pauli string
+
+    # get our super bit mask looking like ....1010101.
+    mask = alternatingmask(paulistring_int)
+
+    # m1 carries the 1's of oper on odd bits 
+    m1 = paulistring_int & mask
+
+    # m2 carries the 1's of oper on even bits
+    m2 = paulistring_int & (mask << 1)
+
+    # OR between m1 and left-shifted m2 to get 1's where either m1 or m2 arre 1
     res = m1 | (m2 >> 1)
+
+    # count 1's to get the number of non-identity Pauli operators
     return count_ones(res)
 end
 
 
-function countbitxy(oper::PauliStringType; kwargs...)
-    mask = alternatingmask(oper)
+function countbitxy(paulistring_int::PauliStringType; kwargs...)
+    # this function counts the number of 01 (X) or 10 (Y) bit pairs in the integer representation of the Pauli string
+    # we use that 01 and 10 have exactly one 1 andd one 0
 
-    op = oper ⊻ (oper >> 1)
+    # get our super bit mask looking like ....1010101.
+    mask = alternatingmask(paulistring_int)
+
+    # XOR to put 1's where the bits are different
+    op = paulistring_int ⊻ (paulistring_int >> 1)
+
+    # AND with the mask to extract the 1's
     op = op & mask
 
+    # count 1's to get the number of X or Y operators
     return count_ones(op)
 end
 
-function countbityz(oper::PauliStringType; kwargs...)
-    mask = alternatingmask(oper)
+function countbityz(paulistring_int::PauliStringType; kwargs...)
+    # this function counts the number of 10 (Y) or 11 (Z) bit pairs in the integer representation of the Pauli string
+    # we use that both have a 1 on the left bit
 
-    op = oper & (mask << 1)
+    # get our super bit mask looking like ....1010101.
+    mask = alternatingmask(paulistring_int)
 
+    # AND with the shifted mask to extract the 1's on the left bit
+    op = paulistring_int & (mask << 1)
+
+    # count 1's to get the number of Y or Z operators
     return count_ones(op)
 end
 
-function bitcommutes(op1::PauliStringType, op2::PauliStringType)
+function bitcommutes(paulistring1_int::PauliStringType, paulistring2_int::PauliStringType)
+    # TODO: document this nicely
 
-    mask0 = alternatingmask(op1)
+    mask0 = alternatingmask(paulistring1_int)
     mask1 = mask0 << 1
 
     # obtain the left (then right) bits of each Pauli pair, in-place
-    aBits0 = mask0 & op1
-    aBits1 = mask1 & op1
-    bBits0 = mask0 & op2
-    bBits1 = mask1 & op2
+    aBits0 = mask0 & paulistring1_int
+    aBits1 = mask1 & paulistring1_int
+    bBits0 = mask0 & paulistring2_int
+    bBits1 = mask1 & paulistring2_int
 
     # shift left bits to align with right bits
     aBits1 = aBits1 >> 1
@@ -75,56 +107,92 @@ function bitcommutes(op1::PauliStringType, op2::PauliStringType)
     return (count_ones(flags) % 2) == 0
 end
 
-bitpaulimultiply(op1::PauliStringType, op2::PauliStringType) = op1 ⊻ op2
+# 'xor between two Pauli different non-identity strings gives the third one. Ignores signs or any coefficient.
+bitpaulimultiply(paulistring1_int::PauliStringType, paulistring2_int::PauliStringType) = paulistring1_int ⊻ paulistring2_int
 
-paulishiftright(op::PauliStringType) = op >> 2  # this will truncate the first encoded Pauli string
+# shift to the right and truncate the first encoded Pauli string. Just a utility function.
+_paulishiftright(paulistring_int::PauliStringType) = paulistring_int >> 2
 
-function getbitpaulielement(oper::PauliStringType, index::Integer)
+function getsinglepaulibits(paulistring_int::PauliStringType, index::Integer)
+    # this function extracts the Pauli operator at position index from the integer representation of the Pauli string
+
+    # we need to shift the integer by 2 * (index - 1), then the first two bits are target Pauli
     bitindex = 2 * (index - 1)
-    # shift to the right and mask with 3 (00000011) to get the two bits
-    shifted_oper = (oper >> bitindex)
-    return shifted_oper & UInt8(3)
+
+    # shift to the right
+    shifted_oper = (paulistring_int >> bitindex)
+
+    # AND with 3 (00000011) to get the first two bits
+    return shifted_oper & typeof(paulistring_int)(3)
 end
 
 
-function setbitpaulielement!(oper::PauliStringType, index::Integer, element::SinglePauliType)
+function setsinglepaulibits(paulistring_int::PauliStringType, index::Integer, pauli_int::SinglePauliType)
+    # this function sets the Pauli operator at position index in the integer representation of the Pauli string
+
+    # we need to shift the integer by 2 * (index - 1), then the first two bits are target Pauli
     bitindex = 2 * (index - 1)
 
-    b1 = _readbit(element, 0)
-    b2 = _readbit(element, 1)
+    # read bits of the pauli_int
+    b1 = _readbit(pauli_int, 0)
+    b2 = _readbit(pauli_int, 1)
 
-    oper = _setbit(oper, bitindex, b1)
-    oper = _setbit(oper, bitindex + 1, b2)
-    return oper
+    # insert them into the paulistring_int
+    paulistring_int = _setbit(paulistring_int, bitindex, b1)
+    paulistring_int = _setbit(paulistring_int, bitindex + 1, b2)
+    return paulistring_int
 end
 
-function _setbit(oper::PauliStringType, bitindex::Integer, bit::Integer)
-    if bit == true  # set to one
-        oper = _setbittoone(oper, bitindex)
+function _setbit(paulistring_int::PauliStringType, bitindex::Integer, target_bit::Integer)
+    # set bit at bitindex to bit
+
+    if target_bit == true  # set to one
+        paulistring_int = _setbittoone(paulistring_int, bitindex)
     else
-        oper = _setbittozero(oper, bitindex)
+        paulistring_int = _setbittozero(paulistring_int, bitindex)
     end
-    return oper
+    return paulistring_int
 end
 
-function _setbittoone(oper::Integer, bitindex::Integer)
-    return oper | (typeof(oper)(1) << bitindex)
+function _setbittoone(paulistring_int::Integer, bitindex::Integer)
+    # set bit at bitindex to 1
+
+    # shift ...00100...  to bitindex
+    shifted_onebit = (typeof(paulistring_int)(1) << bitindex)
+
+    # OR with operator to make sure that that bit is 1
+    return paulistring_int | shifted_onebit
 end
 
-function _setbittozero(oper::Integer, bitindex::Integer)
-    oper = ~oper  # flip all bits
-    oper = _setbittoone(oper, bitindex)
-    oper = ~oper # flip all bits back
-    return oper
+function _setbittozero(paulistring_int::Integer, bitindex::Integer)
+    # set bit at bitindex to 0
+
+    # flip all bits
+    paulistring_int = ~paulistring_int
+
+    # set target bit to one
+    paulistring_int = _setbittoone(paulistring_int, bitindex)
+
+    # flip all bits back, only the target bit is 0
+    paulistring_int = ~paulistring_int
+    return paulistring_int
 end
 
 function _readbit(oper::Integer, bitindex::Integer)
-    # bitindex begins at 0
-    return (oper >> bitindex) & UInt8(1)
+    # return integer with ...000[bit].
+
+    # shift by bitindex
+    shifted_oper = (oper >> bitindex)
+
+    # AND with 1 to get first bit
+    return shifted_oper & typeof(oper)(1)
 end
 
 @generated function alternatingmask(int::T) where {T<:Integer}
-    n_bits = min(bitsize(int), 2_048)  # for 1024 qubits
+    # define our super bit mask looking like ....1010101.
+
+    # length is the number of bits in the integer
+    n_bits = min(bitsize(int), 2_048)  # for max 1024 qubits.
     mask = int(0)
     for ii in 0:(n_bits-1)
         if ii % 2 == 0

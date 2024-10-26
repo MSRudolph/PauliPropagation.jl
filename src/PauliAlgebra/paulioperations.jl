@@ -128,9 +128,9 @@ function calculatesign(op1::PauliStringType, op2::PauliStringType, op3::PauliStr
     identity_pauli = 0
     while op1 > identity_pauli || op2 > identity_pauli  # while both are not identity
         sign *= calculatesign(op1, op2, op3, 1:1)
-        op1 = paulishiftright(op1)
-        op2 = paulishiftright(op2)
-        op3 = paulishiftright(op3)
+        op1 = _paulishiftright(op1)
+        op2 = _paulishiftright(op2)
+        op3 = _paulishiftright(op3)
     end
     return sign
 end

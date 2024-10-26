@@ -3,7 +3,7 @@ function getpaulielement(oper::AbstractArray{T}, index::Int) where {T}
 end
 
 function getpaulielement(oper::Integer, index::Integer)
-    return getbitpaulielement(oper, index)
+    return getsinglepaulibits(oper, index)
 end
 
 function setpaulielement!(oper::AbstractArray{T}, index, element::T) where {T}
@@ -20,5 +20,5 @@ function setpaulielement!(oper::PauliStringType, index, element::Symbol)
 end
 
 function setpaulielement!(oper::PauliStringType, index, element::SinglePauliType)
-    return setbitpaulielement!(oper, index, element)
+    return setsinglepaulibits(oper, index, element)
 end
