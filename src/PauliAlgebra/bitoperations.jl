@@ -33,7 +33,7 @@ function getinttype(nqubits)
     return inttype
 end
 
-function countbitweight(paulistring_int::PauliStringType; kwargs...)
+function countbitweight(paulistring_int::PauliStringType)
     # this function counts the number of 00 bit pairs in the integer representation of the Pauli string
 
     # get our super bit mask looking like ....1010101.
@@ -53,7 +53,7 @@ function countbitweight(paulistring_int::PauliStringType; kwargs...)
 end
 
 
-function countbitxy(paulistring_int::PauliStringType; kwargs...)
+function countbitxy(paulistring_int::PauliStringType)
     # this function counts the number of 01 (X) or 10 (Y) bit pairs in the integer representation of the Pauli string
     # we use that 01 and 10 have exactly one 1 andd one 0
 
@@ -70,7 +70,7 @@ function countbitxy(paulistring_int::PauliStringType; kwargs...)
     return count_ones(op)
 end
 
-function countbityz(paulistring_int::PauliStringType; kwargs...)
+function countbityz(paulistring_int::PauliStringType)
     # this function counts the number of 10 (Y) or 11 (Z) bit pairs in the integer representation of the Pauli string
     # we use that both have a 1 on the left bit
 
