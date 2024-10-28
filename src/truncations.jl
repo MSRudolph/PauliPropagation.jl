@@ -1,32 +1,30 @@
-"""
-    Truncation function should return 'true' if a path should continue to propagate
-    and 'false' if it should be truncated.
-"""
+## TODO: Make actual use of this ile or remove.
 
-function truncateweight(oper, max_weight)
+"""
+Return `true` if a Pauli string in its integer representation should be truncated because its weight (i.e., number of non-identity Paulis) is larger than `max_weight`. 
+"""
+function truncateweight(oper::PauliStringType, max_weight::Real)
     return countweight(oper) > max_weight
 end
 
-
-
 """
-Return 'true' if abs(coeff) < min_abs_coeff
+Return `true` if `abs(coeff) < min_abs_coeff`. Truncations on coefficients should default to false if it is not applicable for a type.
 """
-function truncatemincoeff(coeff, min_abs_coeff)
+function truncatemincoeff(coeff, min_abs_coeff::Real)
     return false
 end
 
-function truncatemincoeff(coeff::Float64, min_abs_coeff)
+function truncatemincoeff(coeff::Float64, min_abs_coeff::Real)
     return abs(coeff) < min_abs_coeff
 end
 
-function truncatemincoeff(node::NumericPathProperties, min_abs_coeff)
+function truncatemincoeff(node::NumericPathProperties, min_abs_coeff::Real)
     return abs(node.coeff) < min_abs_coeff
 end
 
 
 """
-Return 'true' if freq > max_freq
+Return `true` if  `PathProperties.freq > max_freq`. Truncations on coefficients should default to false if it is not applicable for a type.
 """
 function truncatefrequency(coeff, max_freq::Real)
     return false
@@ -39,7 +37,7 @@ end
 
 
 """
-Return 'true' if n_sins > max_sins
+Return `true` if  `PathProperties.nsins > max_sins`. Truncations on coefficients should default to false if it is not applicable for a type.
 """
 function truncatesins(path_properties, max_sins::Real)
     return false

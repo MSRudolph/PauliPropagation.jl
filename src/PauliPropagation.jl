@@ -2,20 +2,37 @@ module PauliPropagation
 
 using Base.Threads
 
-include("datatypes.jl")
+include("./PauliAlgebra/PauliAlgebra.jl")
 export
     PauliSum,
     PauliString,
     getcoeff,
-    getpaulistrings,
+    topaulistrings,
     add,
     add!,
     subtract,
     subtract!,
+    inttosymbol,
+    symboltoint,
+    inttostring,
+    getpaulielement,
+    setpaulielement!,
+    show,
+    countweight,
+    countxy,
+    countyz,
+    containsXorY,
+    containsYorZ,
+    pauliprod,
+    commutes,
+    commutator
+
+
+include("pathproperties.jl")
+export
     PathProperties,
     NumericPathProperties,
     wrapcoefficients
-
 
 include("Gates/Gates.jl")
 export
@@ -52,23 +69,6 @@ export
     su4ansatz,
     qcnnansatz,
     appendSU4!
-
-include("./PauliAlgebra/PauliAlgebra.jl")
-export
-    inttosymbol,
-    symboltoint,
-    inttostring,
-    getpaulielement,
-    setpaulielement!,
-    show,
-    countweight,
-    countxy,
-    countyz,
-    containsXorY,
-    containsYorZ,
-    pauliprod,
-    commutes,
-    commutator
 
 include("truncations.jl")
 

@@ -98,7 +98,7 @@ end
 
 ## Pauli product
 function pauliprod(pstr1::PauliString, pstr2::PauliString)
-    checknumberofqubits(pstr1, pstr2)
+    _checknumberofqubits(pstr1, pstr2)
     sign, coeff = pauliprod(pstr1.operator, pstr2.operator)
     return PauliString(pstr1.nqubits, coeff, sign * pstr1.coeff * pstr2.coeff)
 end
