@@ -14,7 +14,7 @@ end
 EvalEndNode(operator) = EvalEndNode(operator, 1.0)
 
 @kwdef mutable struct PauliGateNode <: CircuitNode #where {T<:Real}
-    parents::Union{Vector{EvalEndNode},Vector{PauliGateNode}}
+    parents::Vector{Union{EvalEndNode,PauliGateNode}}
     trig_inds::Vector{Int}
     signs::Vector{Int}
     param_idx::Int
@@ -34,6 +34,12 @@ NodePathProperties(coeff) = NodePathProperties(coeff, 0, 0, 0)
 function wrapcoefficients(pstr::PauliString, ::Type{NodePathProperties})
     node = NodePathProperties(EvalEndNode(pstr.operator, pstr.coeff, 0.0, false))
     return PauliString(pstr.nqubits, pstr.operator, node)
+end
+
+function wrapcoefficients(psum::PauliSum, ::Type{NodePathProperties})
+    # node = NodePathProperties(EvalEndNode(pstr.operator, pstr.coeff, 0.0, false))
+    # return PauliString(pstr.nqubits, pstr.operator, node)
+    return PauliSum(psum.nqubits, Dict(op => NodePathProperties(EvalEndNode(op, coeff, 0.0, false)) for (op, coeff) in psum.op_dict))
 end
 
 
