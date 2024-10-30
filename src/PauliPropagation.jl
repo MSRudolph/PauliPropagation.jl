@@ -6,6 +6,8 @@ include("datatypes.jl")
 export
     PauliSum,
     PauliString,
+    getcoeff,
+    getpaulistrings,
     add,
     add!,
     subtract,
@@ -56,8 +58,8 @@ export
     inttosymbol,
     symboltoint,
     inttostring,
-    getelement,
-    setelement!,
+    getpaulielement,
+    setpaulielement!,
     show,
     countweight,
     countxy,
@@ -65,7 +67,8 @@ export
     containsXorY,
     containsYorZ,
     pauliprod,
-    commutes
+    commutes,
+    commutator
 
 include("truncations.jl")
 

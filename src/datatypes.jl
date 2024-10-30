@@ -1,4 +1,8 @@
 ## PauliString that is a Pauli Operator
+import Base: *
+import Base: /
+import Base: +
+
 # TODO: change OpType to Unsigned
 struct PauliString{OpType<:Integer,CoeffType}
     nqubits::Int
@@ -7,24 +11,14 @@ struct PauliString{OpType<:Integer,CoeffType}
 end
 
 function PauliString(nq, symbol::Symbol, qind::Int, coeff=1.0)
-    inttype = getinttype(nq)
-    temp_op = inttype(0)
-    temp_op = setelement!(temp_op, qind, symboltoint(symbol))
-    #TODO: find a better way to handle integer coefficients
+    temp_op = symboltoint(nq, symbol, qind)
     coeff = convertcoefficients(coeff)
-
-    return PauliString(nq, symboltoint(temp_op), coeff)
+    return PauliString(nq, temp_op, coeff)
 end
 
 function PauliString(nq, symbols::Vector{Symbol}, qinds::Vector{Int}, coeff=1.0)
-
-    inttype = getinttype(nq)
-    temp_op = inttype(0)
-    for (op, qind) in zip(symbols, qinds)
-        temp_op = setelement!(temp_op, qind, symboltoint(op))
-    end
+    temp_op = symboltoint(nq, symbols, qinds)
     coeff = convertcoefficients(coeff)
-
     return PauliString(nq, temp_op, coeff)
 end
 
@@ -76,11 +70,36 @@ end
 
 PauliSum(pstr::PauliString) = PauliSum(pstr.nqubits, pstr)
 
+PauliSum(psum::PauliSum) = psum
+
 function PauliSum(nq::Int, pstr::PauliString{OpType,CoeffType}) where {OpType,CoeffType}
     checknumberofqubits(nq, pstr)
 
     return PauliSum(nq, Dict{OpType,CoeffType}(pstr.operator => pstr.coeff))
 end
+
+# get coefficients or terms in the PauliSum
+function getcoeff(psum::PauliSum{OpType,CoeffType}, operator::Integer) where {OpType,CoeffType}
+    return get(psum.op_dict, operator, CoeffType(0))
+end
+
+function getcoeff(psum::PauliSum{OpType,CoeffType1}, pstr::PauliString{OpType,CoeffType2}) where {OpType,CoeffType1,CoeffType2}
+    return get(psum.op_dict, pstr.operator, CoeffType1(0))
+end
+
+function getcoeff(psum::PauliSum{OpType,CoeffType}, operator::Symbol, qind::Int) where {OpType,CoeffType}
+    return getcoeff(psum, symboltoint(psum.nqubits, operator, qind))
+end
+
+function getcoeff(psum::PauliSum{OpType,CoeffType}, operator::Vector{Symbol}, qinds) where {OpType,CoeffType}
+    return getcoeff(psum, symboltoint(psum.nqubits, operator, qinds))
+end
+
+function getcoeff(psum::PauliSum{OpType,CoeffType}, operator::Vector{Symbol}) where {OpType,CoeffType}
+    return getcoeff(psum, symboltoint(operator))
+end
+
+getpaulistrings(psum::PauliSum) = [PauliString(psum.nqubits, op, coeff) for (op, coeff) in psum.op_dict]
 
 Base.copy(psum::PauliSum) = PauliSum(psum.nqubits, copy(psum.op_dict))
 
@@ -110,50 +129,70 @@ function ==(ps1::PauliSum, ps2::PauliSum)
     return ps1.op_dict == ps2.op_dict
 end
 
+# define in-place multiplication with a number.
+function mult!(ps::PauliSum, c::Number)
+    # multiply in-place
+    for (k, v) in ps.op_dict
+        ps.op_dict[k] *= c
+    end
+    return ps
+end
+
+# Overload * for PauliSum
+function *(ps::PauliSum, c::Number)
+    ps_copy = copy(ps)  #TODO: make sure deepcopy is not needed
+    mult!(ps_copy, c)
+
+    return ps_copy
+end
+
+# Overload / for PauliSum
+function /(ps::PauliSum, c::Number)
+    ps_copy = copy(ps)  #TODO: make sure deepcopy is not needed
+    mult!(ps_copy, 1 / c)
+
+    return ps_copy
+end
+
 ## Adding to PauliSum
 function add(pobj1::Union{PauliSum,PauliString}, pobj2::Union{PauliSum,PauliString})
     # adds pobj2 to pobj1 in place
     checknumberofqubits(pobj1, pobj2)
-
     pobj1 = copy(pobj1) # or deepcopy?
-
     add!(pobj1, pobj1)
-
     return pobj1
 end
 
 function add!(psum::PauliSum, pstr::PauliString)
     checknumberofqubits(psum, pstr)
-
-    if haskey(psum.op_dict, pstr.operator)
-        psum.op_dict[pstr.operator] += pstr.coeff
-    else
-        psum.op_dict[pstr.operator] = pstr.coeff
-    end
-
+    psum.op_dict[pstr.operator] = get(psum.op_dict, pstr.operator, keytype(psum.op_dict)(0.0)) + pstr.coeff
     return psum
 end
 
 function add!(psum1::PauliSum, psum2::PauliSum)
     checknumberofqubits(psum1, psum2)
-
-    for (operator, coeff) in psum2.op_dict
-        if haskey(psum1.op_dict, operator)
-            psum1.op_dict[operator] += coeff
-        else
-            psum1.op_dict[operator] = coeff
-        end
-    end
-
+    mergewith!(+, psum1.op_dict, psum2.op_dict)
     return psum1
 end
 
-function add!(psum, symbol, qind, coeff=1.0)
+function add!(psum::PauliSum, symbol::Symbol, qind::Integer, coeff=1.0)
     return add!(psum, PauliString(psum.nqubits, symbol, qind, coeff))
 end
 
-function add!(psum, symbols::Vector{Symbol}, qinds::Vector{Int}, coeff=1.0)
+function add!(psum::PauliSum, symbols::Vector{Symbol}, qinds::Vector{Int}, coeff=1.0)
     return add!(psum, PauliString(psum.nqubits, symbols, qinds, coeff))
+end
+
+
+# Overload + for PauliSum
+function +(psum::PauliSum, pstr::PauliString)
+    psum_copy = copy(psum)  #TODO: make sure deepcopy is not needed
+    return add!(psum_copy, pstr)
+end
+
+function +(psum1::PauliSum, psum2::PauliSum)
+    psum_copy = copy(psum1)  #TODO: make sure deepcopy is not needed
+    return add!(psum_copy, psum2)
 end
 
 ## Subtracting from PauliSum
@@ -161,18 +200,14 @@ function subtract(psum1::PauliSum, psum2::PauliSum; precision::Float64=1e-10)
     # subtracts psum2 from psum1
     checknumberofqubits(psum1, psum2)
     psum1 = copy(psum1) # or deepcopy?
-
     subtract!(psum1, psum2, precision=precision)
-
     return psum1
 end
 
 function subtract(psum::PauliSum, pstr::PauliString; precision::Float64=1e-10)
     # subtracts psum2 from psum1
     checknumberofqubits(psum, pstr)
-
     subtract(psum, PauliSum(pstr), precision=precision)
-
     return psum1
 end
 
@@ -269,4 +304,8 @@ Base.show(io::IO, pth::NumericPathProperties) = print(io, "NumericPathProperties
 function wrapcoefficients(pstr::PauliString, PathPropertiesType::Type{PP}) where {PP<:PathProperties}
     # the one-argument constructor of your PathProperties type must be defined
     return PauliString(pstr.nqubits, pstr.operator, PathPropertiesType(pstr.coeff))
+end
+
+function wrapcoefficients(psum::PauliSum, PathPropertiesType::Type{PP}) where {PP<:PathProperties}
+    return PauliSum(psum.nqubits, Dict(op => PathPropertiesType(coeff) for (op, coeff) in psum.op_dict))
 end
