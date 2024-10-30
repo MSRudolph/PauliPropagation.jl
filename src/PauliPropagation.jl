@@ -71,6 +71,8 @@ export
     commutator
 
 include("truncations.jl")
+export 
+    customtruncatedampingcoeff
 
 include("Propagation/Propagation.jl")
 export
