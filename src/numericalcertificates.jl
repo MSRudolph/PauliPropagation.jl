@@ -99,6 +99,7 @@ function mcapply(gate::PauliGateUnion, oper, theta, coeff=1.0, split_prob=0.5)  
     return coeff, oper
 end
 
-# function mcapply(gate::AmplitudeDampingNoise, oper, theta, coeff=1.0, split_prob=0.5)  # 
-#     # TODO
-# end
+function mcapply(gate::AmplitudeDampingNoise, args...)  # 
+    # TODO
+    println("AmplitudeDampingNoise not implemented yet")
+end
