@@ -29,26 +29,26 @@ end
     expected_expval = overlapwithzero(evolved_p)
 
     gamma = 0.
-    truncategamma = (pstr_dict, indx) -> customtruncatedampingcoeff(
-        pstr_dict, gamma, min_abs_coeff
+    truncategamma = (pstr, coeff) -> truncatedampingcoeff(
+        pstr, coeff, gamma, min_abs_coeff
     )
     evolved_p = mergingbfs(
         circ, op, thetas;
         max_weight=W, min_abs_coeff=min_abs_coeff,
-        customtruncationfunction=truncategamma
+        customtruncatefn=truncategamma
     )
-    # \gamma=0 == zero dissipation 
+    # \gamma=0 == zero dissipation
     @test isapprox(overlapwithzero(evolved_p), expected_expval)
 
     gamma = 0.01
     min_abs_coeff = 1e-5
-    truncategamma = (pstr_dict, indx) -> customtruncatedampingcoeff(
-        pstr_dict, gamma, min_abs_coeff
+    truncategamma = (pstr, coeff) -> truncatedampingcoeff(
+        pstr, coeff, gamma, min_abs_coeff
     )
     evolved_p = mergingbfs(
         circ, op, thetas;
         max_weight=W, min_abs_coeff=min_abs_coeff,
-        customtruncationfunction=truncategamma
+        customtruncatefn=truncategamma
     )
     # \gamma=0.1 \approx zero dissipation
     #TODO: is there another way to test dissipation?

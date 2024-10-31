@@ -35,7 +35,7 @@ function mergingbfs!(circ, d, thetas; kwargs...)
 end
 
 
-function mergingapply(gate, operator_dict::Dict, new_operator_dict::Dict, thetas, param_idx, args...; customtruncationfunction=nothing, kwargs...)
+function mergingapply(gate, operator_dict::Dict, new_operator_dict::Dict, thetas, param_idx, args...; kwargs...)
 
     # param_idx is decremented by one if the gate is a Pauli gate
     operator_dict, new_operator_dict, param_idx = applygatetoall!(gate, thetas, param_idx, operator_dict, new_operator_dict)
@@ -43,10 +43,14 @@ function mergingapply(gate, operator_dict::Dict, new_operator_dict::Dict, thetas
     mergeandclear!(operator_dict, new_operator_dict)
 
     checktruncationonall!(operator_dict; kwargs...)
+    
+    # YT: old logic for custom truncation function
+    # now we use the checktruncationonone! function
+    # and pass the custom function as a keyword argument
 
-    if !isnothing(customtruncationfunction)
-        customtruncationfunction(operator_dict, param_idx)  # changes in-place
-    end
+    # if !isnothing(customtruncationfunction)
+    #     customtruncatefn(operator_dict, param_idx)  # changes in-place
+    # end
 
     return operator_dict, new_operator_dict, param_idx
 end
@@ -169,27 +173,44 @@ end
 
 ### TRUNCATE
 
-function checktruncationonall!(operator_dict; max_weight::Real=Inf, min_abs_coeff=0.0, max_freq::Real=Inf, max_sins::Real=Inf, kwargs...)
+function checktruncationonall!(
+    operator_dict; max_weight::Real=Inf, min_abs_coeff=0.0, max_freq::Real=Inf,
+    max_sins::Real=Inf,
+    kwargs...
+)
     # TODO: This does currently hinder performance, even if we don't truncated
     # approx 55ms -> 66ms for the test case
     for (operator, coeff) in operator_dict
-        checktruncationonone!(operator_dict, operator, coeff; max_weight=max_weight, min_abs_coeff=min_abs_coeff, max_freq=max_freq, max_sins=max_sins, kwargs...)
+        checktruncationonone!(
+            operator_dict, operator, coeff;
+            max_weight=max_weight, min_abs_coeff=min_abs_coeff,
+            max_freq=max_freq, max_sins=max_sins,
+            kwargs...
+        )
     end
     return
 end
 
-@inline function checktruncationonone!(operator_dict, operator, coeff; max_weight::Real=Inf, min_abs_coeff=0.0, max_freq::Real=Inf, max_sins::Real=Inf, kwargs...)
-    we_truncate = false
+@inline function checktruncationonone!(
+    operator_dict, operator, coeff;
+    max_weight::Real=Inf, min_abs_coeff=0.0,
+    max_freq::Real=Inf, max_sins::Real=Inf,
+    customtruncatefn::F=nothing,
+    kwargs...
+) where F
+    is_truncated = false
     if truncateweight(operator, max_weight)
-        we_truncate = true
+        is_truncated = true
     elseif truncatemincoeff(coeff, min_abs_coeff)
-        we_truncate = true
+        is_truncated = true
     elseif truncatefrequency(coeff, max_freq)
-        we_truncate = true
+        is_truncated = true
     elseif truncatesins(coeff, max_sins)
-        we_truncate = true
+        is_truncated = true
+    elseif !isnothing(customtruncatefn) && customtruncatefn(operator, coeff)
+        is_truncated = true
     end
-    if we_truncate
+    if is_truncated
         delete!(operator_dict, operator)
     end
     return

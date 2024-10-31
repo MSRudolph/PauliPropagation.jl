@@ -31,4 +31,6 @@ using Random
 
     include("test_paulioperations.jl")
 
+    include("test_truncations.jl")
+
 end

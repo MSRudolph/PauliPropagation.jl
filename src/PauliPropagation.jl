@@ -72,7 +72,7 @@ export
 
 include("truncations.jl")
 export 
-    customtruncatedampingcoeff
+    truncatedampingcoeff
 
 include("Propagation/Propagation.jl")
 export

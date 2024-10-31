@@ -53,32 +53,22 @@ end
 
 # Define the custom truncation functions by dissipation-assisted damping
 function truncatedampingcoeff(
-    pstr::PauliStringType, coeff::Float64, gamma::Float64, min_abs_coeff
-)
-  return abs(coeff) * exp(- gamma * countweight(pstr))  < min_abs_coeff
-end
-
-function customtruncatedampingcoeff(
-    pstr_dict, gamma::Float64, min_abs_coeff
-)
+    pstr::PauliStringType, coeff::Float64, gamma::Float64, min_abs_coeff::Float64
+)::Bool
 """
 Custom truncation function with dissipation-assisted damping of coefficients.
 
 Truncate Pauli strings with coefficients < `min_abs_coeff` and damping `gamma`:
-c(P) * exp(- gamma * w(P)) < `min_abs_coeff`
+c(P) * exp(- gamma * w(P)) < min_abs_coeff
 
 Args:
-    pstr_dict (dict): Dictionary of Pauli strings.
-    gamma (float): Damping gamma.
-    min_abs_coeff (float): Minimal absolute value of the coefficient.
+    pstr: Pauli string.
+    coeff: Coefficient.
+    gamma: Damping gamma.
+    min_abs_coeff: Minimal absolute value of the coefficient.
 
 Returns:
-    None: Changes `pstr_dict` in-place.
+    (Bool) True if the Pauli string should be truncated.
 """
-  for (pstr, coeff) in pstr_dict
-      if truncatedampingcoeff(pstr, coeff, gamma, min_abs_coeff)
-          delete!(pstr_dict, pstr)
-      end
-  end
-  return
+  return abs(coeff) * exp(- gamma * countweight(pstr))  < min_abs_coeff
 end
