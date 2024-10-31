@@ -53,13 +53,13 @@ end
 
 # Define the custom truncation functions by dissipation-assisted damping
 function truncatedampingcoeff(
-    pstr::PauliString, coeff::Float64, gamma::Float64, min_abs_coeff::Float64
+    pstr::PauliStringType, coeff::Float64, gamma::Float64, min_abs_coeff
 )
   return abs(coeff) * exp(- gamma * countweight(pstr))  < min_abs_coeff
 end
 
 function customtruncatedampingcoeff(
-    pstr_dict, gamma::Float64, min_abs_coeff::Float64
+    pstr_dict, gamma::Float64, min_abs_coeff
 )
 """
 Custom truncation function with dissipation-assisted damping of coefficients.
