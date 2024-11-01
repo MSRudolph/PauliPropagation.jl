@@ -1,5 +1,18 @@
 using Statistics
 
+"""
+Function to estimate the average error of a truncated circuit simulation using Monte Carlo sampling.
+Returns the mean squared error of the truncated Pauli propagation simulation averaged over `thetas`.
+
+The function takes a circuit, a PauliString, an array of thetas, an array of split_probabilities, and the number of Monte Carlo samples. 
+Importantly, the `kwargs` can be used to set the truncation parameters of the Pauli propagation.
+
+The length the `thetas` vector should be equal to the number of parametrized gates in the circuit. This can be awkward, for example for Pauli gates, 
+because they have parameters but in the average error estimation they are not used. But the thetas matter for non-splitting parametrized gates.
+
+The the length of the `split_probabilities` vector should be equal to the number of total gates in the circuit. 
+This can be awkward, for example for non-splitting gates. But these matter for the splitting gates.
+"""
 function estimateaverageerror(circ, pstr::PauliString, thetas::AbstractArray, split_probabilities::AbstractArray, n_mcsamples::Integer; kwargs...)
     # length(thetas) should be equal to the number of parametrized gates in the circuit
     @assert length(thetas) == countparameters(circ)
@@ -55,6 +68,7 @@ function montecarlopropagation(circ, pstr::PauliString, thetas::AbstractArray, s
         coeff, oper = mcapply(gate, oper, coeff, thetas[param_idx], split_probabilities[prob_idx]; kwargs...)
 
         # check truncations
+        # TODO: make this properly
         if truncateweight(oper, max_weight)
             is_valid = false
             oper = typeof(oper)(0)
@@ -92,6 +106,7 @@ function mcapply(gate::PauliGateUnion, oper, theta, coeff=1.0, split_prob=0.5)  
     if !commutes(gate, oper)
         # if the gate does not commute with the operator, split with probability split_prob int a random direction.
         if rand() > split_prob
+            # TODO: make sure this works in general and not just for numerical coefficients. For example, add to freq and nsins.
             sign, oper = getnewoperator(gate, oper)
         end
     end
