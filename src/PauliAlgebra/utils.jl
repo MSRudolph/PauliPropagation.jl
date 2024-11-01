@@ -1,46 +1,68 @@
 
 const pauli_ops::Vector{Symbol} = [:I, :X, :Y, :Z]   # maps to 0 1 2 3
 
-symboltoint(sym::Symbol) = findfirst(s -> s == sym, pauli_ops) - 1
-symboltoint(i::Integer) = i
-inttosymbol(int::Integer) = pauli_ops[int+1]
-inttosymbol(s::Symbol) = s
+symboltoint(pauli::Symbol) = findfirst(s -> s == pauli, pauli_ops) - 1
+symboltoint(pauli) = pauli
+inttosymbol(pauli::PauliType) = pauli_ops[pauli+1]
+inttosymbol(pauli) = pauli
 
-function symboltoint(oper::Vector{Symbol})
-    nq = length(oper)
-    intop = getinttype(nq)(0)
-    for (ii, symb) in enumerate(oper)
-        intop = setpaulielement!(intop, ii, symboltoint(symb))
+function symboltoint(pstr_vec::Vector{Symbol})
+    nqubits = length(pstr_vec)
+    pstr_int = getinttype(nqubits)(0)
+    for (ii, symbol) in enumerate(pstr_vec)
+        pstr_int = setpauli(pstr_int, ii, symboltoint(symbol))
     end
-    return intop
+    return pstr_int
 end
 
-function symboltoint(nq::Integer, symbols::Vector{Symbol}, qinds)
-    inttype = getinttype(nq)
-    intop = inttype(0)
-    for (op, qind) in zip(symbols, qinds)
-        intop = setpaulielement!(intop, qind, symboltoint(op))
+function symboltoint(nqubits::Integer, pstr_vec::Vector{Symbol}, qinds) # TODO: pauli argument should always be first!
+    inttype = getinttype(nqubits)
+    pstr_int = inttype(0)
+    for (pauli, qind) in zip(pstr_vec, qinds)
+        pstr_int = setpauli(pstr_int, qind, symboltoint(pauli))
     end
-    return intop
+    return pstr_int
 end
 
-function symboltoint(nq::Integer, symbol::Symbol, qind::Integer)
-    inttype = getinttype(nq)
-    intop = inttype(0)
-    intop = setpaulielement!(intop, qind, symboltoint(symbol))
-    return intop
+function symboltoint(nqubits::Integer, pauli::Symbol, qind::Integer)
+    inttype = getinttype(nqubits)
+    pstr_int = inttype(0)
+    pstr_int = setpauli(pstr_int, qind, symboltoint(pauli))
+    return pstr_int
 end
 
-function inttosymbol(int::Integer, n_qubits::Integer)
-    symbs = [:I for _ in 1:n_qubits]
-    for ii in 1:n_qubits
-        symbs[ii] = inttosymbol(getpaulielement(int, ii))
+function inttosymbol(pauli::PauliStringType, nqubits::Integer)
+    symbols = [:I for _ in 1:nqubits]
+    for ii in 1:nqubits
+        symbols[ii] = inttosymbol(getpauli(pauli, ii))
     end
-    return symbs
+    return symbols
 end
+
+## get and set functions
+function getpauli(pstr::PauliString, index::Integer)
+    return getpauli(pstr.operator, index)
+end
+
+function getpauli(pstr_int::PauliStringType, index::Integer)
+    return getpaulibits(pstr_int, index)
+end
+
+function setpauli(pstr::PauliString, index::Integer, pauli::T) where {T<:Union{Symbol,PauliType}}
+    return PauliString(pstr.nqubits, setpauli(pstr.operator, index, pauli), str.coeff)
+end
+
+function setpauli(pstr_int::PauliStringType, index, pauli::PauliType)
+    return setpaulibits(pstr_int, index, pauli)
+end
+
+function setpauli(pstr_int::PauliStringType, index, pauli::Symbol)
+    return setpauli(pstr_int, index, symboltoint(pauli))
+end
+
 
 ## Helper functions for pretty printing
-inttostring(op::Integer, nq) = prod("$(inttosymbol(getpaulielement(op, ii)))" for ii in 1:nq)
+inttostring(pstr_int::PauliType, nq) = prod("$(inttosymbol(getpauli(pstr_int, ii)))" for ii in 1:nq)
 
 function getprettystr(d::Dict, nq::Int; max_lines=20)
     str = ""

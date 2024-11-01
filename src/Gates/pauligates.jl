@@ -69,7 +69,7 @@ function applynoncummuting(gate::PauliGateUnion, operator, theta, coefficient=1.
 end
 
 function commutes(gate::PauliGateUnion, oper)
-    return sum(!commutes(gate_sym, getpaulielement(oper, qind)) for (qind, gate_sym) in zip(gate.qinds, gate.symbols)) % 2 == 0
+    return sum(!commutes(gate_sym, getpauli(oper, qind)) for (qind, gate_sym) in zip(gate.qinds, gate.symbols)) % 2 == 0
 end
 
 function commutes(gate::FastPauliGate, oper::Integer)
@@ -108,9 +108,9 @@ function getnewoperator(gate::PauliGate, oper)
 
     total_sign = 1  # this coefficient will be imaginary
     for (qind, gate_sym) in zip(gate.qinds, gate.symbols)
-        sign, new_partial_op = pauliprod(gate_sym, getpaulielement(new_oper, qind))
+        sign, new_partial_op = pauliprod(gate_sym, getpauli(new_oper, qind))
         total_sign *= sign
-        new_oper = setpaulielement!(new_oper, qind, new_partial_op)
+        new_oper = setpauli(new_oper, qind, new_partial_op)
     end
     return real(1im * total_sign), new_oper
 end

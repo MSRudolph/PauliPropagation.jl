@@ -6,28 +6,28 @@ import Base: -
 """
 `PauliString`` is a struct that represents a Pauli operator acting on `nqubits` qubits.
 """
-struct PauliString{OpType<:Integer,CoeffType}
+struct PauliString{OpType<:PauliStringType,CoeffType}
     nqubits::Int
-    operator::OpType
+    operator::OpType  # TODO: rename
     coeff::CoeffType
 end
 
 """
 Constructor for a `PauliString` on `nqubits` qubits from a Symbol (:X, :Y, :Z) representing a single non-identity Pauli on qubit `qind` with coefficient `coeff`.
 """
-function PauliString(nqubits::Integer, symbol::Symbol, qind::Integer, coeff=1.0)
-    temp_op = symboltoint(nqubits, symbol, qind)
+function PauliString(nqubits::Integer, pauli::Symbol, qind::Integer, coeff=1.0)
+    pauli = symboltoint(nqubits, pauli, qind)
     coeff = _convertcoefficients(coeff)
-    return PauliString(nqubits, temp_op, coeff)
+    return PauliString(nqubits, pauli, coeff)
 end
 
 """
 Constructor for a `PauliString` on `nqubits` qubits from a list of Symbols representing non-identity Pauli operator on qubits `qinds` with coefficient `coeff`.
 """
-function PauliString(nqubits, symbols::Vector{Symbol}, qinds::Vector{Int}, coeff=1.0)
-    temp_op = symboltoint(nqubits, symbols, qinds)
+function PauliString(nqubits, pstr_vec::Vector{Symbol}, qinds::Vector{Int}, coeff=1.0)
+    pauli = symboltoint(nqubits, pstr_vec, qinds)
     coeff = _convertcoefficients(coeff)
-    return PauliString(nqubits, temp_op, coeff)
+    return PauliString(nqubits, pauli, coeff)
 end
 
 import Base.show
@@ -101,9 +101,7 @@ PauliSum(pstr::PauliString) = PauliSum(pstr.nqubits, pstr)
 Constructor for a `PauliSum` on `nqubits` qubits from a `PauliString`.
 """
 function PauliSum(nq::Int, pstr::PauliString{OpType,CoeffType}) where {OpType,CoeffType}
-
     _checknumberofqubits(nq, pstr)
-
     return PauliSum(nq, Dict{OpType,CoeffType}(pstr.operator => pstr.coeff))
 end
 
@@ -126,30 +124,30 @@ end
 Get the coefficient of a Pauli operator in a `PauliSum` by providing a Pauli operator as a Symbol acting on qubit `qind`. 
 This is consistent with how operators can be added to a `PauliSum` via `add!()`. Defaults to 0 if the operator is not in the `PauliSum`.
 """
-function getcoeff(psum::PauliSum{OpType,CoeffType}, operator::Symbol, qind::Integer) where {OpType,CoeffType}
-    return getcoeff(psum, symboltoint(psum.nqubits, operator, qind))
+function getcoeff(psum::PauliSum{OpType,CoeffType}, pauli::Symbol, qind::Integer) where {OpType,CoeffType}
+    return getcoeff(psum, symboltoint(psum.nqubits, pauli, qind))
 end
 
 """
 Get the coefficient of a Pauli operator in a `PauliSum` by providing a Pauli operator as a vector of Symbols acting on qubits `qinds`. 
 This is consistent with how operators can be added to a `PauliSum` via `add!()`. Defaults to 0 if the operator is not in the `PauliSum`.
 """
-function getcoeff(psum::PauliSum{OpType,CoeffType}, operator::Vector{Symbol}, qinds) where {OpType,CoeffType}
-    return getcoeff(psum, symboltoint(psum.nqubits, operator, qinds))
+function getcoeff(psum::PauliSum{OpType,CoeffType}, pstr_vec::Vector{Symbol}, qinds) where {OpType,CoeffType}
+    return getcoeff(psum, symboltoint(psum.nqubits, pstr_vec, qinds))
 end
 
 """
 Get the coefficient of a Pauli operator in a `PauliSum` by providing a Pauli operator as a vector of Symbols acting on all qubits. 
 This is consistent with how operators can be added to a `PauliSum` via `add!()`. Defaults to 0 if the operator is not in the `PauliSum`.
 """
-function getcoeff(psum::PauliSum{OpType,CoeffType}, operator::Vector{Symbol}) where {OpType,CoeffType}
-    return getcoeff(psum, symboltoint(operator))
+function getcoeff(psum::PauliSum{OpType,CoeffType}, pstr_vec::Vector{Symbol}) where {OpType,CoeffType}
+    return getcoeff(psum, symboltoint(pstr_vec))
 end
 
 """
 Returns the Pauli operators in a `PauliSum` and their coefficients as a list of `PauliString`.
 """
-topaulistrings(psum::PauliSum) = [PauliString(psum.nqubits, op, coeff) for (op, coeff) in psum.op_dict]
+topaulistrings(psum::PauliSum) = [PauliString(psum.nqubits, pauli, coeff) for (pauli, coeff) in psum.op_dict]
 
 """
 Copy a `PauliSum` by copying its `op_dict`.
@@ -185,30 +183,30 @@ import Base: ==
 """
 Equality check for `PauliSum`.
 """
-function ==(ps1::PauliSum, ps2::PauliSum)
-    if ps1.nqubits != ps2.nqubits
+function ==(psum1::PauliSum, psum2::PauliSum)
+    if psum1.nqubits != psum2.nqubits
         return false
     end
 
-    return ps1.op_dict == ps2.op_dict
+    return psum1.op_dict == psum2.op_dict
 end
 
 """
 Multiply a `PauliSum` by a scalar `c` in-place.
 """
-function mult!(ps::PauliSum, c::Number)
+function mult!(psum::PauliSum, c::Number)
     # multiply in-place
-    for (k, v) in ps.op_dict
-        ps.op_dict[k] *= c
+    for (k, v) in psum.op_dict
+        psum.op_dict[k] *= c
     end
-    return ps
+    return psum
 end
 
 """
 Multiply a `PauliSum` by a scalar `c`. This copies the PauliSum.
 """
-function *(ps::PauliSum, c::Number)
-    ps_copy = copy(ps)  #TODO: make sure deepcopy is not needed
+function *(psum::PauliSum, c::Number)
+    ps_copy = copy(psum)  #TODO: make sure deepcopy is not needed
     mult!(ps_copy, c)
     return ps_copy
 end
@@ -216,8 +214,8 @@ end
 """
 Divide a `PauliSum` by a scalar `c`. This copies the PauliSum.
 """
-function /(ps::PauliSum, c::Number)
-    ps_copy = copy(ps)  #TODO: make sure deepcopy is not needed
+function /(psum::PauliSum, c::Number)
+    ps_copy = copy(psum)  #TODO: make sure deepcopy is not needed
     mult!(ps_copy, 1 / c)
     return ps_copy
 end
@@ -271,16 +269,16 @@ end
 In-place addition a Pauli operator to `PauliSum` by providing a it as a Symbol acting on qubit `qind`.
 Coefficient defaults to 1.0.
 """
-function add!(psum::PauliSum, symbol::Symbol, qind::Integer, coeff=1.0)
-    return add!(psum, PauliString(psum.nqubits, symbol, qind, coeff))
+function add!(psum::PauliSum, pauli::Symbol, qind::Integer, coeff=1.0)
+    return add!(psum, PauliString(psum.nqubits, pauli, qind, coeff))
 end
 
 """
 In-place addition a Pauli operator to `PauliSum` by providing a it as a vector of Symbols acting on qubits `qinds`.
 Coefficient defaults to 1.0.
 """
-function add!(psum::PauliSum, symbols::Vector{Symbol}, qinds::Vector{Int}, coeff=1.0)
-    return add!(psum, PauliString(psum.nqubits, symbols, qinds, coeff))
+function add!(psum::PauliSum, pstr_vec::Vector{Symbol}, qinds::Vector{Int}, coeff=1.0) # TODO: don't strinclty type qinds or similar here or elsewhere
+    return add!(psum, PauliString(psum.nqubits, pstr_vec, qinds, coeff))
 end
 
 ## Substraction
@@ -370,31 +368,31 @@ end
 """
 Checks whether the number of qubits `nqubits` is the same between our datatypes.
 """
-function _checknumberofqubits(nqubits::Int, op::Union{PauliString,PauliSum})
-    if nqubits != op.nqubits
+function _checknumberofqubits(nqubits::Int, pobj::Union{PauliString,PauliSum})
+    if nqubits != pobj.nqubits
         throw(
             ArgumentError(
-                "Number of qubits ($(nqubits)) must equal number of qubits ($(op.nqubits)) in $(typeof(op))"
+                "Number of qubits ($(nqubits)) must equal number of qubits ($(pobj.nqubits)) in $(typeof(pobj))"
             )
         )
     end
 end
 
-function _checknumberofqubits(nqubits::Int, op::Vector{Symbol})
-    if nqubits != length(op)
+function _checknumberofqubits(nqubits::Int, pstr_vec::Vector{Symbol})
+    if nqubits != length(pstr_vec)
         throw(
             ArgumentError(
-                "Number of qubits ($(op1.nqubits)) must equal number of qubits ($(length(op))) in $(typeof(op))"
+                "Number of qubits ($(op1.nqubits)) must equal number of qubits ($(length(pstr_vec))) in $(typeof(pstr_vec))"
             )
         )
     end
 end
 
-function _checknumberofqubits(op1::Union{PauliString,PauliSum}, op2::Union{PauliString,PauliSum})
-    if op1.nqubits != op2.nqubits
+function _checknumberofqubits(pobj1::Union{PauliString,PauliSum}, pobj2::Union{PauliString,PauliSum})
+    if pobj1.nqubits != pobj2.nqubits
         throw(
             ArgumentError(
-                "Number of qubits ($(op1.nqubits)) in $(typeof(op1)) must equal number of qubits ($(op2.nqubits)) in $(typeof(op2))"
+                "Number of qubits ($(pobj1.nqubits)) in $(typeof(pobj1)) must equal number of qubits ($(pobj2.nqubits)) in $(typeof(pobj2))"
             )
         )
     end
