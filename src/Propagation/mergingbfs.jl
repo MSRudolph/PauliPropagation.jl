@@ -43,14 +43,6 @@ function mergingapply(gate, operator_dict::Dict, new_operator_dict::Dict, thetas
     mergeandclear!(operator_dict, new_operator_dict)
 
     checktruncationonall!(operator_dict; kwargs...)
-    
-    # YT: old logic for custom truncation function
-    # now we use the checktruncationonone! function
-    # and pass the custom function as a keyword argument
-
-    # if !isnothing(customtruncationfunction)
-    #     customtruncatefn(operator_dict, param_idx)  # changes in-place
-    # end
 
     return operator_dict, new_operator_dict, param_idx
 end
@@ -195,9 +187,9 @@ end
     operator_dict, operator, coeff;
     max_weight::Real=Inf, min_abs_coeff=0.0,
     max_freq::Real=Inf, max_sins::Real=Inf,
-    customtruncatefn::F=nothing,
+    customtruncatefn=nothing,
     kwargs...
-) where F
+)
     is_truncated = false
     if truncateweight(operator, max_weight)
         is_truncated = true
