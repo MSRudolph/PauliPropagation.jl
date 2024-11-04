@@ -9,7 +9,7 @@ Returns the mean squared error of the truncated Pauli propagation simulation ave
 The function takes a circuit, a PauliString, and the number of Monte Carlo samples. Thetas will be set to ones and split_probabilities to 0.5 by default.
 Importantly, the `kwargs` can be used to set the truncation parameters of the Pauli propagation.
 """
-function estimateaverageerror(circ, pstr::PauliString, n_mcsamples::Integer; circuit_reversed=false, kwargs...)
+function estimateaverageerror(circ, pstr::PauliString, n_mcsamples::Integer; initialstatefunc=overlapwithzero, circuit_reversed=false, kwargs...)
     # length(thetas) should be equal to the number of parametrized gates in the circuit
     thetas = ones(countparameters(circ))
     # length(split_probabilities) should be equal to the number of total gates in the circuit
@@ -19,7 +19,7 @@ function estimateaverageerror(circ, pstr::PauliString, n_mcsamples::Integer; cir
 
     # TODO: Need to provide initial state overlapfunction
 
-    return estimateaverageerror!(circ, pstr, outcome_array, thetas, split_probabilities; circuit_reversed=circuit_reversed, kwargs...)
+    return estimateaverageerror!(circ, pstr, outcome_array, thetas, split_probabilities; initialstatefunc=initialstatefunc, circuit_reversed=circuit_reversed, kwargs...)
 
 end
 
@@ -38,7 +38,7 @@ because they have parameters but in the average error estimation they are not us
 The the length of the `split_probabilities` vector should be equal to the number of total gates in the circuit. 
 This can be awkward, for example for non-splitting gates. But these matter for the splitting gates.
 """
-function estimateaverageerror(circ, pstr::PauliString, n_mcsamples::Integer, thetas::AbstractArray, split_probabilities::AbstractArray; circuit_reversed=false, kwargs...)
+function estimateaverageerror(circ, pstr::PauliString, n_mcsamples::Integer, thetas::AbstractArray, split_probabilities::AbstractArray; initialstatefunc=overlapwithzero, circuit_reversed=false, kwargs...)
     # length(thetas) should be equal to the number of parametrized gates in the circuit
     @assert length(thetas) == countparameters(circ)
     # length(split_probabilities) should be equal to the number of total gates in the circuit
@@ -48,7 +48,7 @@ function estimateaverageerror(circ, pstr::PauliString, n_mcsamples::Integer, the
 
     # TODO: Need to provide initial state overlapfunction
 
-    return estimateaverageerror!(circ, pstr, outcome_array, thetas, split_probabilities; circuit_reversed=circuit_reversed, kwargs...)
+    return estimateaverageerror!(circ, pstr, outcome_array, thetas, split_probabilities; initialstatefunc=initialstatefunc, circuit_reversed=circuit_reversed, kwargs...)
 
 end
 
@@ -56,7 +56,7 @@ end
 """
 In-place version of `estimateaverageerror`. This function takes an array of length m_mcsamples as an argument and modifies it in-place.
 """
-function estimateaverageerror!(circ, pstr::PauliString, outcome_array::AbstractVector, thetas::AbstractArray, split_probabilities::AbstractArray; circuit_reversed=false, kwargs...)
+function estimateaverageerror!(circ, pstr::PauliString, outcome_array::AbstractVector, thetas::AbstractArray, split_probabilities::AbstractArray; initialstatefunc=overlapwithzero, circuit_reversed=false, kwargs...)
     # This function takes an outcome_array as an argument and modifies it in-place.
 
     # length(thetas) should be equal to the number of parametrized gates in the circuit
@@ -75,8 +75,8 @@ function estimateaverageerror!(circ, pstr::PauliString, outcome_array::AbstractV
 
         # multiply the coefficient of the backpropagated Pauli with the overlap with the initial state (#TODO: provide initial state)
         # and then multply with (1 - is_valid) to get the final outcome.
-        # if not valid, then the error is coeff * overlapwithzero(final_operator), if valid, then the error is 0
-        outcome_array[ii] = final_pstr.coeff * overlapwithzero(final_pstr.operator) * (1 - is_valid)
+        # if not valid, then the error is coeff * initial_state_func(final_operator), if valid, then the error is 0
+        outcome_array[ii] = final_pstr.coeff * initialstatefunc(final_pstr.operator) * (1 - is_valid)
     end
 
     return mean(outcome_array)
@@ -97,7 +97,7 @@ function montecarlopropagation(circ, pstr::PauliString, thetas::AbstractArray, s
     coeff = pstr.coeff
     for gate in circ
 
-        coeff, pauli = mcapply(gate, pauli, coeff, thetas[param_idx], split_probabilities[prob_idx]; kwargs...)
+        coeff, pauli = mcapply(gate, pauli, coeff, thetas[param_idx], split_probabilities[prob_idx]; kwargs...) # TODO: this currently allocates a lot of memory.
 
         # check truncations
         # TODO: make this properly
@@ -118,14 +118,14 @@ function montecarlopropagation(circ, pstr::PauliString, thetas::AbstractArray, s
         # always decrement the probability index
         prob_idx -= 1
     end
-    return PauliString(pstr.nqubits, pauli, coeff), is_valid
+    return PauliString{typeof(pstr).parameters...}(pstr.nqubits, pauli, coeff), is_valid
 end
 
 # if we don't define an mcapply() function, assume that it doesn't split and that the apply function does the job
-mcapply(gate, pauli, coeff, theta, args...) = apply(gate, pauli, theta, coeff) # TODO: have more sensible default functions once the numerical certificate is figured out.
+mcapply(gate, pauli, coeff, theta, split_probability; kwargs...) = apply(gate, pauli, theta, coeff; kwargs...) # TODO: have more sensible default functions once the numerical certificate is figured out.
 
 # mcapply for Pauli gates
-function mcapply(gate::PauliGateUnion, pauli, coeff, theta, split_prob=0.5)  # 
+function mcapply(gate::PauliGateUnion, pauli, coeff, theta, split_prob=0.5; kwargs...)  # 
 
     if !commutes(gate, pauli)
         # if the gate does not commute with the operator, split with probability split_prob int a random direction.
@@ -138,7 +138,7 @@ function mcapply(gate::PauliGateUnion, pauli, coeff, theta, split_prob=0.5)  #
     return coeff, pauli
 end
 
-function mcapply(gate::AmplitudeDampingNoise, args...)  # 
+function mcapply(gate::AmplitudeDampingNoise, args...; kwargs...)  # 
     # TODO
     println("AmplitudeDampingNoise not implemented yet")
 end
