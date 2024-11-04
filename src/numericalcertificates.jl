@@ -77,6 +77,7 @@ function estimateaverageerror!(circ, pstr::PauliString, outcome_array::AbstractV
 
 end
 
+## TODO: Have easier to use versions of the functions that don't require the user to calculate the split probabilities and thetas.
 function montecarlopropagation(circ, pstr::PauliString, thetas::AbstractArray, split_probabilities::AbstractArray; circuit_reversed=false, max_weight=Inf, max_freq=Inf, max_sins=Inf, kwargs...)
     # Reverse the circ if it is not already done. Allocates memory.
     if circuit_reversed
