@@ -183,6 +183,10 @@ function add!(psum::PauliSum, symbols::Vector{Symbol}, qinds::Vector{Int}, coeff
     return add!(psum, PauliString(psum.nqubits, symbols, qinds, coeff))
 end
 
+function add!(psum::PauliSum, c::Number)
+    return add!(psum, :I, 1, c)
+end
+
 
 # Overload + for PauliSum
 function +(psum::PauliSum, pstr::PauliString)
