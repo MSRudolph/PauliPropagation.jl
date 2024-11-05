@@ -87,7 +87,7 @@ function estimateaverageerror!(circ, pstr::PauliString, outcome_array::AbstractV
         # multiply the coefficient of the backpropagated Pauli with the overlap with the initial state (#TODO: provide initial state)
         # and then multply with (1 - is_valid) to get the final outcome.
         # if not valid, then the error is coeff * initial_state_func(final_operator), if valid, then the error is 0
-        outcome_array[ii] = getnumcoeff(final_pstr.coeff) * initialstatefunc(final_pstr.operator) * (1 - is_valid)
+        outcome_array[ii] = getnumcoeff(final_pstr.coeff)^2 * initialstatefunc(final_pstr.operator)^2 * (1 - is_valid)
     end
 
     return mean(outcome_array)
@@ -155,7 +155,7 @@ function montecarlopropagation(circ, pstr::PauliString, thetas, split_probabilit
     coeff = copy(pstr.coeff)
     for gate in circ
 
-        coeff, pauli = mcapply(gate, pauli, coeff, _getelmt(thetas, param_idx), _getelmt(split_probabilities, prob_idx); kwargs...) # TODO: this currently allocates a lot of memory.
+        pauli, coeff = mcapply(gate, pauli, coeff, _getelmt(thetas, param_idx), _getelmt(split_probabilities, prob_idx); kwargs...) # TODO: this currently allocates a lot of memory.
 
         # check truncations
         # TODO: make this properly
@@ -209,7 +209,7 @@ function mcapply(gate::PauliGateUnion, pauli, coeff, theta, split_prob=0.5; kwar
         end
     end
     # the sign has abs(sign) = 1, so updating the coefficient with abs(sign) doesn't do anything
-    return coeff, pauli
+    return pauli, coeff
 end
 
 """
