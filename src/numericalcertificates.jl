@@ -70,14 +70,34 @@ function estimateaverageerror!(circ, pstr::PauliString, outcome_array::AbstractV
         # multiply the coefficient of the backpropagated Pauli with the overlap with the initial state (#TODO: provide initial state)
         # and then multply with (1 - is_valid) to get the final outcome.
         # if not valid, then the error is coeff * initial_state_func(final_operator), if valid, then the error is 0
-        outcome_array[ii] = final_pstr.coeff * initialstatefunc(final_pstr.operator) * (1 - is_valid)
+        outcome_array[ii] = getnumcoeff(final_pstr.coeff) * initialstatefunc(final_pstr.operator) * (1 - is_valid)
     end
 
     return mean(outcome_array)
 
 end
 
-## TODO: Have easier to use versions of the functions that don't require the user to calculate the split probabilities and thetas.
+
+
+
+function montecarlopropagation(circ, pstr::PauliString; circuit_reversed=false, max_weight=Inf, max_freq=Inf, max_sins=Inf, kwargs...)
+    thetas = ones(countparameters(circ)) * π  # TODO: have a mode that doesn't create arrays, just probabilities as floats.
+    return montecarlopropagation(
+        circ, pstr, thetas, split_probabilities;
+        circuit_reversed=circuit_reversed, max_weight=max_weight, max_freq=max_freq, max_sins=max_sins, kwargs...
+    )
+end
+
+
+function montecarlopropagation(circ, pstr::PauliString, thetas::AbstractArray; circuit_reversed=false, max_weight=Inf, max_freq=Inf, max_sins=Inf, kwargs...)
+    split_probabilities = _calculatesplitprobabilities(circ, thetas)
+    return montecarlopropagation(
+        circ, pstr, thetas, split_probabilities;
+        circuit_reversed=circuit_reversed, max_weight=max_weight, max_freq=max_freq, max_sins=max_sins, kwargs...
+    )
+end
+
+
 function montecarlopropagation(circ, pstr::PauliString, thetas::AbstractArray, split_probabilities::AbstractArray; circuit_reversed=false, max_weight=Inf, max_freq=Inf, max_sins=Inf, kwargs...)
     # Reverse the circ if it is not already done. Allocates memory.
     if circuit_reversed
@@ -89,7 +109,7 @@ function montecarlopropagation(circ, pstr::PauliString, thetas::AbstractArray, s
     is_valid = true
 
     pauli = pstr.operator
-    coeff = pstr.coeff
+    coeff = copy(pstr.coeff)
     for gate in circ
 
         coeff, pauli = mcapply(gate, pauli, coeff, thetas[param_idx], split_probabilities[prob_idx]; kwargs...) # TODO: this currently allocates a lot of memory.
@@ -128,8 +148,14 @@ function mcapply(gate::PauliGateUnion, pauli, coeff, theta, split_prob=0.5; kwar
     if !commutes(gate, pauli)
         # if the gate does not commute with the operator, remain with probability `split_prob` and split off with probability 1 - `split_prob`.
         if rand() > split_prob
-            # TODO: make sure this works in general and not just for numerical coefficients. For example, add to freq and nsins.
+            # branch into the new Pauli
             sign, pauli = getnewoperator(gate, pauli)
+            # for PathProperties: increment sin and frequency count
+            _incrementsinandfreq!(coeff)
+        else
+            # Pauli doesn't get changed
+            # for PathProperties: increment cos and frequency count
+            _incrementcosandfreq!(coeff)
         end
     end
     # the sign has abs(sign) = 1, so updating the coefficient with abs(sign) doesn't do anything

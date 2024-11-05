@@ -305,9 +305,19 @@ Base.show(io::IO, pth::NumericPathProperties) = print(io, "NumericPathProperties
 
 
 ## Wrapping PauliString and PauliSum in PathProperties
+function wrapcoefficients(pstr::PauliString)
+    # by default wrap into `NumericPathProperties`
+    return wrapcoefficients(pstr, NumericPathProperties)
+end
+
 function wrapcoefficients(pstr::PauliString, PathPropertiesType::Type{PP}) where {PP<:PathProperties}
     # the one-argument constructor of your PathProperties type must be defined
     return PauliString(pstr.nqubits, pstr.operator, PathPropertiesType(pstr.coeff))
+end
+
+function wrapcoefficients(psum::PauliSum)
+    # by default wrap into `NumericPathProperties`
+    return wrapcoefficients(psum, NumericPathProperties)
 end
 
 function wrapcoefficients(psum::PauliSum, PathPropertiesType::Type{PP}) where {PP<:PathProperties}
