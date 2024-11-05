@@ -223,7 +223,7 @@ end
 
 
 ### Utilities
-_getelmt(arr::AbstractArray, idx::Integer) = arr[idx]
+_getelmt(arr::AbstractArray, idx::Integer) = idx > 0 ? arr[idx] : eltype(arr)(0)
 _getelmt(num::Number, idx::Integer) = num
 
 """
