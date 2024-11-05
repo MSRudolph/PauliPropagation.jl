@@ -46,5 +46,5 @@
     wop = wrapcoefficients(PauliString(nq, :Z, rand(1:nq)))
     @test typeof(montecarlopropagation(circ, wop, ones(nparams) * π)) <: Tuple{typeof(wop),Bool}
 
-    # TODO Tests including noise channels
+    # TODO Tests including noise channel
 end

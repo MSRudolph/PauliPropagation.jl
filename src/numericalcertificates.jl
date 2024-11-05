@@ -199,7 +199,7 @@ function mcapply(gate::PauliGateUnion, pauli, coeff, theta, split_prob=0.5; kwar
         # if the gate does not commute with the operator, remain with probability `split_prob` and split off with probability 1 - `split_prob`.
         if rand() > split_prob
             # branch into the new Pauli
-            sign, pauli = getnewoperator(gate, pauli)
+            sign, pauli = getnewoperator(gate, pauli) # TODO: This allocates
             # for PathProperties: increment sin and frequency count
             _incrementsinandfreq!(coeff)
         else

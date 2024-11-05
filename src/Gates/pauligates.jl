@@ -3,6 +3,7 @@ struct PauliGate <: ParametrizedGate
     qinds::Vector{Int}
 end
 
+# TODO: We should make these type-stable by using tuples and not vectors
 struct FastPauliGate{T} <: ParametrizedGate where {T<:Integer}
     symbols::Vector{Symbol}
     qinds::Vector{Int}
@@ -114,6 +115,7 @@ function getnewoperator(gate::PauliGate, oper)
 end
 
 function getnewoperator(gate::FastPauliGate, oper)
+    # TODO: This allocates memory
     sign, new_op = pauliprod(gate.bitoperator, oper, gate.qinds)
     return real(1im * sign), new_op
 end
