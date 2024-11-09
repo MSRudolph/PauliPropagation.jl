@@ -22,7 +22,6 @@ using Test
         (:Z, :Z) => (1, :I, :Z),
     )
     mapped_CNOT = createcliffordmap(CNOT_relations)
-    # Check we get the same result
     @test mapped_CNOT == default_clifford_map[:CNOT]
 
     # H
@@ -33,6 +32,5 @@ using Test
         (:Z,) => (1, :X),
     )
     mapped_H = createcliffordmap(H_relations)
-    # Check we get the same result
     @test mapped_H == default_clifford_map[:H]
 end
