@@ -36,7 +36,7 @@ function bricklayertopology(qindices; periodic=false)
     end
 end
 
-function get2dtopology(nx, ny)
+function get2dtopology(nx, ny; periodic=false)
     topology = []
 
     for jj in 1:ny
@@ -50,6 +50,20 @@ function get2dtopology(nx, ny)
                 push!(topology, ((jj - 1) * nx + ii, (jj - 1) * nx + ii + 1))
             end
         end
+    end
+
+    if periodic
+        nq = nx * ny
+        for ii in 1:nx
+            push!(topology, (ii, nq - nx + ii))
+        end
+
+
+        for ii in 0:ny-1
+            push!(topology, (ii * nx + 1, ii * nx + nx))
+        end
+
+        topology = [pair for pair in unique(topology) if pair[1] != pair[2]]
     end
 
     return topology

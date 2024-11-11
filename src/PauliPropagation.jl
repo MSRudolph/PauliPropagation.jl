@@ -71,6 +71,8 @@ export
     appendSU4!
 
 include("truncations.jl")
+export 
+    truncatedampingcoeff
 
 include("Propagation/Propagation.jl")
 export
