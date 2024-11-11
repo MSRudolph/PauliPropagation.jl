@@ -8,7 +8,7 @@ Returns the mean squared error of the truncated Pauli propagation simulation ave
 
 The length the `thetas` vector should be equal to the number of parametrized gates in the circuit. 
 Alternatively, `thetas` can be a single real number applicable for all parametrized gates.
-The default `thetas=π` or any other non-array values assume that the cricuit consists only of `(Fast)PauliGates` -`CliffordGates`.
+The default `thetas=π` or any other non-array values assume that the circuit consists only of `(Fast)PauliGates` -`CliffordGates`.
 For `PauliGates`, the value should be the integration range of the parameters around zero.
 For other currently supported parametrized gates, potential splitting probabilities can be derived from the parameters (e.g., for `AmplitudeDampingNoise`). 
 We currently support no non-parametrized splitting gates. This may change in the future.
@@ -81,7 +81,7 @@ end
 Perform a single Monte Carlo propagation of a Pauli string through a circuit. Returns the final Pauli string and a boolean indicating whether the path was truncated.
 
 The length the `thetas` vector should be equal to the number of parametrized gates in the circuit. Alternatively, `thetas` can be a single real number applicable for all parametrized gates.
-The default `thetas=π` or any other non-array values assume that the cricuit consists only of `(Fast)PauliGates` -`CliffordGates`.
+The default `thetas=π` or any other non-array values assume that the circuit consists only of `(Fast)PauliGates` -`CliffordGates`.
 For `PauliGates`, `thetas` should be the integration range of the parameters around zero.
 For other currently supported parametrized gates, potential splitting probabilities can be derived from the parameters (e.g., for `AmplitudeDampingNoise`). 
 We currently support no non-parametrized splitting gates. This may change in the future.
@@ -209,7 +209,7 @@ end
 
 """
 Function that automatically calculates the splitting probability of the gates in the circuit based on a one number theta.
-The default `thetas=π` or any other non-array values assume that the cricuit consists only of `(Fast)PauliGates` -`CliffordGates`.
+This assumes that the circuit consists only of `(Fast)PauliGates` -`CliffordGates`.
 """
 function _calculatesplitprobabilities(circ::AbstractArray, r::Number)
     return 0.5 * (1 + sin(2 * r) / (2 * r))
