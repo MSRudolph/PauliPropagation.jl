@@ -1,56 +1,139 @@
 # TODO: generate these definitions with Macro's instead? Easier to maintain and less error-prone
 
+"""
+    countweight(pstr::PauliString)
+
+Function to count the weight of a `PauliString`.
+"""
 function countweight(pstr::PauliString)
     return countweight(pstr.operator)
 end
 
-function countweight(psum::PauliSum)
-    return countweight(psum.op_dict)
-end
+"""
+    countweight(pstr::PauliStringType)
 
-function countweight(psum::Dict{OpType,CoeffType}) where {OpType<:PauliStringType,CoeffType}
-    return [countweight(pstr) for pstr in keys(psum)]
-end
-
+Function to count the weight of a Pauli string in its integer representation.
+"""
 function countweight(pstr::PauliStringType)
     return _countbitweight(pstr)
 end
 
+"""
+    countweight(psum::PauliSum)
+
+Function to count the weight Pauli strings in a `PauliSum`. Returns an array of weights.
+"""
+function countweight(psum::PauliSum)
+    return countweight(psum.op_dict)
+end
+
+"""
+    countweight(psum::Dict)
+
+Function to count the weight Pauli strings in a Pauli sum in the form of a `Dict`. Returns an array of weights.
+"""
+function countweight(psum::Dict)
+    return [countweight(pstr) for pstr in keys(psum)]
+end
+
+"""
+    countxy(pstr::PauliString)
+
+Function to count the number of X and Y Paulis in a `PauliString`.
+"""
 function countxy(pstr::PauliString)
     return countxy(pstr.operator)
 end
 
-function countxy(psum::PauliSum)
-    return countxy(psum.op_dict)
-end
+"""
+    countxy(pstr::PauliStringType)
 
-function countxy(psum::Dict{OpType,CoeffType}) where {OpType<:PauliStringType,CoeffType}
-    return [countxy(pstr) for pstr in keys(psum)]
-end
-
+Function to count the number of X and Y Paulis in a Pauli string in its integer representation.
+"""
 function countxy(pstr::PauliStringType)
     return _countbitxy(pstr)
 end
 
+"""
+    countxy(psum::PauliSum)
+
+Function to count the number of X and Y Paulis in a `PauliSum`. Returns an array of counts.
+"""
+function countxy(psum::PauliSum)
+    return countxy(psum.op_dict)
+end
+
+"""
+    countxy(psum::Dict)
+
+Function to count the number of X and Y Paulis in a Pauli sum in the form of a `Dict`. Returns an array of counts.
+"""
+function countxy(psum::Dict)
+    return [countxy(pstr) for pstr in keys(psum)]
+end
+
+"""
+    countyz(pstr::PauliString)
+
+Function to count the number of Y and Z Paulis in a `PauliString`.
+"""
 function countyz(pstr::PauliString)
     return countyz(pstr.operator)
 end
 
-function countyz(psum::PauliSum)
-    return countxy(psum.op_dict)
-end
+"""
+    countyz(pstr::PauliStringType)
 
-function countyz(psum::Dict{OpType,CoeffType}) where {OpType<:PauliStringType,CoeffType}
-    return [countxy(pstr) for pstr in keys(psum)]
-end
-
+Function to count the number of Y and Z Paulis in a Pauli string in its integer representation.
+"""
 function countyz(pstr::PauliStringType)
     return _countbityz(pstr)
 end
 
+"""
+    countyz(psum::PauliSum)
+
+Function to count the number of Y and Z Paulis in a `PauliSum`. Returns an array of counts.
+"""
+function countyz(psum::PauliSum)
+    return countxy(psum.op_dict)
+end
+
+"""
+    countyz(psum::Dict)
+
+Function to count the number of Y and Z Paulis in a Pauli sum in the form of a `Dict`. Returns an array of counts.
+"""
+function countyz(psum::Dict)
+    return [countxy(pstr) for pstr in keys(psum)]
+end
+
+"""
+    containsXorY(pstr::PauliString)
+
+Check if a Pauli string contains an X or Y operator.
+"""
 containsXorY(pstr::PauliString) = containsXorY(pstr.operator)
+
+"""
+    containsXorY(pstr::PauliStringType)
+
+Check if a Pauli string in its integer representation contains an X or Y operator.
+"""
 containsXorY(pstr::PauliStringType) = countxy(pstr) > 0
+
+"""
+    containsXorY(pstr::PauliString)
+
+Check if a Pauli string contains a Y or Z operator.
+"""
 containsYorZ(pstr::PauliString) = containsYorZ(pstr.operator)
+
+"""
+    containsYorZ(pstr::PauliStringType)
+
+Check if a Pauli string in its integer representation contains a Y or Z operator.
+"""
 containsYorZ(pstr::PauliStringType) = countyz(pstr) > 0
 
 
@@ -125,19 +208,45 @@ function commutes(pauli1::Symbol, pauli2::Symbol)
 end
 
 ## Commutator
+"""
+    commutator(psum1::PauliSum, psum2::PauliSum)
+    
+Calculate the commutator of two `PauliSum`s.
+"""
 function commutator(psum1::PauliSum, psum2::PauliSum)
     new_op_dict = commutator(psum1.op_dict, psum2.op_dict)
     return PauliSum(psum1.nqubits, new_op_dict)
 end
 
+"""
+    commutator(pstr1::PauliString, pstr2::PauliString)
+
+Calculate the commutator of two `PauliString`s.
+"""
 function commutator(pstr1::PauliString, pstr2::PauliString)
     new_coeff, new_op = commutator(pstr1.operator, pstr2.operator)
     return PauliString(pstr1.nqubits, new_op, new_coeff)
 end
 
+"""
+    commutator(psum::PauliSum, pstr::PauliString)
+
+Calculate the commutator of a `PauliSum` and a `PauliString`.
+"""
 commutator(psum::PauliSum, pstr::PauliString) = commutator(psum, PauliSum(pstr))
+
+"""
+    commutator(pstr::PauliString, psum::PauliSum)
+
+Calculate the commutator of a `PauliString` and a `PauliSum`.
+"""
 commutator(pstr::PauliString, psum::PauliSum) = commutator(PauliSum(pstr), psum)
 
+"""
+    commutator(pstr1::PauliStringType, pstr2::PauliStringType)
+
+Calculate the commutator of two Pauli strings in their integer representation.
+"""
 function commutator(pstr1::PauliStringType, pstr2::PauliStringType)
 
     if commutes(pstr1, pstr2)
@@ -150,6 +259,12 @@ function commutator(pstr1::PauliStringType, pstr2::PauliStringType)
     return 2 * total_sign, new_oper
 end
 
+
+"""
+    commutator(psum1::Dict{OpType,CoeffType1}, psum2::Dict{OpType,CoeffType2}) where {OpType<:PauliStringType,CoeffType1,CoeffType2}
+
+Calculate the commutator of two Pauli sums in the form of a `Dict`.
+"""
 function commutator(psum1::Dict{OpType,CoeffType1}, psum2::Dict{OpType,CoeffType2}) where {OpType<:PauliStringType,CoeffType1,CoeffType2}
     # different types of coefficients are allowed but not different types of operators
 
@@ -174,12 +289,22 @@ function commutator(psum1::Dict{OpType,CoeffType1}, psum2::Dict{OpType,CoeffType
 end
 
 ## Pauli product
+"""
+    pauliprod(pstr1::PauliString, pstr2::PauliString)
+
+Calculate the product of two `PauliString`s. For example `X*Y = iZ`.
+"""
 function pauliprod(pstr1::PauliString, pstr2::PauliString)
     _checknumberofqubits(pstr1, pstr2)
     sign, coeff = pauliprod(pstr1.operator, pstr2.operator)
     return PauliString(pstr1.nqubits, coeff, sign * pstr1.coeff * pstr2.coeff)
 end
 
+"""
+    pauliprod(pauli1::PauliStringType, pauli2::PauliStringType)
+
+Calculate the product of two Pauli strings in their integer representation.
+"""
 function pauliprod(pauli1::PauliStringType, pauli2::PauliStringType)
     # This function is for when we need to globally check the sign of the product (like in general products of Paulis, not local Pauli gates)
     pauli3 = _bitpaulimultiply(pauli1, pauli2)
@@ -187,16 +312,40 @@ function pauliprod(pauli1::PauliStringType, pauli2::PauliStringType)
     return sign, pauli3
 end
 
+"""
+    pauliprod(pauli1::Symbol, pauli2::PauliType)
+
+Calculate the product of two Paulis where one is a `Symbol` and the other is in the integer representation.
+"""
 function pauliprod(pauli1::Symbol, pauli2::PauliType)
     # assume that just one qubit is involved because we check commutation with a single Symbol
     return pauliprod(symboltoint(pauli1), pauli2, 1:1)
 end
 
+"""
+    pauliprod(pauli1::PauliType, pauli2::Symbol)
+
+Calculate the product of two Paulis where one is in the integer representation and the other is a `Symbol`.
+"""
+function pauliprod(pauli1::PauliType, pauli2::Symbol)
+    return pauliprod(pauli2, pauli1)
+end
+
+"""
+    pauliprod(pauli1::Symbol, pauli2::Symbol)
+
+Calculate the product of two Paulis of type `Symbol`.
+"""
 function pauliprod(pauli1::Symbol, pauli2::Symbol)
     # assume that just one qubit is involved because we check commutation with a single Symbol
     return pauliprod(symboltoint(pauli1), symboltoint(pauli2), 1:1)
 end
 
+"""
+    pauliprod(pauli1::PauliType, pauli2::PauliType)
+
+Calculate the product of two Paulis in their integer representation. Indicate via `changed_indices` which qubit sites to check.
+"""
 function pauliprod(pauli1::PauliStringType, pauli2::PauliStringType, changed_indices)
     # Calculate the Pauli product when you know on which sites the Paulis differ (changed_indices)
     pauli3 = _bitpaulimultiply(pauli1, pauli2)
@@ -204,6 +353,21 @@ function pauliprod(pauli1::PauliStringType, pauli2::PauliStringType, changed_ind
     return sign, pauli3
 end
 
+"""
+    calculatesign(pauli1::PauliStringType, pauli2::PauliStringType, pauli3::PauliStringType)
+
+Calculate the sign of the product of two Pauli strings in their integer representation. Outcomes are either ±1 or ±i.
+"""
+function calculatesign(pauli1::PauliStringType, pauli2::PauliStringType)
+    return calculatesign(pauli1, pauli2, _bitpaulimultiply(pauli1, pauli2))
+end
+
+"""
+    calculatesign(pauli1::PauliStringType, pauli2::PauliStringType, pauli3::PauliStringType)
+
+Calculate the sign of the product of two Pauli strings in their integer representation. Outcomes are either ±1 or ±i.
+Takes the product of the Paulis as argument for efficiency. 
+"""
 function calculatesign(pauli1::PauliStringType, pauli2::PauliStringType, pauli3::PauliStringType)
     # Calculate the sign of the product, loop as long as neither of the operators are Identity
     sign = Complex{Int64}(1)
@@ -216,6 +380,13 @@ function calculatesign(pauli1::PauliStringType, pauli2::PauliStringType, pauli3:
     end
     return sign
 end
+
+"""
+    calculatesign(pauli1::PauliStringType, pauli2::PauliStringType, pauli3::PauliStringType, changed_indices)
+
+Calculate the sign of the product of two Pauli strings in their integer representation. Outcomes are either ±1 or ±i.
+Takes the product of the Paulis as argument for efficiency. Indicate via `changed_indices` which qubit sites to check.
+"""
 function calculatesign(pauli1::PauliStringType, pauli2::PauliStringType, pauli3::PauliStringType, changed_indices)
     # Calculate the sign of the product but when you know on which sites the Paulis differ (changed_indices)
     sign = Complex{Int64}(1)
@@ -229,14 +400,22 @@ function calculatesign(pauli1::PauliStringType, pauli2::PauliStringType, pauli3:
     return sign
 end
 
+"""
+    generalizedlevicivita(pauli1::PauliType, pauli2::PauliType, pauli3::PauliType)
+
+Calculate the sign of the product of two Paulis in their integer representation. Outcomes are either ±1 or ±i.
+Takes the product of the Paulis as argument for efficiency. Indicate via `changed_indices` which qubit sites to check.
+
+Note, this function is the foundation of `calculatesign` but assumes that the only (potentially) non-identity Pauli is on the first site.
+"""
+function generalizedlevicivita(pauli1::PauliType, pauli2::PauliType, pauli3::PauliType)
+    # acts like levicivita but yields the correct sign for products with I or P^2, and takes care of the imaginary coefficients in Pauli products
+    return generalized_levicivita_matrix[pauli1+1, pauli2+1, pauli3+1]
+end
+
 const generalized_levicivita_matrix = permutedims(cat(
         [1 0 0 0; 0 1 0 0; 0 0 1 0; 0 0 0 1], # first arg is I
         [0 1 0 0; 1 0 0 0; 0 0 0 1im; 0 0 -1im 0], # first arg is X
         [0 0 1 0; 0 0 0 -1im; 1 0 0 0; 0 1im 0 0], # first arg is Y
         [0 0 0 1; 0 0 1im 0; 0 -1im 0 0; 1 0 0 0]; # first arg is Z
         dims=3), (2, 3, 1))
-
-function generalizedlevicivita(pauli1::PauliType, pauli2::PauliType, pauli3::PauliType)
-    # acts like levicivita but yields the correct sign for products with I or P^2, and takes care of the imaginary coefficients in Pauli products
-    return generalized_levicivita_matrix[pauli1+1, pauli2+1, pauli3+1]
-end
