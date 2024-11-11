@@ -151,6 +151,21 @@ function _getpaulibits(pstr::PauliStringType, index::Integer)
 end
 
 """
+    _getbit(pauli::Integer, bitindex::Integer)
+
+Gets the bit at index `bitindex` in the integer representation of the Pauli operator.
+"""
+function _getbit(pauli::Integer, bitindex::Integer)
+    # return integer with ...000[bit].
+
+    # shift by bitindex
+    shifted_pauli = (pauli >> bitindex)
+
+    # AND with 1 to get first bit
+    return shifted_pauli & typeof(pauli)(1)
+end
+
+"""
     _setpaulibits(pstr::PauliStringType, pauli::PauliType, index::Integer)
 
 This function sets the Pauli operator at position `index` in the integer representation of the Pauli string.
@@ -160,8 +175,8 @@ function _setpaulibits(pstr::PauliStringType, pauli::PauliType, index::Integer)
     bitindex = 2 * (index - 1)
 
     # read bits of the pauli
-    b1 = _readbit(pauli, 0)
-    b2 = _readbit(pauli, 1)
+    b1 = _getbit(pauli, 0)
+    b2 = _getbit(pauli, 1)
 
     # insert them into the pstr
     pstr = _setbit(pstr, b1, bitindex)
@@ -220,15 +235,6 @@ function _setbittozero(pstr::Integer, bitindex::Integer)
     return pstr
 end
 
-function _readbit(pauli::Integer, bitindex::Integer)
-    # return integer with ...000[bit].
-
-    # shift by bitindex
-    shifted_pauli = (pauli >> bitindex)
-
-    # AND with 1 to get first bit
-    return shifted_pauli & typeof(pauli)(1)
-end
 
 @generated function alternatingmask(pstr::T) where {T<:PauliStringType}
     # define our super bit mask looking like ....1010101.
