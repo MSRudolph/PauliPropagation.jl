@@ -28,7 +28,7 @@ using Random
     include("test_noisechannels.jl")
     @test paulinoise(8, 4, Inf, 0.0)
 
-    include("test_gates.jl")
+    include("test_cliffordgates.jl")
 
     include("test_pauligates.jl")
 
