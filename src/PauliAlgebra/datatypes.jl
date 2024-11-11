@@ -191,7 +191,7 @@ function show(io::IO, psum::PauliSum)
     if length(psum.op_dict) == 0
         dict_string = "(no operators)"
     else
-        dict_string = getprettystr(psum.op_dict, psum.nqubits)
+        dict_string = _getprettystr(psum.op_dict, psum.nqubits)
     end
     print(io, "PauliSum(nqubits: $(psum.nqubits), $dict_string)")
 end
