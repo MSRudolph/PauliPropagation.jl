@@ -90,6 +90,6 @@ end
 
 function splitapply(gate::AmplitudeDampingNoise, operator, p, coefficient=1.0)
     new_operator = copy(operator)
-    new_operator = setpauli(new_operator, gate.qind, 0)
+    new_operator = setpauli(new_operator, 0, gate.qind)
     return operator, (1 - p) * coefficient, new_operator, p * coefficient
 end

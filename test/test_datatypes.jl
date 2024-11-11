@@ -85,8 +85,8 @@ end
 
 @testset "PauliSum Tests" begin
     # Subtest for PauliSum from Dict
-    pauli_ints, pauli_cs = test_paulisum_from_dict()
-    @test pauli_ints == [symboltoint([:I, :I, :Y]), symboltoint([:I, :I, :I])]
+    paulis, pauli_cs = test_paulisum_from_dict()
+    @test paulis == [symboltoint([:I, :I, :Y]), symboltoint([:I, :I, :I])]
     @test pauli_cs == [1.0, 1.5]
 
     # Subtest for subtracting PauliSum

@@ -8,12 +8,12 @@ function countweight(psum::PauliSum)
     return countweight(psum.op_dict)
 end
 
-function countweight(pauli_dict::Dict{OpType,CoeffType}) where {OpType<:PauliStringType,CoeffType}
-    return [countweight(pauli) for pauli in keys(pauli_dict)]
+function countweight(psum::Dict{OpType,CoeffType}) where {OpType<:PauliStringType,CoeffType}
+    return [countweight(pstr) for pstr in keys(psum)]
 end
 
-function countweight(pstr_int::PauliStringType)
-    return _countbitweight(pstr_int)
+function countweight(pstr::PauliStringType)
+    return _countbitweight(pstr)
 end
 
 function countxy(pstr::PauliString)
@@ -24,12 +24,12 @@ function countxy(psum::PauliSum)
     return countxy(psum.op_dict)
 end
 
-function countxy(pauli_dict::Dict{OpType,CoeffType}) where {OpType<:PauliStringType,CoeffType}
-    return [countxy(pauli) for pauli in keys(pauli_dict)]
+function countxy(psum::Dict{OpType,CoeffType}) where {OpType<:PauliStringType,CoeffType}
+    return [countxy(pstr) for pstr in keys(psum)]
 end
 
-function countxy(pstr_int::PauliStringType)
-    return _countbitxy(pstr_int)
+function countxy(pstr::PauliStringType)
+    return _countbitxy(pstr)
 end
 
 function countyz(pstr::PauliString)
@@ -40,40 +40,88 @@ function countyz(psum::PauliSum)
     return countxy(psum.op_dict)
 end
 
-function countyz(pauli_dict::Dict{OpType,CoeffType}) where {OpType<:PauliStringType,CoeffType}
-    return [countxy(pauli) for pauli in keys(pauli_dict)]
+function countyz(psum::Dict{OpType,CoeffType}) where {OpType<:PauliStringType,CoeffType}
+    return [countxy(pstr) for pstr in keys(psum)]
 end
 
-function countyz(oper::PauliStringType)
-    return _countbityz(oper)
+function countyz(pstr::PauliStringType)
+    return _countbityz(pstr)
 end
 
 containsXorY(pstr::PauliString) = containsXorY(pstr.operator)
-containsXorY(pstr_int::PauliStringType) = countxy(pstr_int) > 0
+containsXorY(pstr::PauliStringType) = countxy(pstr) > 0
 containsYorZ(pstr::PauliString) = containsYorZ(pstr.operator)
-containsYorZ(pstr_int::PauliStringType) = countyz(pstr_int) > 0
+containsYorZ(pstr::PauliStringType) = countyz(pstr) > 0
 
 
 ### All the commutation check functions
-function commutes(sym1::Symbol, sym2::Symbol)::Bool
-    if sym1 == :I || sym2 == :I
+"""
+    commutes(pstr1::PauliString, pstr2::PauliString)
+
+Check if two Pauli strings of type `PauliString` commute.
+"""
+function commutes(pstr1::PauliString, pstr2::PauliString)
+    return commutes(pstr1.operator, pstr2.operator)
+end
+
+"""
+    commutes(pstr1::PauliStringType, pstr2::PauliStringType)
+
+Check if two Pauli strings of in their integer representation commute.
+"""
+function commutes(pstr1::PauliStringType, pstr2::PauliStringType)
+    return _bitcommutes(pstr1, pstr2)
+end
+
+"""
+    commutes(psum1::PauliSum, psum2::PauliSum)
+
+Check if two Pauli sums of type `PauliSum` commute.
+"""
+function commutes(psum1::PauliSum, psum2::PauliSum)
+    comm = commutator(psum1.op_dict, psum2.op_dict)
+    return isempty(comm)
+end
+
+"""
+    function commutes(psum1::Dict{OpType,CoeffType1}, psum2::Dict{OpType,CoeffType2}) where {OpType<:PauliStringType,CoeffType1,CoeffType2}
+
+Check if two Pauli sums of type `PauliSum` commute.
+"""
+function commutes(psum1::Dict{OpType,CoeffType1}, psum2::Dict{OpType,CoeffType2}) where {OpType<:PauliStringType,CoeffType1,CoeffType2}
+    comm = commutator(psum1, psum2)
+    return isempty(comm)
+end
+
+"""
+    commutes(pauli1::Symbol, pauli2::PauliType)
+
+Check if two Paulis commute where one is a `Symbol` and the other is in the integer representation.
+"""
+function commutes(pauli1::Symbol, pauli2::PauliType)
+    return commutes(pauli1, inttosymbol(pauli2))
+end
+
+"""
+    commutes(pauli1::PauliType, pauli2::Symbol)
+
+Check if two Paulis commute where one is in the integer representation and the other is a `Symbol`.
+"""
+function commutes(pauli1::PauliType, pauli2::Symbol)
+    return commutes(pauli2, pauli1)
+end
+
+"""
+    commutes(pauli1::Symbol, pauli2::Symbol)
+
+Check if two Paulis of type `Symbol` commute.
+"""
+function commutes(pauli1::Symbol, pauli2::Symbol)
+    if pauli1 == :I || pauli2 == :I
         return true
     else
-        return sym1 == sym2
+        return pauli1 == pauli2
     end
-end
-
-function commutes(sym1::Symbol, pauli_ind::PauliType)::Bool
-    return commutes(sym1, inttosymbol(pauli_ind))
-end
-
-function commutes(oper1::PauliStringType, oper2::PauliStringType)
-    return _bitcommutes(oper1, oper2)
-end
-
-function commutes(oper1::Dict{T,Float64}, oper2::Dict{T,Float64}) where {T<:PauliStringType}
-    comm = commutator(oper1, oper2)
-    return isempty(comm)
 end
 
 ## Commutator
@@ -90,24 +138,24 @@ end
 commutator(psum::PauliSum, pstr::PauliString) = commutator(psum, PauliSum(pstr))
 commutator(pstr::PauliString, psum::PauliSum) = commutator(PauliSum(pstr), psum)
 
-function commutator(pstr1_int::PauliStringType, pstr2_int::PauliStringType)
+function commutator(pstr1::PauliStringType, pstr2::PauliStringType)
 
-    if commutes(pstr1_int, pstr2_int)
+    if commutes(pstr1, pstr2)
         total_sign = ComplexF64(0.0)
-        new_oper = zero(typeof(pstr1_int))
+        new_oper = zero(typeof(pstr1))
     else
-        total_sign, new_oper = pauliprod(pstr1_int, pstr2_int)
+        total_sign, new_oper = pauliprod(pstr1, pstr2)
     end
     # commutator is [A, B] = AB - BA = 2AB for non-commuting (meaning anti-commuting) Paulis
     return 2 * total_sign, new_oper
 end
 
-function commutator(pauli_dict1::Dict{OpType,CoeffType1}, pauli_dict2::Dict{OpType,CoeffType2}) where {OpType<:PauliStringType,CoeffType1,CoeffType2}
+function commutator(psum1::Dict{OpType,CoeffType1}, psum2::Dict{OpType,CoeffType2}) where {OpType<:PauliStringType,CoeffType1,CoeffType2}
     # different types of coefficients are allowed but not different types of operators
 
     new_pauli_dict = Dict{OpType,ComplexF64}()
 
-    for (pauli1, coeff1) in pauli_dict1, (pauli2, coeff2) in pauli_dict2
+    for (pauli1, coeff1) in psum1, (pauli2, coeff2) in psum2
         if !commutes(pauli1, pauli2)
             sign, new_op = commutator(pauli1, pauli2)
             new_pauli_dict[new_op] = get(new_pauli_dict, new_op, ComplexF64(0.0)) + sign * coeff1 * coeff2
@@ -142,6 +190,11 @@ end
 function pauliprod(pauli1::Symbol, pauli2::PauliType)
     # assume that just one qubit is involved because we check commutation with a single Symbol
     return pauliprod(symboltoint(pauli1), pauli2, 1:1)
+end
+
+function pauliprod(pauli1::Symbol, pauli2::Symbol)
+    # assume that just one qubit is involved because we check commutation with a single Symbol
+    return pauliprod(symboltoint(pauli1), symboltoint(pauli2), 1:1)
 end
 
 function pauliprod(pauli1::PauliStringType, pauli2::PauliStringType, changed_indices)

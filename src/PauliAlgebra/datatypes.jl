@@ -64,7 +64,7 @@ struct PauliSum{OpType<:Integer,CoeffType}
 end
 
 """
-Contructor for an empty `PauliSum` on `nq` qubits.
+Contructor for an empty `PauliSum` on `nqubits` qubits.
 """
 PauliSum(nqubits::Integer) = PauliSum(nqubits, Dict{getinttype(nqubits),Float64}())
 
@@ -78,17 +78,17 @@ Args:
 Returns:
     PauliSum
 """
-function PauliSum(nqubits::Integer, sym_dict::Dict{Vector{Symbol},CoeffType}) where {CoeffType}
+function PauliSum(nqubits::Integer, psum::Dict{Vector{Symbol},CoeffType}) where {CoeffType}
 
-    _checknumberofqubits.(nqubits, keys(sym_dict))
+    _checknumberofqubits.(nqubits, keys(psum))
 
-    int_dict = Dict(symboltoint(k) => _convertcoefficients(v) for (k, v) in sym_dict)
+    int_dict = Dict(symboltoint(k) => _convertcoefficients(v) for (k, v) in psum)
 
     return PauliSum(nqubits, int_dict)
 end
 
 """
-Trivial constructor for a `PauliSum` on `nqubits` qubits from a `PauliSum`. Returns the same `PauliSum`.
+Trivial constructor for a `PauliSum` on `nqubits` qubits from a `PauliSum`. Returns the same `PauliSum` and does not copy.
 """
 PauliSum(psum::PauliSum) = psum
 

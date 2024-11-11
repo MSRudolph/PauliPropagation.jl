@@ -1,42 +1,42 @@
 
-const pauli_ops::Vector{Symbol} = [:I, :X, :Y, :Z]   # maps to 0 1 2 3
+const pauli_symbols::Vector{Symbol} = [:I, :X, :Y, :Z]   # maps to 0 1 2 3
 
-symboltoint(pauli::Symbol) = findfirst(s -> s == pauli, pauli_ops) - 1
+symboltoint(pauli::Symbol) = findfirst(s -> s == pauli, pauli_symbols) - 1
 symboltoint(pauli) = pauli
-inttosymbol(pauli::PauliType) = pauli_ops[pauli+1]
+inttosymbol(pauli::PauliType) = pauli_symbols[pauli+1]
 inttosymbol(pauli) = pauli
 
-function symboltoint(pstr_vec::Vector{Symbol})
-    nqubits = length(pstr_vec)
-    pstr_int = getinttype(nqubits)(0)
-    for (ii, symbol) in enumerate(pstr_vec)
-        pstr_int = setpauli(pstr_int, ii, symboltoint(symbol))
+function symboltoint(pstr::Vector{Symbol})
+    nqubits = length(pstr)
+    converted_pstr = getinttype(nqubits)(0)
+    for (qind, pauli) in enumerate(pstr)
+        converted_pstr = setpauli(converted_pstr, pauli, qind)
     end
-    return pstr_int
+    return converted_pstr
 end
 
-function symboltoint(nqubits::Integer, pstr_vec::Vector{Symbol}, qinds) # TODO: pauli argument should always be first!
+function symboltoint(nqubits::Integer, pstr::Vector{Symbol}, qinds) # TODO: pauli argument should always be first!
     inttype = getinttype(nqubits)
-    pstr_int = inttype(0)
-    for (pauli, qind) in zip(pstr_vec, qinds)
-        pstr_int = setpauli(pstr_int, qind, symboltoint(pauli))
+    converted_pstr = inttype(0)
+    for (qind, pauli) in zip(qinds, pstr)
+        converted_pstr = setpauli(converted_pstr, pauli, qind)
     end
-    return pstr_int
+    return converted_pstr
 end
 
 function symboltoint(nqubits::Integer, pauli::Symbol, qind::Integer)
     inttype = getinttype(nqubits)
-    pstr_int = inttype(0)
-    pstr_int = setpauli(pstr_int, qind, symboltoint(pauli))
-    return pstr_int
+    converted_pauli = inttype(0)
+    converted_pauli = setpauli(converted_pauli, pauli, qind)
+    return converted_pauli
 end
 
-function inttosymbol(pauli::PauliStringType, nqubits::Integer)
-    symbols = [:I for _ in 1:nqubits]
+function inttosymbol(pstr::PauliStringType, nqubits::Integer)
+    converted_pstr = [:I for _ in 1:nqubits]
     for ii in 1:nqubits
-        symbols[ii] = inttosymbol(getpauli(pauli, ii))
+        converted_pstr[ii] = inttosymbol(getpauli(pstr, ii))
     end
-    return symbols
+    return converted_pstr
 end
 
 ## get and set functions
@@ -44,38 +44,38 @@ function getpauli(pstr::PauliString, index::Integer)
     return getpauli(pstr.operator, index)
 end
 
-function getpauli(pstr_int::PauliStringType, index::Integer)
-    return getpaulibits(pstr_int, index)
+function getpauli(pstr::PauliStringType, index::Integer)
+    return _getpaulibits(pstr, index)
 end
 
-function setpauli(pstr::PauliString, index::Integer, pauli::T) where {T<:Union{Symbol,PauliType}}
-    return PauliString(pstr.nqubits, setpauli(pstr.operator, index, pauli), str.coeff)
+function setpauli(pstr::PauliString, pauli::T, index::Integer) where {T<:Union{Symbol,PauliType}}
+    return PauliString(pstr.nqubits, setpauli(pstr.operator, pauli, index), str.coeff)
 end
 
-function setpauli(pstr_int::PauliStringType, index, pauli::PauliType)
-    return setpaulibits(pstr_int, index, pauli)
+function setpauli(pstr::PauliStringType, pauli::PauliType, index::Integer)
+    return _setpaulibits(pstr, pauli, index)
 end
 
-function setpauli(pstr_int::PauliStringType, index, pauli::Symbol)
-    return setpauli(pstr_int, index, symboltoint(pauli))
+function setpauli(pstr::PauliStringType, pauli::Symbol, index::Integer)
+    # `symboltoint` to ensure we work with `PauliType`, i.e., integers
+    return setpauli(pstr, symboltoint(pauli), index)
 end
-
 
 ## Helper functions for pretty printing
-inttostring(pstr_int::PauliType, nq) = prod("$(inttosymbol(getpauli(pstr_int, ii)))" for ii in 1:nq)
+inttostring(pstr::PauliType, nqubits) = prod("$(inttosymbol(getpauli(pstr, ii)))" for ii in 1:nqubits)
 
-function getprettystr(d::Dict, nq::Int; max_lines=20)
+function getprettystr(psum::Dict, nqubits::Int; max_lines=20)
     str = ""
-    header = length(d) == 1 ? "1 Pauli term: \n" : "$(length(d)) Pauli terms:\n"
+    header = length(psum) == 1 ? "1 Pauli term: \n" : "$(length(psum)) Pauli terms:\n"
     str *= header
 
-    for (ii, (op, coeff)) in enumerate(d)
+    for (ii, (op, coeff)) in enumerate(psum)
         if ii > max_lines
             new_str = "  ⋮"
             str *= new_str
             break
         end
-        pauli_string = inttostring(op, nq)
+        pauli_string = inttostring(op, nqubits)
         if length(pauli_string) > 20
             pauli_string = pauli_string[1:20] * "..."
         end
