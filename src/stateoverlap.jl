@@ -12,11 +12,15 @@ end
 function overlapbyorthogonality(op_dict::Dict, orthogonalfunc)
     val = 0.0
     for (operator, coeff) in op_dict
-        if !orthogonalfunc(operator)
+        if overlapbyorthogonality(operator, orthogonalfunc)
             val += getnumcoeff(coeff)
         end
     end
     return val
+end
+
+function overlapbyorthogonality(op::Integer, orthogonalfunc)
+    return !orthogonalfunc(op)
 end
 
 ## For the typical |0> or |+> cases

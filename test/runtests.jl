@@ -36,4 +36,6 @@ using Random
 
     include("test_truncations.jl")
 
+    include("test_numericalcertificates.jl")
+
 end

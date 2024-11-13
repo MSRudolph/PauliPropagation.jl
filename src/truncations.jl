@@ -39,7 +39,7 @@ end
 """
 Return `true` if  `PathProperties.nsins > max_sins`. Truncations on coefficients should default to false if it is not applicable for a type.
 """
-function truncatesins(path_properties, max_sins::Real)
+function truncatesins(coeff, max_sins::Real)
     return false
 end
 

@@ -71,7 +71,7 @@ export
     appendSU4!
 
 include("truncations.jl")
-export 
+export
     truncatedampingcoeff
 
 include("Propagation/Propagation.jl")
@@ -92,6 +92,13 @@ export
     zerofilter,
     evaluateagainstdict,
     getnumcoeff
+
+include("numericalcertificates.jl")
+export
+    estimateaverageerror,
+    estimateaverageerror!,
+    montecarlopropagation,
+    mcapply
 
 include("surrogate.jl")
 export

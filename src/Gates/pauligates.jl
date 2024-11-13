@@ -3,6 +3,7 @@ struct PauliGate <: ParametrizedGate
     qinds::Vector{Int}
 end
 
+# TODO: We should make these type-stable by using tuples and not vectors
 struct FastPauliGate{T} <: ParametrizedGate where {T<:Integer}
     symbols::Vector{Symbol}
     qinds::Vector{Int}
@@ -86,8 +87,7 @@ end
 
 function applysin(path_properties::PathProperties, theta; sign=1, kwargs...)
     # path_properties = copy(path_properties) # copy not necesasry. Was done in applycos.
-    path_properties.nsins += 1
-    path_properties.freq += 1
+    _incrementsinandfreq!(path_properties)
 
     path_properties.coeff = applysin(path_properties.coeff, theta; sign, kwargs...)
     return path_properties
@@ -95,8 +95,7 @@ end
 
 function applycos(path_properties::PathProperties, theta; sign=1, kwargs...)
     path_properties = copy(path_properties)
-    path_properties.ncos += 1
-    path_properties.freq += 1
+    _incrementcosandfreq!(path_properties)
 
     path_properties.coeff = applycos(path_properties.coeff, theta; sign, kwargs...)
     return path_properties
@@ -115,7 +114,29 @@ function getnewoperator(gate::PauliGate, pstr)
     return real(1im * total_sign), new_oper
 end
 
-function getnewoperator(gate::FastPauliGate, pstr::PauliStringType)
-    sign, new_op = pauliprod(gate.bitoperator, pstr, gate.qinds)
+function getnewoperator(gate::FastPauliGate, oper)
+    # TODO: This allocates memory
+    sign, new_op = pauliprod(gate.bitoperator, oper, gate.qinds)
     return real(1im * sign), new_op
+end
+
+function _incrementcosandfreq!(coeff)
+    return
+end
+
+function _incrementsinandfreq!(coeff)
+    return
+end
+
+
+function _incrementcosandfreq!(path_properties::PathProperties)
+    path_properties.ncos += 1
+    path_properties.freq += 1
+    return
+end
+
+function _incrementsinandfreq!(path_properties::PathProperties)
+    path_properties.nsins += 1
+    path_properties.freq += 1
+    return
 end
