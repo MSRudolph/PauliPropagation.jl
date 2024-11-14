@@ -31,12 +31,14 @@ If `periodic` is set to `true`, the last qubit is connected to the first qubit.
 """
 function bricklayertopology(qindices; periodic=false)
     nqubits = length(qindices)
+
+    topology = Tuple{Int,Int}[]
     if nqubits == 1
-        return []
+        return topology
     elseif nqubits == 2
-        return [(qindices[1], qindices[2])]
+        push!(topology, (qindices[1], qindices[2]))
+        return topology
     else
-        topology = Tuple{Int,Int}[]
         for ii in 1:2:nqubits-1
             push!(topology, (qindices[ii], qindices[ii+1]))
         end
@@ -55,13 +57,27 @@ function bricklayertopology(qindices; periodic=false)
 end
 
 """
+    staircasetopology(nqubits::Integer; periodic=false)
+
+Create a 1D staircase topology on `nqubits` qubits. The qubits are connected in a staircase pattern, where qubit `i` is connected to qubit `i+1`.
+If `periodic` is set to `true`, the last qubit is connected to the first qubit.
+"""
+function staircasetopology(nqubits::Integer; periodic=false)
+    topology = [(ii, ii + 1) for ii in 1:nqubits-1]
+    if periodic
+        push!(topology, (nqubits, 1))
+    end
+    return topology
+end
+
+"""
     get2dtopology(nx::Integer, ny::Integer; periodic=false)
 
 Create a 2D topology on a grid of `nx` by `ny` qubits. The order is one that works and may need to be adapted for specific purposes.
 If `periodic` is set to `true`, the grid is connected periodically in both directions.
 """
 function get2dtopology(nx::Integer, ny::Integer; periodic=false)
-    topology = []
+    topology = Tuple{Int,Int}[]
 
     for jj in 1:ny
         for ii in 1:nx
@@ -103,7 +119,7 @@ function get2dstaircasetopology(nx::Integer, ny::Integer)
     next_inds = [1]
     temp_inds = []
 
-    topology = []
+    topology = Tuple{Int,Int}[]
     while length(next_inds) > 0
         for ind in next_inds
             if ind % nx != 0
