@@ -1,42 +1,66 @@
-function countparameters(circuit::AbstractVector)
-    n_params = 0
+"""
+    countparameters(circuit)
+
+Utility function to count the number of gates of type `ParametrizedGate` in a circuit.
+"""
+function countparameters(circuit)
+    nparams = 0
     for gate in circuit
-        n_params += isa(gate, ParametrizedGate)
+        nparams += isa(gate, ParametrizedGate)
     end
-    return n_params
+    return nparams
 end
 
+## Topologies
 
-function bricklayertopology(nq::Int; periodic=false)
-    return bricklayertopology(1:nq; periodic=periodic)
+"""
+    bricklayertopology(nqubits::Integer; periodic=false)
+
+Create the topology of a so-called 1D bricklayer circuit on `nqubits` qubits. It consists of two sublayers connecting odd-even and eve-odd qubit indices, respectively.
+If `periodic` is set to `true`, the last qubit is connected to the first qubit.
+"""
+function bricklayertopology(nqubits::Integer; periodic=false)
+    return bricklayertopology(1:nqubits; periodic=periodic)
 end
 
+"""
+    bricklayertopology(qindices; periodic=false)
+
+Create the topology of a so-called 1D bricklayer circuit on a subset of qubits indicated by `qindices`.
+If `periodic` is set to `true`, the last qubit is connected to the first qubit.
+"""
 function bricklayertopology(qindices; periodic=false)
-    nq = length(qindices)
-    if nq == 1
+    nqubits = length(qindices)
+    if nqubits == 1
         return []
-    elseif nq == 2
+    elseif nqubits == 2
         return [(qindices[1], qindices[2])]
     else
-        topo = []
-        for ii in 1:2:nq-1
-            push!(topo, (qindices[ii], qindices[ii+1]))
+        topology = Tuple{Int,Int}[]
+        for ii in 1:2:nqubits-1
+            push!(topology, (qindices[ii], qindices[ii+1]))
         end
         if periodic && (qindices[end] % 2 == 1)  # odd layer
-            push!(topo, (qindices[end], qindices[1]))
+            push!(topology, (qindices[end], qindices[1]))
         end
-        for ii in 2:2:nq-1
-            push!(topo, (qindices[ii], qindices[ii+1]))
+        for ii in 2:2:nqubits-1
+            push!(topology, (qindices[ii], qindices[ii+1]))
         end
         if periodic && (qindices[end] % 2 == 0)  # even layer
-            push!(topo, (qindices[end], qindices[1]))
+            push!(topology, (qindices[end], qindices[1]))
         end
 
-        return topo
+        return topology
     end
 end
 
-function get2dtopology(nx, ny; periodic=false)
+"""
+    get2dtopology(nx::Integer, ny::Integer; periodic=false)
+
+Create a 2D topology on a grid of `nx` by `ny` qubits. The order is one that works and may need to be adapted for specific purposes.
+If `periodic` is set to `true`, the grid is connected periodically in both directions.
+"""
+function get2dtopology(nx::Integer, ny::Integer; periodic=false)
     topology = []
 
     for jj in 1:ny
@@ -70,7 +94,12 @@ function get2dtopology(nx, ny; periodic=false)
 
 end
 
-function get2dstaircasetopology(nx, ny)
+"""
+    get2dstaircasetopology(nx::Integer, ny::Integer)
+
+Create a 2D staircase topology on a grid of `nx` by `ny` qubits. Mind the order of the topology, which forms a staircase spanning the grid -> in the Schrödinger picture <-. 
+"""
+function get2dstaircasetopology(nx::Integer, ny::Integer)
     next_inds = [1]
     temp_inds = []
 
@@ -95,15 +124,22 @@ function get2dstaircasetopology(nx, ny)
     return unique(topology)
 end
 
-function hardwareefficientcircuit(n_qubits, n_layers; topology=nothing)
+## Create circuits
+"""
+    hardwareefficientcircuit(nqubits::Integer, nlayers::Integer; topology=nothing)
+
+Create a hardware-efficient circuit consisting of layers of single-qubit X-Z-X Pauli gates and YY entangling gates.
+A topology can be specified as a list of pairs of qubit indices. If no topology is specified, a bricklayer topology is used.
+"""
+function hardwareefficientcircuit(nqubits::Integer, nlayers::Integer; topology=nothing)
     circuit::Vector{Gate} = []
 
     if isnothing(topology)
-        topology = [(ii, ii + 1) for ii in 1:n_qubits-1]
+        topology = bricklayertopology(nqubits)
     end
 
-    for jj in 1:n_layers
-        for ii in 1:n_qubits
+    for _ in 1:nlayers
+        for ii in 1:nqubits
             # RX
             push!(circuit, PauliGate([:X], [ii]))
 
@@ -124,17 +160,24 @@ function hardwareefficientcircuit(n_qubits, n_layers; topology=nothing)
     return circuit
 end
 
-function efficientsu2circuit(n_qubits, n_layers; topology=nothing)
+"""
+    efficientsu2circuit(nqubits::Integer, nlayers::Integer; topology=nothing)
+
+Create a hardware-efficient circuit consisting of layers of single-qubit Y-Z Pauli gates and CNOT entangling gates.
+A topology can be specified as a list of pairs of qubit indices. If no topology is specified, a bricklayer topology is used.
+"""
+function efficientsu2circuit(nqubits::Integer, nlayers::Integer; topology=nothing)
+    # TODO: Technically the middle layers have Y-Z-Y Pauli gates, and the last Z-Y.
     circuit::Vector{Gate} = []
 
     if isnothing(topology)
-        topology = [(ii, ii + 1) for ii in 1:n_qubits-1]
+        topology = bricklayertopology(nqubits)
     end
 
-    for jj in 1:n_layers
-        for ii in 1:n_qubits
+    for jj in 1:nlayers
+        for ii in 1:nqubits
             # RY
-            push!(circuit, PauliGate([:Y], [ii]))  # TODO: make fast gates
+            push!(circuit, PauliGate([:Y], [ii]))
 
             # RZ
             push!(circuit, PauliGate([:Z], [ii]))
@@ -151,22 +194,28 @@ function efficientsu2circuit(n_qubits, n_layers; topology=nothing)
     return circuit
 end
 
+"""
+    tfitrottercircuit(nqubits::Integer, nlayers::Integer; topology=nothing, start_with_ZZ=true)
 
-function tfitrottercircuit(n_qubits, n_layers; topology=nothing, start_with_ZZ=true)
+Create a circuit that corresponds to a Trotterization of the transverse-field Ising Hamiltonian. 
+A topology can be specified as a list of pairs of qubit indices. If no topology is specified, a bricklayer topology is used.
+If `start_with_ZZ` is set to `true`, the circuit starts with a layer of ZZ gates, else with a layer of X gates. This is relevant depending on the initial state.
+"""
+function tfitrottercircuit(nqubits::Integer, nlayers::Integer; topology=nothing, start_with_ZZ=true)
     circuit::Vector{Gate} = []
 
     if isnothing(topology)
-        topology = [(ii, ii + 1) for ii in 1:n_qubits-1]
+        topology = bricklayertopology(nqubits)
     end
 
     zzlayer(circuit) = append!(circuit, (PauliGate([:Z, :Z], collect(pair)) for pair in topology))
-    xlayer(circuit) = append!(circuit, (PauliGate([:X], [ii]) for ii in 1:n_qubits))
+    xlayer(circuit) = append!(circuit, (PauliGate([:X], [ii]) for ii in 1:nqubits))
 
     if start_with_ZZ
         zzlayer(circuit)
     end
 
-    for _ in 1:n_layers-1
+    for _ in 1:nlayers-1
         xlayer(circuit)
         zzlayer(circuit)
     end
@@ -181,14 +230,21 @@ function tfitrottercircuit(n_qubits, n_layers; topology=nothing, start_with_ZZ=t
     return circuit
 end
 
-function heisenbergtrottercircuit(n_qubits, n_layers; topology=nothing)
+"""
+    heisenbergtrottercircuit(nqubits::Integer, nlayers::Integer; topology=nothing)
+
+Create a circuit that corresponds to a Trotterization of the Heisenberg Hamiltonian.
+A topology can be specified as a list of pairs of qubit indices. If no topology is specified, a bricklayer topology is used.
+Note that the gates are applied as layers of XX-YY-ZZ gates, not as layers of XX on all, then YY on all, then ZZ on all. On the bricklayer topology, these are equivalent.
+"""
+function heisenbergtrottercircuit(nqubits::Integer, nlayers::Integer; topology=nothing)
     circuit::Vector{Gate} = []
 
     if isnothing(topology)
-        topology = [(ii, ii + 1) for ii in 1:n_qubits-1]
+        topology = bricklayertopology(nqubits)
     end
 
-    for jj in 1:n_layers
+    for jj in 1:nlayers
 
         for pair in topology
             # XX
@@ -206,15 +262,21 @@ function heisenbergtrottercircuit(n_qubits, n_layers; topology=nothing)
     return circuit
 end
 
+"""
+    su4ansatz(nqubits::Integer, nlayers::Integer; topology=nothing)
 
-function su4ansatz(n_qubits, n_layers; topology=nothing)
+Create a circuit that consists of layers of SU(4) gates on a given topology. 
+SU(4) gates are decomposed via the KAK Decomposition into single-qubit Z-X-Z gates on each qubit, followed by XX-YY-ZZ gates and again single-qubit Z-X-Z gates, for a total of 15 Pauli gates.
+A topology can be specified as a list of pairs of qubit indices. If no topology is specified, a bricklayer topology is used.
+"""
+function su4ansatz(nqubits::Integer, nlayers::Integer; topology=nothing)
     circuit::Vector{Gate} = []
 
     if isnothing(topology)
-        topology = [(ii, ii + 1) for ii in 1:n_qubits-1]
+        topology = bricklayertopology(nqubits)
     end
 
-    for nl in 1:n_layers
+    for nl in 1:nlayers
         for pair in topology
             appendSU4!(circuit, pair)
         end
@@ -224,10 +286,16 @@ function su4ansatz(n_qubits, n_layers; topology=nothing)
     return circuit
 end
 
-function qcnnansatz(n_qubits; periodic=false)
+"""
+    qcnnansatz(nqubits::Integer; periodic=false)
+
+Create a Quantum Convolutional Neural Network (QCNN) ansatz on `nqubits` qubits.
+The topology for the ansatz is created by creating bricklayer topologies on half the qubits every layer. The final qubits are qubit 1 and ~`nqubits/2`, which should be measured.
+"""
+function qcnnansatz(nqubits::Integer; periodic=false)
     circuit::Vector{Gate} = []
 
-    qselection = 1:n_qubits
+    qselection = 1:nqubits
     topology = []
     while length(qselection) > 1
         # @show qselection
@@ -244,7 +312,12 @@ function qcnnansatz(n_qubits; periodic=false)
 end
 
 
+"""
+    appendSU4!(circuit, pair)
 
+Append a layer of SU(4) gates to a circuit on a given pair of qubits.
+The SU(4) gate is decomposed via the KAK Decomposition into single-qubit Z-X-Z gates on each qubit, followed by XX-YY-ZZ gates and again single-qubit Z-X-Z gates, for a total of 15 Pauli gates.
+"""
 function appendSU4!(circuit, pair)
     # arbitrary on q1
     push!(circuit, PauliGate([:Z], [pair[1]]))
