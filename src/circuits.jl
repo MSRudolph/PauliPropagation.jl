@@ -113,7 +113,8 @@ end
 """
     get2dstaircasetopology(nx::Integer, ny::Integer)
 
-Create a 2D staircase topology on a grid of `nx` by `ny` qubits. Mind the order of the topology, which forms a staircase spanning the grid -> in the Schrödinger picture <-. 
+Create a 2D staircase topology on a grid of `nx` by `ny` qubits.
+Mind the order of the topology, which forms a staircase spanning the grid -> in the Schrödinger picture <-. 
 """
 function get2dstaircasetopology(nx::Integer, ny::Integer)
     next_inds = [1]
@@ -145,7 +146,8 @@ end
     hardwareefficientcircuit(nqubits::Integer, nlayers::Integer; topology=nothing)
 
 Create a hardware-efficient circuit consisting of layers of single-qubit X-Z-X Pauli gates and YY entangling gates.
-A topology can be specified as a list of pairs of qubit indices. If no topology is specified, a bricklayer topology is used.
+A topology can be specified as a list of pairs of qubit indices. 
+If no topology is specified, a bricklayer topology is used.
 """
 function hardwareefficientcircuit(nqubits::Integer, nlayers::Integer; topology=nothing)
     circuit::Vector{Gate} = []

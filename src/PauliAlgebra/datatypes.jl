@@ -138,7 +138,7 @@ end
 Get the coefficient of a Pauli operator in a `PauliSum` by providing the `PauliString` representation of the Pauli operator. Defaults to 0 if the operator is not in the `PauliSum`.
 """
 function getcoeff(psum::PauliSum{OpType,CoeffType1}, pstr::PauliString{OpType,CoeffType2}) where {OpType,CoeffType1,CoeffType2}
-    return get(psum.op_dict, pstr.operator, CoeffType(0))
+    return get(psum.op_dict, pstr.operator, CoeffType1(0))
 end
 
 
