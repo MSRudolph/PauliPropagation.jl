@@ -324,13 +324,16 @@ function add!(psum::PauliSum, pauli::Symbol, qind::Integer, coeff=1.0)
     return add!(psum, PauliString(psum.nqubits, pauli, qind, coeff))
 end
 
+
+# TODO: add! for PauliStringType with coefficient. Use these functions throughout mergingbfs
+
 """
     add!(psum::PauliSum, pstr_vec::Vector{Symbol}, qinds::Vector{Int}, coeff=1.0)
 
 In-place addition a Pauli operator to `PauliSum` by providing a it as a vector of Symbols acting on qubits `qinds`.
 Coefficient defaults to 1.0.
 """
-function add!(psum::PauliSum, pstr::Vector{Symbol}, qinds::Vector{Int}, coeff=1.0) # TODO: don't strinclty type qinds or similar here or elsewhere
+function add!(psum::PauliSum, pstr::Vector{Symbol}, qinds::Vector{Int}, coeff=1.0) # TODO: don't strictly type qinds or similar here or elsewhere
     return add!(psum, PauliString(psum.nqubits, pstr, qinds, coeff))
 end
 
