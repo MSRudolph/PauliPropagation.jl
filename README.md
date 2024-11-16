@@ -30,7 +30,7 @@ push!(LOAD_PATH,rel_path);
 
 ## Examples
 
-You can find example notebooks in the [example folder](https://github.com/MSRudolph/PauliPropagation.jl/tree/main/examples). 
+You can find example notebooks in the `examples` folder.
 
 Here is a tiny working example where we approximately simulate the expectation value of a quantum circuit.
 ```julia
