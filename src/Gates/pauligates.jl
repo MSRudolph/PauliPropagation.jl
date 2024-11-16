@@ -43,6 +43,11 @@ struct FastPauliGate{T} <: ParametrizedGate where {T<:PauliStringType}
     bitoperator::T
 end
 
+import Base.show
+function show(io::IO, fastpauligate::FastPauliGate)
+    print(io, "FastPauliGate{$(typeof(fastpauligate.bitoperator))}($(fastpauligate.symbols), $(fastpauligate.qinds))")
+end
+
 """
     PauliGateUnion
 
