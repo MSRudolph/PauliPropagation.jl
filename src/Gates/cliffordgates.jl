@@ -1,3 +1,9 @@
+"""
+    CliffordGate(symbol::Symbol, qinds::Vector{Int})
+
+A Clifford gate with the name `symbol` acting on the qubits `qinds`.
+`symbol` needs to match any of the implemented Clifford gates in the global `default_clifford_map`.
+"""
 struct CliffordGate <: StaticGate
     symbol::Symbol
     qinds::Vector{Int}
@@ -21,26 +27,28 @@ const _default_clifford_map = Dict(
 
 const default_clifford_map = deepcopy(_default_clifford_map)
 
+"""
+    reset_clifford_map!()
+
+Reset global `default_clifford_map` to the CLifford gate implemented by default.
+"""
 function reset_clifford_map!()
     global default_clifford_map = deepcopy(_default_clifford_map)
     return
 end
 
+"""
+    createcliffordmap(gate_relations::Dict)
 
-# Generalized function to create a gate map for any gate
+Create a Clifford gate map from a dictionary of gate relations which can then be pushed to the global `default_clifford_map`.
+`gate_relations` is a dictionary with pairs like `(:X, :X) => (-1, :Z, :X)`,
+describing the action of the Clifford gate on symbols (including the sign change).
+"""
 function createcliffordmap(gate_relations::Dict)
-    """Convert gate relations to a Clifford gate map.
-
-    Args:
-    gate_relations: Dict{Tuple, Tuple} - A dictionary of gate relations
-
-    Returns:
-    mapped_gate: Vector{Tuple} - A vector of tuples representing the gate map.
-    """
-    # check that number of qubits are less than 5 (supported by UInt8)
+    # check that number of qubits are 4 or less (supported by UInt8)
     if maximum([length(k) for k in keys(gate_relations)]) > 4
         throw(ArgumentError(
-            "Number of qubits less than 5 is supported for UInt8 type."
+            "Number of qubits must be 4 or less due to UInt8 type restrictions."
         ))
     end
 
@@ -55,9 +63,7 @@ function createcliffordmap(gate_relations::Dict)
         reordered_gate_vals[idx+1] = gate_relations[gate_keys[i]]
     end
 
-    mapped_gate = Vector{
-        Tuple{Int,typeof(symboltoint(collect(gate_keys[1])))}
-    }(undef, length(gate_keys))
+    mapped_gate = Vector{Tuple{Int,UInt8}}(undef, length(gate_keys))
     for (i, v) in enumerate(reordered_gate_vals)
         mapped_gate[i] = v[1], symboltoint(collect(v[2:end]))
     end
@@ -66,29 +72,51 @@ function createcliffordmap(gate_relations::Dict)
 end
 
 ### Applying Clifford gates
+"""
+    apply(gate::CliffordGate, pstr::PauliString, args...)
+
+Apply a `CliffordGate` to a `PauliString`. Returnse a new `PauliString`.
+"""
 function apply(gate::CliffordGate, pstr::PauliString, args...)
     return PauliString(pstr.nqubits, apply(gate, pstr.operator, pstr.coeff)...)
 end
 
-function apply(gate::CliffordGate, operator, theta, coefficient)
-    return apply(gate, operator, coefficient)
-end
+"""
+    apply(gate::CliffordGate, pstr::PauliStringType, coefficient=1.0)
 
-function apply(gate::CliffordGate, operator, coefficient=1.0)
+Apply a `CliffordGate` to a Pauli string in its integer representation and an optional coefficient. 
+"""
+function apply(gate::CliffordGate, pstr::PauliStringType, coefficient=1.0)
     map_array = default_clifford_map[gate.symbol]
-    return applywithmap(gate, operator, coefficient, map_array)
+    return applywithmap(gate, pstr, coefficient, map_array)
 end
 
-function applywithmap(gate, operator, coefficient, map_array)
-    operator = copy(operator)
+"""
+    apply(gate::CliffordGate, str::PauliStringType, theta, coefficient)
+
+Apply a `CliffordGate` to a Pauli string in its integer representation and a coefficient. 
+The extra the argument may arise in other parts of the package.
+"""
+function apply(gate::CliffordGate, pstr::PauliStringType, theta, coefficient)
+    return apply(gate, pstr, coefficient)
+end
+
+"""
+    applywithmap(gate::CliffordGate, pstr::PauliStringType, coefficient, map_array)
+
+Apply a `CliffordGate` to a Pauli string in its integer representation and a coefficient 
+using the a `map_array` corresponding to the `CliffordGate`.
+"""
+function applywithmap(gate::CliffordGate, pstr::PauliStringType, coefficient, map_array)
+    pstr = copy(pstr)
     qinds = gate.qinds
 
-    lookup_op = _extractlookupop(operator, qinds)
+    lookup_op = _extractlookupop(pstr, qinds)
     sign, new_op = map_array[lookup_op+1]  # +1 because Julia is 1-indexed and lookup_op is 0-indexed
-    operator = _insertnewop!(operator, new_op, qinds)
+    pstr = _insertnewop!(pstr, new_op, qinds)
 
     coefficient = _multiplysign!(coefficient, sign)
-    return operator, coefficient
+    return pstr, coefficient
 end
 
 function _extractlookupop(operator, qinds)
