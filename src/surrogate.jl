@@ -1,27 +1,54 @@
-## For the surrogate
+### NOTE ###
+# This is an experimental submodule of PauliPropagation.julia
+# The Pauli propagation Surrogate works in the limited case of circuits consisting of Clifford gates and Pauli gates.
+# The handling is awkward and not final.
+# View this as legacy code.
+# This code will be removed in the future.
+############ 
+
+"""
+Abstract node type for the Pauli propagation Surrogate 
+"""
 abstract type CircuitNode end
 
+"""
+    EvalEndNode(operator::Integer, coefficient::Real)
 
+Node type for the Pauli strings in the observable to be backpropagated.
+"""
 @kwdef mutable struct EvalEndNode <: CircuitNode
     operator::Integer
-    coefficient::Real # eventually symbolic?
-    # func::Function = x->1.0
+    coefficient::Real
     cummulative_value::Float64 = 0.0
     is_evaluated::Bool = false
-
 end
 
-EvalEndNode(operator) = EvalEndNode(operator, 1.0)
+"""
+    EvalEndNode(operator::Integer)
 
-@kwdef mutable struct PauliGateNode <: CircuitNode #where {T<:Real}
+Constructor for `EvalEndNode` with a default coefficient of 1.0.
+"""
+EvalEndNode(operator::Integer) = EvalEndNode(operator, 1.0)
+
+"""
+    PauliGateNode(parents::Vector{Union{EvalEndNode,PauliGateNode}}, trig_inds::Vector{Int}, signs::Vector{Int}, param_idx::Int)
+
+Surrogate graph node for a Pauli gate.
+"""
+@kwdef mutable struct PauliGateNode <: CircuitNode
     parents::Vector{Union{EvalEndNode,PauliGateNode}}
     trig_inds::Vector{Int}
     signs::Vector{Int}
     param_idx::Int
-    cummulative_value::Float64 = 0.0
+    cummulative_value::Float64 = 0.0  # This must be changed to Real for automatic differentiation libraries.
     is_evaluated::Bool = false
 end
 
+"""
+    NodePathProperties(coeff::CircuitNode, nsins::Int, ncos::Int, freq::Int)
+
+Surrogate `PathProperties` type. Carries `CircuitNode`s instead of numerical coefficients.
+"""
 mutable struct NodePathProperties <: PathProperties
     coeff::CircuitNode
     nsins::Int
@@ -29,13 +56,28 @@ mutable struct NodePathProperties <: PathProperties
     freq::Int
 end
 
-NodePathProperties(coeff) = NodePathProperties(coeff, 0, 0, 0)
+"""
+    NodePathProperties(coeff::CircuitNode)
 
+One-argument constructor for `NodePathProperties`. Initializes `nsins`, `ncos`, and `freq` to 0.
+"""
+NodePathProperties(coeff::CircuitNode) = NodePathProperties(coeff, 0, 0, 0)
+
+"""
+    wrapcoefficients(pstr::PauliString, ::Type{NodePathProperties})
+
+Wrap the coefficient of a `PauliString` into `NodePathProperties`.
+"""
 function wrapcoefficients(pstr::PauliString, ::Type{NodePathProperties})
     node = NodePathProperties(EvalEndNode(pstr.operator, pstr.coeff, 0.0, false))
     return PauliString(pstr.nqubits, pstr.operator, node)
 end
 
+"""
+    wrapcoefficients(psum::PauliSum, ::Type{NodePathProperties})
+
+Wrap the coefficients of a `PauliSum` into `NodePathProperties`.
+"""
 function wrapcoefficients(psum::PauliSum, ::Type{NodePathProperties})
     # node = NodePathProperties(EvalEndNode(pstr.operator, pstr.coeff, 0.0, false))
     # return PauliString(pstr.nqubits, pstr.operator, node)
@@ -60,12 +102,12 @@ function _multiplysign!(eval_endnode::EvalEndNode, sign)
     return eval_endnode
 end
 
-function operatortopathdict(op, coefficient=1.0)
-    op = deepcopy(op)
-    # d = Dict(op => PathProperties(EvalEndNode(operator=op, coefficient=coefficient, cummulative_value=coefficient)))
-    d = Dict(op => NodePathProperties(EvalEndNode(operator=op, coefficient=coefficient, cummulative_value=coefficient)))
-    return d
-end
+## old
+# function operatortopathdict(op, coefficient=1.0)
+#     op = deepcopy(op)
+#     d = Dict(op => NodePathProperties(EvalEndNode(operator=op, coefficient=coefficient, cummulative_value=coefficient)))
+#     return d
+# end
 
 parents(node::T) where {T<:CircuitNode} = node.parents
 
@@ -127,15 +169,41 @@ function resetnodes(eval_list::Vector{<:CircuitNode})
     return
 end
 
+"""
+    expectation(eval_list::Vector{<:CircuitNode}, thetas)
 
-function gettraceevalorder(node::CircuitNode, numeric_thetas)
+Evaluate the expectation value of a Surrogate by evaluating all involved circuit nodes in the correct order.
+`eval_list` can be attained as the output of `gettraceevalorder()`
+"""
+function expectation(eval_list::Vector{<:CircuitNode}, thetas)
+    for ii in eachindex(eval_list)
+        _evalnode(eval_list[ii], thetas)
+    end
+    return getnodeval(eval_list[end])
+end
+
+"""
+    gettraceevalorder(node::CircuitNode, thetas)
+
+Return a vector of `CircuitNode`s in the order they should be evaluated to get the correct cummulative result on `node`.
+`thetas` numerically plays no role here but it needs to be the correct length given the number of parametrized gates.
+"""
+function gettraceevalorder(node::CircuitNode, thetas)
     eval_list = Union{PauliGateNode,EvalEndNode}[]
-    traceevalorder(node, numeric_thetas; eval_list)
+    traceevalorder(node, thetas; eval_list)
     return eval_list
 end
 
-function traceevalorder(node::PauliGateNode, numeric_thetas; eval_list=nothing)
-    val = 0.0
+"""
+    traceevalorder(node::PauliGateNode, thetas; eval_list=nothing)
+
+Evaluate the coefficient of `node` on the Surrogate by recursively evaluating all parents.
+`thetas` are the parameters of the circuit.
+NOTE: This requires calling `resetnodes` in-between evaluations with different `thetas`.
+`eval_list` does not need to be passed when manually using this function.
+"""
+function traceevalorder(node::PauliGateNode, thetas; eval_list=nothing)
+    val = typeof(node.cummulative_value)(0)
 
     if isevaluated(node)
         return node.cummulative_value
@@ -144,12 +212,11 @@ function traceevalorder(node::PauliGateNode, numeric_thetas; eval_list=nothing)
     node_parents = parents(node)
 
     for ii in eachindex(node_parents)
-        # exprfunc = node.funcs[ii]
         parent = node_parents[ii]
 
-        this_val = evaltrig(node.trig_inds[ii], node.signs[ii], numeric_thetas, node.param_idx)
+        this_val = _evaltrig(node.trig_inds[ii], node.signs[ii], thetas, node.param_idx)
 
-        other_val = isevaluated(parent) ? getnodeval(parent) : traceevalorder(parent, numeric_thetas; eval_list)
+        other_val = isevaluated(parent) ? getnodeval(parent) : traceevalorder(parent, thetas; eval_list)
         val += this_val * other_val
 
     end
@@ -161,8 +228,14 @@ function traceevalorder(node::PauliGateNode, numeric_thetas; eval_list=nothing)
     return node.cummulative_value
 end
 
-function traceevalorder(node::EvalEndNode, numeric_thetas; eval_list=nothing)
-    setcummulativevalue(node, node.coefficient) #node.func(numeric_thetas)
+"""
+    traceevalorder(node::EvalEndNode, thetas; eval_list=nothing)
+
+Evaluates the observable's coefficient. 
+This function likely does not need to be called manually.
+"""
+function traceevalorder(node::EvalEndNode, thetas; eval_list=nothing)
+    setcummulativevalue(node, node.coefficient)
     node.is_evaluated = true
     if !isnothing(eval_list)
         push!(eval_list, node)
@@ -170,12 +243,19 @@ function traceevalorder(node::EvalEndNode, numeric_thetas; eval_list=nothing)
     return node.cummulative_value
 end
 
-traceevalorder(nodes::Vector{<:CircuitNode}, num_thetas) = ThreadsX.sum(traceevalorder(node, num_thetas) for node in nodes)
+"""
+    traceevalorder(nodes::Vector{<:CircuitNode}, thetas)
+
+Evaluate the sum of coefficients of a vector of `CircuitNode` on the Surrogate. 
+This will be evaluated in parallel with recursive evaluation of the parents. 
+NOTE: This requires calling `resetnodes` in-between evaluations with different `thetas`.
+"""
+traceevalorder(nodes::Vector{<:CircuitNode}, thetas) = ThreadsX.sum(traceevalorder(node, thetas) for node in nodes)
 
 
 # const trig_funcs = [x -> 1.0, cos, sin] 
 
-function evaltrig(which_idx, sign, thetas, param_idx)
+function _evaltrig(which_idx, sign, thetas, param_idx)
     if which_idx == 1
         return cos(thetas[param_idx]) * sign
     elseif which_idx == -1
@@ -186,40 +266,44 @@ function evaltrig(which_idx, sign, thetas, param_idx)
     # return trig_funcs[which_idx+1](thetas[param_idx]) * sign
 end
 
-evaltrig(node::CircuitNode, thetas, ii) = evaltrig(node.trig_inds[ii], node.signs[ii], thetas, node.param_idx)
+_evaltrig(node::CircuitNode, thetas, ii) = _evaltrig(node.trig_inds[ii], node.signs[ii], thetas, node.param_idx)
 
 
 
 ## Exploratory
 
-function evalnode(node::PauliGateNode, numeric_thetas)
+function _evalnode(node::PauliGateNode, thetas)
 
-    val = sum(evaltrig(node, numeric_thetas, ii) * getnodeval(node.parents[ii]) for ii in eachindex(node.parents))
+    val = sum(_evaltrig(node, thetas, ii) * getnodeval(node.parents[ii]) for ii in eachindex(node.parents))
     # val = sum(evaltrig(node.trig_inds[ii], node.signs[ii], numeric_thetas, node.param_idx) * getnodeval(node.parents[ii]) for ii in eachindex(node.parents))
     setcummulativevalue(node, val)
     node.is_evaluated = true
     return
 end
 
-function evalnode(node::EvalEndNode, numeric_thetas)
+function _evalnode(node::EvalEndNode, thetas)
     setcummulativevalue(node, node.coefficient)
     node.is_evaluated = true
     return
 end
 
-function expectation(eval_list::Vector{<:CircuitNode}, numeric_thetas)
-    for ii in eachindex(eval_list)
-        evalnode(eval_list[ii], numeric_thetas)
-    end
-    return getnodeval(eval_list[end])
-end
 
+# TODO: not functional
+# """
+#     toevallist(final_nodes::Vector{<:CircuitNode})
 
-function toevallist(final_nodes)
-    # final_nodes = collect(pth.coeff for (obs, pth) in dsym if !containsYorZ(obs));
-    final_eval_node = PauliGateNode(parents=final_nodes, trig_inds=zeros(Int, length(final_nodes)), signs=ones(length(final_nodes)), param_idx=1, cummulative_value=0.0)
+# Return a vector of `CircuitNode`s in the order they should be evaluated to get the correct cummulative result on the final node.
+# """
+# function toevallist(final_nodes::Vector{<:CircuitNode})
+#     final_eval_node = PauliGateNode(
+#         parents=final_nodes,
+#         trig_inds=zeros(Int, length(final_nodes)),
+#         signs=ones(length(final_nodes)),
+#         param_idx=1,
+#         cummulative_value=0.0
+#     )
 
-    resetnodes(final_eval_node)
-    resetnodes(final_eval_node)
-    return eval_list = gettraceevalorder(final_eval_node, zeros(m_total))
-end
+#     resetnodes(final_eval_node)
+#     resetnodes(final_eval_node)
+#     return gettraceevalorder(final_eval_node, zeros(m_total))
+# end
