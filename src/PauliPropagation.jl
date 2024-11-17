@@ -49,6 +49,8 @@ export
     reset_clifford_map!,
     createcliffordmap,
     applywithmap,
+    ParametrizedNoiseChannel,
+    PauliNoise,
     DepolarizingNoise,
     PauliXNoise,
     PauliYNoise,

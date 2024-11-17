@@ -1,95 +1,188 @@
 # Depolarzing noise channel
+"""
+Abstract type for parametrized noise channels
+"""
+abstract type ParametrizedNoiseChannel <: ParametrizedGate end
 
-abstract type PauliNoise <: ParametrizedGate end
+"""
+Abstract type for Pauli noise, i.e., noise that is diagonal in Pauli basis
+"""
+abstract type PauliNoise <: ParametrizedNoiseChannel end
 
+
+"""
+    DepolarizingNoise(qind::Int)
+
+A depolarizing noise channel acting on the qubit at index `qind`.
+Will damp X, Y, and Z Paulis equally.
+"""
 struct DepolarizingNoise <: PauliNoise
     qind::Int
 end
 
-function apply(gate::DepolarizingNoise, operator, p, coefficient=1.0)
+"""
+    apply(gate::DepolarizingNoise, pstr::PauliStringType, p, coefficient=1.0)
 
-    if getpauli(operator, gate.qind) != 0   # non-identity operator
+Apply a depolarizing noise channel to a Pauli string `pstr` in its integer representation with noise strength `p`.
+Physically `p` is restricted to the range `[0, 1]`.
+A coefficient of the Pauli string can optionally be passed as `coefficient`.
+"""
+function apply(gate::DepolarizingNoise, pstr::PauliStringType, p, coefficient=1.0)
+
+    if getpauli(pstr, gate.qind) != 0   # non-identity operator
         coefficient *= (1 - p)
     end
 
-    return operator, coefficient
+    return pstr, coefficient
 end
 
 
 ### Pauli noise channels
+"""
+    PauliXNoise(qind::Int)
 
+A Pauli-X noise channel acting on the qubit at index `qind`.
+Will damp X Paulis.
+"""
 struct PauliXNoise <: PauliNoise
     qind::Int
 end
 
-function apply(gate::PauliXNoise, operator, p, coefficient=1.0)
+"""
+    apply(gate::PauliXNoise, pstr::PauliStringType, p, coefficient=1.0)
 
-    if getpauli(operator, gate.qind) == 1   # X operator
+Apply a Pauli-X noise channel to a Pauli string `pstr` in its integer representation with noise strength `p`.
+Physically `p` is restricted to the range `[0, 1]`.
+A coefficient of the Pauli string can optionally be passed as `coefficient`.
+"""
+function apply(gate::PauliXNoise, pstr::PauliStringType, p, coefficient=1.0)
+
+    if getpauli(pstr, gate.qind) == 1   # X operator
         coefficient *= (1 - p)
     end
 
-    return operator, coefficient
+    return pstr, coefficient
 end
 
+"""
+    PauliYNoise(qind::Int)
 
+A Pauli-Y noise channel acting on the qubit at index `qind`.
+Will damp Y Paulis.
+"""
 struct PauliYNoise <: PauliNoise
     qind::Int
 end
 
-function apply(gate::PauliYNoise, operator, p, coefficient=1.0)
+"""
+    apply(gate::PauliYNoise, pstr::PauliStringType, p, coefficient=1.0)
 
-    if getpauli(operator, gate.qind) == 2   # Y operator
+Apply a Pauli-Y noise channel to a Pauli string `pstr` in its integer representation with noise strength `p`.
+Physically `p` is restricted to the range `[0, 1]`.
+A coefficient of the Pauli string can optionally be passed as `coefficient`.
+"""
+function apply(gate::PauliYNoise, pstr::PauliStringType, p, coefficient=1.0)
+
+    if getpauli(pstr, gate.qind) == 2   # Y operator
         coefficient *= (1 - p)
     end
 
-    return operator, coefficient
+    return pstr, coefficient
 end
 
+"""
+    PauliZNoise(qind::Int)
 
+A Pauli-Z noise channel acting on the qubit at index `qind`.
+Will damp Z Paulis.
+"""
 struct PauliZNoise <: PauliNoise
     qind::Int
 end
 
-function apply(gate::PauliZNoise, operator, p, coefficient=1.0)
+"""
+    apply(gate::PauliZNoise, pstr::PauliStringType, p, coefficient=1.0)
 
-    if getpauli(operator, gate.qind) == 3   # Z operator
+Apply a Pauli-Z noise channel to a Pauli string `pstr` in its integer representation with noise strength `p`.
+Physically `p` is restricted to the range `[0, 1]`.
+A coefficient of the Pauli string can optionally be passed as `coefficient`.
+"""
+function apply(gate::PauliZNoise, pstr::PauliStringType, p, coefficient=1.0)
+
+    if getpauli(pstr, gate.qind) == 3   # Z operator
         coefficient *= (1 - p)
     end
 
-    return operator, coefficient
+    return pstr, coefficient
 end
 
+"""
+    AmplitudeDampingNoise(qind::Int)
 
+An amplitude damping noise channel acting on the qubit at index `qind`.
+Damps X and Y Paulis, and splits Z into and I and Z component (in the transposed Heisenberg picture).
+"""
 struct AmplitudeDampingNoise <: ParametrizedGate
     qind::Int
 end
 
-function apply(gate::AmplitudeDampingNoise, operator, p, coefficient=1.0)
+"""
+   apply(gate::AmplitudeDampingNoise, pstr::PauliStringType, gamma, coefficient=1.0) 
 
-    if actsdiagonally(gate, operator)  # test for Z operator
-        return diagonalapply(gate, operator, p, coefficient)
+Apply an amplitude damping noise channel to a Pauli string `pstr` in its integer representation with noise strength `gamma`.
+Returns a tuple of either a single pair of Pauli string and coefficient or two pairs of Pauli strings and coefficients.
+Physically `gamma` is restricted to the range `[0, 1]`.
+A coefficient of the Pauli string can optionally be passed as `coefficient`.
+"""
+function apply(gate::AmplitudeDampingNoise, pstr::PauliStringType, gamma, coefficient=1.0)
+
+    if actsdiagonally(gate, pstr)  # test for Z operator
+        return diagonalapply(gate, pstr, gamma, coefficient)
     end
 
-    return splitapply(gate, operator, p, coefficient)
+    return splitapply(gate, pstr, gamma, coefficient)
 end
 
-function actsdiagonally(gate::AmplitudeDampingNoise, operator)
-    return getpauli(operator, gate.qind) != 3
+"""
+    actsdiagonally(gate::AmplitudeDampingNoise, pstr::PauliStringType)
+
+Check if the amplitude damping noise channel acts diagonally on the Pauli string `pstr`.
+This implies no splitting and happens acting on I, X, and Y.
+"""
+function actsdiagonally(gate::AmplitudeDampingNoise, pstr::PauliStringType)
+    return getpauli(pstr, gate.qind) != 3
 end
 
-function diagonalapply(gate::AmplitudeDampingNoise, operator, p, coefficient=1.0)
+"""
+    diagonalapply(gate::AmplitudeDampingNoise, pstr::PauliStringType, gamma, coefficient=1.0)
 
-    local_op = getpauli(operator, gate.qind)
+Apply an amplitude damping noise channel to a Pauli string `pstr` in its integer representation with noise strength `gamma`.
+This is under the assumption that it has been checked that the noise channel acts diagonally on the Pauli string.
+Returns a tuple of Pauli string and coefficient.
+Physically `gamma` is restricted to the range `[0, 1]`.
+A coefficient of the Pauli string can optionally be passed as `coefficient`.
+"""
+function diagonalapply(gate::AmplitudeDampingNoise, pstr::PauliStringType, gamma, coefficient=1.0)
+
+    local_op = getpauli(pstr, gate.qind)
 
     if local_op != 0  # non-identity operator
-        coefficient *= sqrt(1 - p)
+        coefficient *= sqrt(1 - gamma)
     end
 
-    return operator, coefficient
+    return pstr, coefficient
 end
 
-function splitapply(gate::AmplitudeDampingNoise, operator, p, coefficient=1.0)
-    new_operator = copy(operator)
-    new_operator = setpauli(new_operator, 0, gate.qind)
-    return operator, (1 - p) * coefficient, new_operator, p * coefficient
+"""
+    splitapply(gate::AmplitudeDampingNoise, pstr::PauliStringType, gamma, coefficient=1.0)
+
+Apply an amplitude damping noise channel to a Pauli string `pstr` in its integer representation with noise strength `gamma`.
+This is under the assumption that it has been checked that the noise channel acts on a Z Pauli and splits.
+Returns a tuple of two pairs of Pauli strings and coefficients.
+Physically `gamma` is restricted to the range `[0, 1]`.
+A coefficient of the Pauli string can optionally be passed as `coefficient`.
+"""
+function splitapply(gate::AmplitudeDampingNoise, pstr::PauliStringType, gamma, coefficient=1.0)
+    new_pstr = setpauli(pstr, 0, gate.qind)
+    return pstr, (1 - gamma) * coefficient, new_pstr, gamma * coefficient
 end
