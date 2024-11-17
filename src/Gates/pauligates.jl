@@ -12,7 +12,7 @@ end
 """
     PauliGate(symbol::Symbol, qind::Int)
 
-Constructor for a `PauliGate` acting on a single qubit `qind` with the Pauli operator `symbol`.
+Constructor for a `PauliGate` acting on a single qubit `qind` with the Pauli `symbol`.
 """
 function PauliGate(symbol::Symbol, qind::Int)
     return PauliGate([symbol], [qind])
@@ -138,7 +138,7 @@ end
 """
     apply(gate::PauliGateUnion, pstr::PauliStringType, theta, coefficient=1.0)
 
-Apply a `(Fast)PauliGate` with an angle `theta` and a coefficient `coefficient` to a Pauli string in its integer representation.
+Apply a `(Fast)PauliGate` with an angle `theta` and a coefficient `coefficient` to an integer Pauli string.
 Returns either one pair of (pstr, coefficient) in one tuple or two pairs as one tuple.
 The latter is the case when the `gate` does not commute with the Pauli string.
 """
@@ -153,7 +153,7 @@ end
 """
     applynoncummuting(gate::PauliGateUnion, pstr::PauliStringType, theta, coefficient=1.0; kwargs...)
 
-Apply a `(Fast)PauliGate` with an angle `theta` and a coefficient `coefficient` to a Pauli string in its integer representation,
+Apply a `(Fast)PauliGate` with an angle `theta` and a coefficient `coefficient` to an integer Pauli string,
 assuming that the gate does not commute with the Pauli string.
 Returns two pairs of (pstr, coefficient) as one tuple.
 Currently `kwargs` are passed to `applycos` and `applysin` for the Surrogate.
@@ -178,7 +178,7 @@ end
 """
     commutes(gate::PauliGateUnion, pstr)
 
-Check if a `PauliGate` commutes with a Pauli string in its integer representation.
+Check if a `PauliGate` commutes with an integer Pauli string.
 """
 function commutes(gate::PauliGate, pstr::PauliStringType)
     return sum(!commutes(gate_sym, getpauli(pstr, qind)) for (qind, gate_sym) in zip(gate.qinds, gate.symbols)) % 2 == 0
@@ -187,7 +187,7 @@ end
 """
     commutes(gate::FastPauliGate, pstr::PauliStringType)
 
-Check if a `FastPauliGate` commutes with a Pauli string in its integer representation.
+Check if a `FastPauliGate` commutes with an integer Pauli string.
 """
 function commutes(gate::FastPauliGate, pstr::PauliStringType)
     return commutes(gate.bitoperator, pstr)
@@ -242,7 +242,7 @@ end
 """
     getnewoperator(gate::PauliGate, pstr::PauliStringType)
 
-Get the new Pauli string after applying a `PauliGate` to a Pauli string in its integer representation,
+Get the new Pauli string after applying a `PauliGate` to an integer Pauli string,
 as well as the corresponding ±1 coefficient.
 """
 function getnewoperator(gate::PauliGate, pstr::PauliStringType)
@@ -260,7 +260,7 @@ end
 """
     getnewoperator(gate::FastPauliGate, pstr::PauliStringType)
 
-Get the new Pauli string after applying a `FastPauliGate` to a Pauli string in its integer representation,
+Get the new Pauli string after applying a `FastPauliGate` to an integer Pauli string,
 as well as the corresponding ±1 coefficient.
 """
 function getnewoperator(gate::FastPauliGate, pstr::PauliStringType)

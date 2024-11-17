@@ -74,7 +74,6 @@ A custom truncation function can be passed as `customtruncatefn` with the signat
 """
 function mergingapply(gate, operator_dict::Dict, new_operator_dict::Dict, thetas, param_idx, args...; kwargs...)
 
-    # param_idx is decremented by one if the gate is a Pauli gate
     operator_dict, new_operator_dict, param_idx = applygatetoall!(gate, thetas, param_idx, operator_dict, new_operator_dict)
 
     mergeandclear!(operator_dict, new_operator_dict)

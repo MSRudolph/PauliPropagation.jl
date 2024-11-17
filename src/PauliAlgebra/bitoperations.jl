@@ -34,7 +34,7 @@ end
 """
     _countbitweight(pstr::PauliStringType)
 
-This function counts the number of 00 bit pairs in the integer representation of the Pauli string.
+This function counts the number of 00 bit pairs in the integer Pauli string.
 """
 function _countbitweight(pstr::PauliStringType)
     # get our super bit mask looking like ....1010101.
@@ -56,7 +56,7 @@ end
 """
      _countbitxy(pstr::PauliStringType)
 
-This function counts the number of 01 (X) or 10 (Y) bit pairs in the integer representation of the Pauli string.
+This function counts the number of 01 (X) or 10 (Y) bit pairs in the integer Pauli string.
 """
 function _countbitxy(pstr::PauliStringType)
     # we use that 01 and 10 have exactly one 1 and one 0
@@ -77,7 +77,7 @@ end
 """
     _countbityz(pstr::PauliStringType)
 
-This function counts the number of 10 (Y) or 11 (Z) bit pairs in the integer representation of the Pauli string.
+This function counts the number of 10 (Y) or 11 (Z) bit pairs in the integer Pauli string.
 """
 function _countbityz(pstr::PauliStringType)
     # we use that both have a 1 on the left bit
@@ -95,7 +95,7 @@ end
 """
     _bitcommutes(pstr1::PauliStringType, pstr2::PauliStringType)
 
-This function checks if two Pauli strings in their integer representation commute.
+This function checks if two integer Pauli strings commute.
 """
 function _bitcommutes(pstr1::PauliStringType, pstr2::PauliStringType)
 
@@ -137,7 +137,7 @@ _paulishiftright(pstr::PauliStringType) = pstr >> 2
 """
     _getpaulibits(pstr::PauliStringType, index::Integer)
 
-This function extracts the Pauli at position `index` from the integer representation of the Pauli string.
+This function extracts the Pauli at position `index` from the integer Pauli string.
 """
 function _getpaulibits(pstr::PauliStringType, index::Integer)
     # we need to shift the integer by 2 * (index - 1), then the first two bits are target Pauli
@@ -153,7 +153,7 @@ end
 """
     _getbit(pauli::Integer, bitindex::Integer)
 
-Gets the bit at index `bitindex` in the integer representation of the Pauli operator.
+Gets the bit at index `bitindex` in the integer Pauli string.
 """
 function _getbit(pauli::Integer, bitindex::Integer)
     # return integer with ...000[bit].
@@ -168,15 +168,15 @@ end
 """
     _setpaulibits(pstr::PauliStringType, pauli::PauliType, index::Integer)
 
-This function sets the Pauli operator at position `index` in the integer representation of the Pauli string.
+This function sets the Pauli at position `index` in the integer Pauli string to `target_pauli`.
 """
-function _setpaulibits(pstr::PauliStringType, pauli::PauliType, index::Integer)
+function _setpaulibits(pstr::PauliStringType, target_pauli::PauliType, index::Integer)
     # we need to shift the integer by 2 * (index - 1), then the first two bits are target Pauli
     bitindex = 2 * (index - 1)
 
     # read bits of the pauli
-    b1 = _getbit(pauli, 0)
-    b2 = _getbit(pauli, 1)
+    b1 = _getbit(target_pauli, 0)
+    b2 = _getbit(target_pauli, 1)
 
     # insert them into the pstr
     pstr = _setbit(pstr, b1, bitindex)
@@ -187,7 +187,7 @@ end
 """
     _setbit(pstr::PauliStringType, target_bit::Integer, bitindex::Integer)
 
-Sets a bit at index `bitindex` in the integer representation of the Pauli string to the value of `target_bit`.
+Sets a bit at index `bitindex` in the integer Pauli string to the value of `target_bit`.
 """
 function _setbit(pstr::PauliStringType, target_bit::Integer, bitindex::Integer)
     # set bit at bitindex to bit
@@ -203,7 +203,7 @@ end
 """
     _setbittoone(pstr::Integer, bitindex::Integer)
 
-Sets a bit at index `bitindex` in the integer representation of the Pauli string to 1.
+Sets a bit at index `bitindex` in the integer Pauli string to 1.
 """
 function _setbittoone(pstr::Integer, bitindex::Integer)
     # set bit at bitindex to 1
@@ -219,7 +219,7 @@ end
 """
     _setbittozero(pstr::Integer, bitindex::Integer)
 
-Sets a bit at index `bitindex` in the integer representation of the Pauli string to 0.
+Sets a bit at index `bitindex` in the integer Pauli string to 0.
 """
 function _setbittozero(pstr::Integer, bitindex::Integer)
     # set bit at bitindex to 0

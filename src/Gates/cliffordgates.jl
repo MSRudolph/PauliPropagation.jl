@@ -103,7 +103,7 @@ end
 """
     apply(gate::CliffordGate, pstr::PauliStringType, coefficient=1.0)
 
-Apply a `CliffordGate` to a Pauli string in its integer representation and an optional coefficient. 
+Apply a `CliffordGate` to an integer Pauli string and an optional coefficient. 
 """
 function apply(gate::CliffordGate, pstr::PauliStringType, coefficient=1.0)
     map_array = default_clifford_map[gate.symbol]
@@ -113,7 +113,7 @@ end
 """
     apply(gate::CliffordGate, str::PauliStringType, theta, coefficient)
 
-Apply a `CliffordGate` to a Pauli string in its integer representation and a coefficient. 
+Apply a `CliffordGate` to an integer Pauli string and a coefficient. 
 The extra the argument may arise in other parts of the package.
 """
 function apply(gate::CliffordGate, pstr::PauliStringType, theta, coefficient)
@@ -123,7 +123,7 @@ end
 """
     applywithmap(gate::CliffordGate, pstr::PauliStringType, coefficient, map_array)
 
-Apply a `CliffordGate` to a Pauli string in its integer representation and a coefficient 
+Apply a `CliffordGate` to an integer Pauli string and a coefficient 
 using the a `map_array` corresponding to the `CliffordGate`.
 """
 function applywithmap(gate::CliffordGate, pstr::PauliStringType, coefficient, map_array)

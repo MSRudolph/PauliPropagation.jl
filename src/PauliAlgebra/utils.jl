@@ -4,7 +4,7 @@ const pauli_symbols::Vector{Symbol} = [:I, :X, :Y, :Z]
 """
     symboltoint(pstr::Vector{Symbol})
 
-Maps a vector of symbols to an integer representation of a Pauli string.
+Maps a vector of symbols to an integer Pauli string.
 """
 function symboltoint(pstr::Vector{Symbol})
     nqubits = length(pstr)
@@ -18,7 +18,7 @@ end
 """
     symboltoint(nqubits::Integer, pstr::Vector{Symbol}, qinds)
 
-Maps a vector of symbols acting on the indices `qinds` to an integer representation of a Pauli string. Other sites are set to the identity.
+Maps a vector of symbols acting on the indices `qinds` to an integer Pauli string. Other sites are set to the identity.
 """
 function symboltoint(nqubits::Integer, pstr::Vector{Symbol}, qinds)
     inttype = getinttype(nqubits)
@@ -32,7 +32,7 @@ end
 """
     symboltoint(nqubits::Integer, pauli::Symbol, qind::Integer)
 
-Maps a single symbol acting on the index `qind` to an integer representation of a Pauli string. Other sites are set to the identity.
+Maps a single symbol acting on the index `qind` to an integer Pauli string. Other sites are set to the identity.
 """
 function symboltoint(nqubits::Integer, pauli::Symbol, qind::Integer)
     inttype = getinttype(nqubits)
@@ -44,7 +44,7 @@ end
 """
     inttosymbol(pstr::PauliStringType, nqubits::Integer)
 
-Maps an integer representation of a Pauli string to a vector of symbols.
+Maps an integer Pauli string to a vector of symbols.
 """
 function inttosymbol(pstr::PauliStringType, nqubits::Integer)  # TODO: does the argument order need to change?
     converted_pstr = [:I for _ in 1:nqubits]
@@ -65,7 +65,7 @@ symboltoint(pauli) = pauli
 """
     inttosymbol(pauli::PauliType)
 
-Maps a Pauli in integer representation to its corresponding symbol.
+Maps an integer Pauli to its corresponding symbol.
 """
 inttosymbol(pauli::PauliType) = pauli_symbols[pauli+1]
 inttosymbol(pauli) = pauli
@@ -74,7 +74,7 @@ inttosymbol(pauli) = pauli
 """
     getpauli(pstr::PauliString, index::Integer)
 
-Gets the Pauli on index `index` of a `PauliString` in its integer representation.
+Gets the Pauli on index `index` of a `PauliString` in the integer representation.
 """
 function getpauli(pstr::PauliString, index::Integer)
     return getpauli(pstr.operator, index)
@@ -83,7 +83,7 @@ end
 """
     getpauli(pstr::PauliStringType, index::Integer)
 
-Gets the Pauli on index `index` of a Pauli string in its integer representation.
+Gets the Pauli on index `index` of an integer Pauli string.
 """
 function getpauli(pstr::PauliStringType, index::Integer)
     return _getpaulibits(pstr, index)
@@ -92,25 +92,25 @@ end
 """
     setpauli(pstr::PauliString, pauli::T, index::Integer) where {T<:Union{Symbol,PauliType}}
 
-Sets the Pauli on index `index` of a `PauliString` to a particular Pauli. That Pauli can be provided as integer (0, 1, 2, 3) or as a symbol (:I, :X, :Y, :Z).
+Sets the Pauli on index `index` of an integer `PauliString` to `target_pauli`. That Pauli can be provided as integer (0, 1, 2, 3) or as a symbol (:I, :X, :Y, :Z).
 """
 function setpauli(pstr::PauliString, pauli::T, index::Integer) where {T<:Union{Symbol,PauliType}}
     return PauliString(pstr.nqubits, setpauli(pstr.operator, pauli, index), str.coeff)
 end
 
 """
-    setpauli(pstr::PauliStringType, pauli::PauliType, index::Integer)
+    setpauli(pstr::PauliStringType, target_pauli::PauliType, index::Integer)
 
-Sets the Pauli on index `index` of a Pauli string to a particular Pauli. That Pauli should be provided as integer (0, 1, 2, 3).
+Sets the Pauli on index `index` of an integer Pauli string to `target_pauli`. That Pauli should be provided as integer (0, 1, 2, 3).
 """
-function setpauli(pstr::PauliStringType, pauli::PauliType, index::Integer)
-    return _setpaulibits(pstr, pauli, index)
+function setpauli(pstr::PauliStringType, target_pauli::PauliType, index::Integer)
+    return _setpaulibits(pstr, target_pauli, index)
 end
 
 """
     setpauli(pstr::PauliStringType, pauli::PauliType, index::Integer)
 
-Sets the Pauli on index `index` of a Pauli string to a particular Pauli. That Pauli should be provided as a symbol (:I, :X, :Y, :Z).
+Sets the Pauli on index `index` of an integer Pauli string to `target_pauli`. That Pauli should be provided as a symbol (:I, :X, :Y, :Z).
 """
 function setpauli(pstr::PauliStringType, pauli::Symbol, index::Integer)
     # `symboltoint` to ensure we work with `PauliType`, i.e., integers
@@ -119,7 +119,7 @@ end
 
 ## Helper functions for pretty printing
 """
-Returns a string representation of a Pauli string in integer representation.
+Returns a string representation of an integer Pauli string.
 """
 inttostring(pstr::PauliType, nqubits) = prod("$(inttosymbol(getpauli(pstr, ii)))" for ii in 1:nqubits)
 

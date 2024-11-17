@@ -23,7 +23,7 @@ end
 """
     apply(gate::DepolarizingNoise, pstr::PauliStringType, p, coefficient=1.0)
 
-Apply a depolarizing noise channel to a Pauli string `pstr` in its integer representation with noise strength `p`.
+Apply a depolarizing noise channel to an integer Pauli string `pstr` with noise strength `p`.
 Physically `p` is restricted to the range `[0, 1]`.
 A coefficient of the Pauli string can optionally be passed as `coefficient`.
 """
@@ -51,7 +51,7 @@ end
 """
     apply(gate::PauliXNoise, pstr::PauliStringType, p, coefficient=1.0)
 
-Apply a Pauli-X noise channel to a Pauli string `pstr` in its integer representation with noise strength `p`.
+Apply a Pauli-X noise channel to an integer Pauli string `pstr` with noise strength `p`.
 Physically `p` is restricted to the range `[0, 1]`.
 A coefficient of the Pauli string can optionally be passed as `coefficient`.
 """
@@ -77,7 +77,7 @@ end
 """
     apply(gate::PauliYNoise, pstr::PauliStringType, p, coefficient=1.0)
 
-Apply a Pauli-Y noise channel to a Pauli string `pstr` in its integer representation with noise strength `p`.
+Apply a Pauli-Y noise channel to an integer Pauli string `pstr` with noise strength `p`.
 Physically `p` is restricted to the range `[0, 1]`.
 A coefficient of the Pauli string can optionally be passed as `coefficient`.
 """
@@ -103,7 +103,7 @@ end
 """
     apply(gate::PauliZNoise, pstr::PauliStringType, p, coefficient=1.0)
 
-Apply a Pauli-Z noise channel to a Pauli string `pstr` in its integer representation with noise strength `p`.
+Apply a Pauli-Z noise channel to an integer Pauli string `pstr` with noise strength `p`.
 Physically `p` is restricted to the range `[0, 1]`.
 A coefficient of the Pauli string can optionally be passed as `coefficient`.
 """
@@ -129,7 +129,7 @@ end
 """
    apply(gate::AmplitudeDampingNoise, pstr::PauliStringType, gamma, coefficient=1.0) 
 
-Apply an amplitude damping noise channel to a Pauli string `pstr` in its integer representation with noise strength `gamma`.
+Apply an amplitude damping noise channel to an integer Pauli string `pstr` with noise strength `gamma`.
 Returns a tuple of either a single pair of Pauli string and coefficient or two pairs of Pauli strings and coefficients.
 Physically `gamma` is restricted to the range `[0, 1]`.
 A coefficient of the Pauli string can optionally be passed as `coefficient`.
@@ -156,7 +156,7 @@ end
 """
     diagonalapply(gate::AmplitudeDampingNoise, pstr::PauliStringType, gamma, coefficient=1.0)
 
-Apply an amplitude damping noise channel to a Pauli string `pstr` in its integer representation with noise strength `gamma`.
+Apply an amplitude damping noise channel to an integer Pauli string `pstr` with noise strength `gamma`.
 This is under the assumption that it has been checked that the noise channel acts diagonally on the Pauli string.
 Returns a tuple of Pauli string and coefficient.
 Physically `gamma` is restricted to the range `[0, 1]`.
@@ -176,7 +176,7 @@ end
 """
     splitapply(gate::AmplitudeDampingNoise, pstr::PauliStringType, gamma, coefficient=1.0)
 
-Apply an amplitude damping noise channel to a Pauli string `pstr` in its integer representation with noise strength `gamma`.
+Apply an amplitude damping noise channel to an integer Pauli string `pstr` with noise strength `gamma`.
 This is under the assumption that it has been checked that the noise channel acts on a Z Pauli and splits.
 Returns a tuple of two pairs of Pauli strings and coefficients.
 Physically `gamma` is restricted to the range `[0, 1]`.

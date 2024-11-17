@@ -126,7 +126,7 @@ end
 """
     getcoeff(psum::PauliSum{OpType,CoeffType}, operator::Integer) where {OpType,CoeffType}
 
-Get the coefficient of a Pauli operator in a `PauliSum` by providing the integer representation of the Pauli operator. Defaults to 0 if the operator is not in the `PauliSum`.
+Get the coefficient of an integer Pauli string in a `PauliSum`. Defaults to 0 if the Pauli string is not in the `PauliSum`.
 """
 function getcoeff(psum::PauliSum{OpType,CoeffType}, operator::Integer) where {OpType,CoeffType}
     return get(psum.op_dict, operator, CoeffType(0))
@@ -135,7 +135,7 @@ end
 """
     getcoeff(psum::PauliSum{OpType,CoeffType1}, pstr::PauliString{OpType,CoeffType2}) where {OpType,CoeffType1,CoeffType2}
 
-Get the coefficient of a Pauli operator in a `PauliSum` by providing the `PauliString` representation of the Pauli operator. Defaults to 0 if the operator is not in the `PauliSum`.
+Get the coefficient of a `PauliString` in a `PauliSum`. Defaults to 0 if the Pauli string is not in the `PauliSum`.
 """
 function getcoeff(psum::PauliSum{OpType,CoeffType1}, pstr::PauliString{OpType,CoeffType2}) where {OpType,CoeffType1,CoeffType2}
     return get(psum.op_dict, pstr.operator, CoeffType1(0))
@@ -145,7 +145,7 @@ end
 """
     getcoeff(psum::PauliSum{OpType,CoeffType}, pauli::Symbol, qind::Integer) where {OpType,CoeffType}
 
-Get the coefficient of a Pauli operator in a `PauliSum` by providing a Pauli operator as a Symbol acting on qubit `qind`. 
+Get the coefficient of a Pauli string in a `PauliSum` by providing the Pauli string as a Symbol acting on qubit `qind`. 
 This is consistent with how operators can be added to a `PauliSum` via `add!()`. Defaults to 0 if the operator is not in the `PauliSum`.
 """
 function getcoeff(psum::PauliSum{OpType,CoeffType}, pauli::Symbol, qind::Integer) where {OpType,CoeffType}
@@ -155,7 +155,7 @@ end
 """
     getcoeff(psum::PauliSum{OpType,CoeffType}, pstr::Vector{Symbol}, qinds) where {OpType,CoeffType}
 
-Get the coefficient of a Pauli operator in a `PauliSum` by providing a Pauli operator as a vector of Symbols acting on qubits `qinds`. 
+Get the coefficient of a Pauli string in a `PauliSum` by providing the Pauli string as a vector of Symbols acting on qubits `qinds`. 
 This is consistent with how operators can be added to a `PauliSum` via `add!()`. Defaults to 0 if the operator is not in the `PauliSum`.
 """
 function getcoeff(psum::PauliSum{OpType,CoeffType}, pstr::Vector{Symbol}, qinds) where {OpType,CoeffType}
@@ -165,7 +165,7 @@ end
 """
     getcoeff(psum::PauliSum{OpType,CoeffType}, pstr::Vector{Symbol}) where {OpType,CoeffType}
 
-Get the coefficient of a Pauli operator in a `PauliSum` by providing a Pauli operator as a vector of Symbols acting on all qubits. 
+Get the coefficient of a Pauli string in a `PauliSum` by providing the Pauli string as a vector of Symbols acting on all qubits. 
 This is consistent with how operators can be added to a `PauliSum` via `add!()`. Defaults to 0 if the operator is not in the `PauliSum`.
 """
 function getcoeff(psum::PauliSum{OpType,CoeffType}, pstr::Vector{Symbol}) where {OpType,CoeffType}
@@ -175,7 +175,7 @@ end
 """
     topaulistrings(psum::PauliSum)
 
-Returns the Pauli operators in a `PauliSum` and their coefficients as a list of `PauliString`.
+Returns the Pauli strings in a `PauliSum` and their coefficients as a list of `PauliString`.
 """
 topaulistrings(psum::PauliSum) = [PauliString(psum.nqubits, pauli, coeff) for (pauli, coeff) in psum.op_dict]
 
@@ -317,7 +317,7 @@ end
 """
     add!(psum::PauliSum, pauli::Symbol, qind::Integer, coeff=1.0)
 
-In-place addition a Pauli operator to `PauliSum` by providing a it as a Symbol acting on qubit `qind`.
+In-place addition a Pauli string to `PauliSum` by providing the Pauli string as a Symbol acting on qubit `qind`.
 Coefficient defaults to 1.0.
 """
 function add!(psum::PauliSum, pauli::Symbol, qind::Integer, coeff=1.0)
@@ -330,7 +330,7 @@ end
 """
     add!(psum::PauliSum, pstr_vec::Vector{Symbol}, qinds::Vector{Int}, coeff=1.0)
 
-In-place addition a Pauli operator to `PauliSum` by providing a it as a vector of Symbols acting on qubits `qinds`.
+In-place addition a Pauli string to `PauliSum` by providing the Pauli string as a vector of Symbols acting on qubits `qinds`.
 Coefficient defaults to 1.0.
 """
 function add!(psum::PauliSum, pstr::Vector{Symbol}, qinds::Vector{Int}, coeff=1.0) # TODO: don't strictly type qinds or similar here or elsewhere
