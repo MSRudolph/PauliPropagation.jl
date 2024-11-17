@@ -159,18 +159,18 @@ function hardwareefficientcircuit(nqubits::Integer, nlayers::Integer; topology=n
     for _ in 1:nlayers
         for ii in 1:nqubits
             # RX
-            push!(circuit, PauliGate([:X], [ii]))
+            push!(circuit, PauliGate(:X, ii))
 
             # RZ
-            push!(circuit, PauliGate([:Z], [ii]))
+            push!(circuit, PauliGate(:Z, ii))
 
             # RX
-            push!(circuit, PauliGate([:X], [ii]))
+            push!(circuit, PauliGate(:X, ii))
         end
 
         for pair in topology
             # CNOT or YY gate here
-            push!(circuit, PauliGate([:Y, :Y], collect(pair)))
+            push!(circuit, PauliGate([:Y, :Y], pair))
         end
     end
 
@@ -195,16 +195,16 @@ function efficientsu2circuit(nqubits::Integer, nlayers::Integer; topology=nothin
     for jj in 1:nlayers
         for ii in 1:nqubits
             # RY
-            push!(circuit, PauliGate([:Y], [ii]))
+            push!(circuit, PauliGate(:Y, ii))
 
             # RZ
-            push!(circuit, PauliGate([:Z], [ii]))
+            push!(circuit, PauliGate(:Z, ii))
 
         end
 
         for pair in topology
             # CNOT or YY gate here
-            push!(circuit, CliffordGate(:CNOT, collect(pair)))
+            push!(circuit, CliffordGate(:CNOT, pair))
         end
     end
 
@@ -226,8 +226,8 @@ function tfitrottercircuit(nqubits::Integer, nlayers::Integer; topology=nothing,
         topology = bricklayertopology(nqubits)
     end
 
-    zzlayer(circuit) = append!(circuit, (PauliGate([:Z, :Z], collect(pair)) for pair in topology))
-    xlayer(circuit) = append!(circuit, (PauliGate([:X], [ii]) for ii in 1:nqubits))
+    zzlayer(circuit) = append!(circuit, (PauliGate([:Z, :Z], pair) for pair in topology))
+    xlayer(circuit) = append!(circuit, (PauliGate(:X, ii) for ii in 1:nqubits))
 
     if start_with_ZZ
         zzlayer(circuit)
@@ -266,13 +266,13 @@ function heisenbergtrottercircuit(nqubits::Integer, nlayers::Integer; topology=n
 
         for pair in topology
             # XX
-            push!(circuit, PauliGate([:X, :X], collect(pair)))
+            push!(circuit, PauliGate([:X, :X], pair))
 
             # YY
-            push!(circuit, PauliGate([:Y, :Y], collect(pair)))
+            push!(circuit, PauliGate([:Y, :Y], pair))
 
             # ZZ
-            push!(circuit, PauliGate([:Z, :Z], collect(pair)))
+            push!(circuit, PauliGate([:Z, :Z], pair))
         end
     end
 
@@ -338,27 +338,27 @@ The SU(4) gate is decomposed via the KAK Decomposition into single-qubit Z-X-Z g
 """
 function appendSU4!(circuit, pair)
     # arbitrary on q1
-    push!(circuit, PauliGate([:Z], [pair[1]]))
-    push!(circuit, PauliGate([:X], [pair[1]]))
-    push!(circuit, PauliGate([:Z], [pair[1]]))
+    push!(circuit, PauliGate(:Z, pair[1]))
+    push!(circuit, PauliGate(:X, pair[1]))
+    push!(circuit, PauliGate(:Z, pair[1]))
 
     # arbitrary on q2
-    push!(circuit, PauliGate([:Z], [pair[2]]))
-    push!(circuit, PauliGate([:X], [pair[2]]))
-    push!(circuit, PauliGate([:Z], [pair[2]]))
+    push!(circuit, PauliGate(:Z, pair[2]))
+    push!(circuit, PauliGate(:X, pair[2]))
+    push!(circuit, PauliGate(:Z, pair[2]))
 
     # entanglers
-    push!(circuit, PauliGate([:X, :X], collect(pair)))
-    push!(circuit, PauliGate([:Y, :Y], collect(pair)))
-    push!(circuit, PauliGate([:Z, :Z], collect(pair)))
+    push!(circuit, PauliGate([:X, :X], pair))
+    push!(circuit, PauliGate([:Y, :Y], pair))
+    push!(circuit, PauliGate([:Z, :Z], pair))
 
     # arbitrary on q1
-    push!(circuit, PauliGate([:Z], [pair[1]]))
-    push!(circuit, PauliGate([:X], [pair[1]]))
-    push!(circuit, PauliGate([:Z], [pair[1]]))
+    push!(circuit, PauliGate(:Z, pair[1]))
+    push!(circuit, PauliGate(:X, pair[1]))
+    push!(circuit, PauliGate(:Z, pair[1]))
 
     # arbitrary on q2
-    push!(circuit, PauliGate([:Z], [pair[2]]))
-    push!(circuit, PauliGate([:X], [pair[2]]))
-    push!(circuit, PauliGate([:Z], [pair[2]]))
+    push!(circuit, PauliGate(:Z, pair[2]))
+    push!(circuit, PauliGate(:X, pair[2]))
+    push!(circuit, PauliGate(:Z, pair[2]))
 end

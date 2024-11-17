@@ -9,6 +9,25 @@ struct CliffordGate <: StaticGate
     qinds::Vector{Int}
 end
 
+"""
+    CliffordGate(symbol::Symbol, qind::Int)
+
+Constructor for a single-qubit `CliffordGate`.
+"""
+function CliffordGate(symbol::Symbol, qind::Int)
+    return CliffordGate(symbol, [qind])
+end
+
+"""
+    CliffordGate(symbol::Symbol, qinds::Union{AbstractArray, Tuple, Base.Generator})
+
+Constructor for a `CliffordGate` acting on the qubits `qinds`. 
+Converts the types of `qinds` to the correct types for `CliffordGate`.
+"""
+function CliffordGate(symbol::Symbol, qinds::Union{AbstractArray,Tuple,Base.Generator})
+    return CliffordGate(symbol, collect(qinds))
+end
+
 # TODO: verify that these are all correct
 const _default_clifford_map = Dict(
     :H => [(1, 0x00), (1, 0x03), (-1, 0x02), (1, 0x01)],
