@@ -4,7 +4,7 @@
 Perform merging breadth-first search (BFS) simulation of a `PauliString` propagating through the circuit `circ` in the Heisenberg picture. 
 Parameters for the parametrized gates in `circ` are given by `thetas`.
 `kwargs` are passed to the truncation function. Supported by default are `max_weight`, `min_abs_coeff`, `max_freq`, and `max_sins`.
-A custom truncation function can be passed as `customtruncatefn` with the signature customtruncatefn(operator, coefficient)::Bool.
+A custom truncation function can be passed as `customtruncatefn` with the signature customtruncatefn(pstr::PauliStringType, coefficient)::Bool.
 """
 function mergingbfs(circ, pstr::PauliString, thetas; kwargs...)
     psum = PauliSum(pstr.nqubits, pstr)
@@ -17,7 +17,7 @@ end
 Perform merging breadth-first search (BFS) simulation of a `PauliSum` propagating through the circuit `circ` in the Heisenberg picture. 
 Parameters for the parametrized gates in `circ` are given by `thetas`.
 `kwargs` are passed to the truncation function. Supported by default are `max_weight`, `min_abs_coeff`, `max_freq`, and `max_sins`.
-A custom truncation function can be passed as `customtruncatefn` with the signature customtruncatefn(operator, coefficient)::Bool.
+A custom truncation function can be passed as `customtruncatefn` with the signature customtruncatefn(pstr::PauliStringType, coefficient)::Bool.
 """
 function mergingbfs(circ, psum::PauliSum, thetas; kwargs...)
     pauli_dict = mergingbfs!(circ, deepcopy(psum.op_dict), thetas; kwargs...)
@@ -32,7 +32,7 @@ Perform in-place merging breadth-first search (BFS) simulation of a `PauliSum` p
 The input `psum` will be modified.
 Parameters for the parametrized gates in `circ` are given by `thetas`.
 `kwargs` are passed to the truncation function. Supported by default are `max_weight`, `min_abs_coeff`, `max_freq`, and `max_sins`.
-A custom truncation function can be passed as `customtruncatefn` with the signature customtruncatefn(operator, coefficient)::Bool.
+A custom truncation function can be passed as `customtruncatefn` with the signature customtruncatefn(pstr::PauliStringType, coefficient)::Bool.
 """
 function mergingbfs!(circ, psum::PauliSum, thetas; kwargs...)
     pauli_dict = mergingbfs!(circ, psum.op_dict, thetas; kwargs...)
@@ -46,7 +46,7 @@ Perform in-place merging breadth-first search (BFS) simulation of a `Dict{PauliS
 The input `psum` will be modified.
 Parameters for the parametrized gates in `circ` are given by `thetas`.
 `kwargs` are passed to the truncation function. Supported by default are `max_weight`, `min_abs_coeff`, `max_freq`, and `max_sins`.
-A custom truncation function can be passed as `customtruncatefn` with the signature customtruncatefn(operator, coefficient)::Bool.
+A custom truncation function can be passed as `customtruncatefn` with the signature customtruncatefn(pstr::PauliStringType, coefficient)::Bool.
 """
 function mergingbfs!(circ, d::Dict, thetas; kwargs...)
     # TODO: Should we have a version of this that doesn't require thetas and uses surrogate code?
@@ -70,7 +70,7 @@ end
 1st-level function below `mergingbfs!` that applies one gate to all operators in `operator_dict`, potentially using `new_operator_dict` in the process,
 and merges everything back into `operator_dict`. Truncations are checked here after merging.
 This function can be overwritten for a custom gate if the lower-level functions `applygatetoall!`, `applygatetoone!`, and `apply` are not sufficient.
-A custom truncation function can be passed as `customtruncatefn` with the signature customtruncatefn(operator, coefficient)::Bool.
+A custom truncation function can be passed as `customtruncatefn` with the signature customtruncatefn(pstr::PauliStringType, coefficient)::Bool.
 """
 function mergingapply(gate, operator_dict::Dict, new_operator_dict::Dict, thetas, param_idx, args...; kwargs...)
 
@@ -247,7 +247,7 @@ end
 
 Check truncation conditions on all operators in `operator_dict` and remove them if they are truncated.
 This function supports the default truncations based on `max_weight`, `min_abs_coeff`, `max_freq`, and `max_sins`.
-A custom truncation function can be passed as `customtruncatefn` with the signature customtruncatefn(operator, coefficient)::Bool.
+A custom truncation function can be passed as `customtruncatefn` with the signature customtruncatefn(pstr::PauliStringType, coefficient)::Bool.
 """
 function checktruncationonall!(
     operator_dict; max_weight::Real=Inf, min_abs_coeff=0.0, max_freq::Real=Inf,
@@ -277,7 +277,7 @@ end
 
 Check truncation conditions one operator in `operator_dict` and it them if it is truncated.
 This function supports the default truncations based on `max_weight`, `min_abs_coeff`, `max_freq`, and `max_sins`.
-A custom truncation function can be passed as `customtruncatefn` with the signature customtruncatefn(operator, coefficient)::Bool.
+A custom truncation function can be passed as `customtruncatefn` with the signature customtruncatefn(pstr::PauliStringType, coefficient)::Bool.
 """
 @inline function checktruncationonone!(
     operator_dict, operator, coeff;

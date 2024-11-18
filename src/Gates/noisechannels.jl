@@ -147,7 +147,7 @@ end
     actsdiagonally(gate::AmplitudeDampingNoise, pstr::PauliStringType)
 
 Check if the amplitude damping noise channel acts diagonally on the Pauli string `pstr`.
-This implies no splitting and happens acting on I, X, and Y.
+This implies no splitting (acting diagonally) which happens when acting on I, X, and Y.
 """
 function actsdiagonally(gate::AmplitudeDampingNoise, pstr::PauliStringType)
     return getpauli(pstr, gate.qind) != 3
@@ -164,9 +164,9 @@ A coefficient of the Pauli string can optionally be passed as `coefficient`.
 """
 function diagonalapply(gate::AmplitudeDampingNoise, pstr::PauliStringType, gamma, coefficient=1.0)
 
-    local_op = getpauli(pstr, gate.qind)
+    local_pauli = getpauli(pstr, gate.qind)
 
-    if local_op != 0  # non-identity operator
+    if local_pauli != 0  # non-identity operator
         coefficient *= sqrt(1 - gamma)
     end
 

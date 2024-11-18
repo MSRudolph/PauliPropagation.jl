@@ -94,7 +94,7 @@ end
 """
     apply(gate::CliffordGate, pstr::PauliString, args...)
 
-Apply a `CliffordGate` to a `PauliString`. Returnse a new `PauliString`.
+Apply a `CliffordGate` to a `PauliString`. Returns a new `PauliString`.
 """
 function apply(gate::CliffordGate, pstr::PauliString, args...)
     return PauliString(pstr.nqubits, apply(gate, pstr.operator, pstr.coeff)...)
@@ -114,7 +114,7 @@ end
     apply(gate::CliffordGate, str::PauliStringType, theta, coefficient)
 
 Apply a `CliffordGate` to an integer Pauli string and a coefficient. 
-The extra the argument may arise in other parts of the package.
+The extra `theta` argument may arise in other parts of the package.
 """
 function apply(gate::CliffordGate, pstr::PauliStringType, theta, coefficient)
     return apply(gate, pstr, coefficient)

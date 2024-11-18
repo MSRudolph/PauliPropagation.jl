@@ -25,7 +25,6 @@ Constructor for a `PauliGate` acting on the qubits `qinds` with the Pauli operat
 Converts the types of the input arguments to the correct types for `PauliGate`.
 """
 function PauliGate(symbols::Union{AbstractArray,Tuple,Base.Generator}, qinds::Union{AbstractArray,Tuple,Base.Generator})
-    # `collect` returns a vector for any iterable 
     return PauliGate(collect(symbols), collect(qinds))
 end
 
@@ -44,6 +43,9 @@ struct FastPauliGate{T} <: ParametrizedGate where {T<:PauliStringType}
 end
 
 import Base.show
+"""
+Pretty print for `FastPauliGate`.
+"""
 function show(io::IO, fastpauligate::FastPauliGate)
     print(io, "FastPauliGate{$(typeof(fastpauligate.bitoperator))}($(fastpauligate.symbols), $(fastpauligate.qinds))")
 end
@@ -59,7 +61,7 @@ PauliGateUnion = Union{PauliGate,FastPauliGate}
     tofastgates(gate::Gate, nqubits::Integer)
 
 Transforms a gate to a potentially faster but more involved gate type. 
-This is not implemented for all gates.
+This is currently only for `PauliGate` to `FastPauliGate`.
 """
 tofastgates(gate::Gate, nqubits::Integer) = gate  # TODO: move this to a more general place
 

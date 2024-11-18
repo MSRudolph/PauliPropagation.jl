@@ -14,7 +14,7 @@ For example, if you are working with a Jupyter notebook, run
 using Pkg
 Pkg.add("https://github.com/MSRudolph/PauliPropagation.jl.git")
 ```
-where you can use the keyword `rev="branchname"` to install the version on a particular branch (although we don't recommend doing this).
+where you can use the keyword `rev="branchname"` to install the version on a particular branch if you want to contribute to the package.
 
 ### Clone repository and install locally 
 Navigate to a local directory where you want to clone this repository into and run the following in a terminal

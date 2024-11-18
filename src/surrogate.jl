@@ -124,7 +124,13 @@ function setcummulativevalue(node::CircuitNode, val)
     return
 end
 
+"""
+Pretty print for `CircuitNode`
+"""
 Base.show(io::IO, node::CircuitNode) = print(io, "$(typeof(node))($(length(node.parents)) parent(s), param_idx=$(node.param_idx))")
+"""
+Pretty print for `EvalEndNode`
+"""
 Base.show(io::IO, node::EvalEndNode) = print(io, "$(typeof(node))(Operator=$(node.operator), coefficient=$(node.coefficient))")
 
 

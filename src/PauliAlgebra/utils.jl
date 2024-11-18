@@ -19,6 +19,7 @@ end
     symboltoint(nqubits::Integer, pstr::Vector{Symbol}, qinds)
 
 Maps a vector of symbols acting on the indices `qinds` to an integer Pauli string. Other sites are set to the identity.
+`qinds` can be any iterable.
 """
 function symboltoint(nqubits::Integer, pstr::Vector{Symbol}, qinds)
     inttype = getinttype(nqubits)
@@ -90,12 +91,12 @@ function getpauli(pstr::PauliStringType, index::Integer)
 end
 
 """
-    setpauli(pstr::PauliString, pauli::T, index::Integer) where {T<:Union{Symbol,PauliType}}
+    setpauli(pstr::PauliString, target_pauli::T, index::Integer) where {T<:Union{Symbol,PauliType}}
 
 Sets the Pauli on index `index` of an integer `PauliString` to `target_pauli`. That Pauli can be provided as integer (0, 1, 2, 3) or as a symbol (:I, :X, :Y, :Z).
 """
-function setpauli(pstr::PauliString, pauli::T, index::Integer) where {T<:Union{Symbol,PauliType}}
-    return PauliString(pstr.nqubits, setpauli(pstr.operator, pauli, index), str.coeff)
+function setpauli(pstr::PauliString, target_pauli::T, index::Integer) where {T<:Union{Symbol,PauliType}}
+    return PauliString(pstr.nqubits, setpauli(pstr.operator, target_pauli, index), str.coeff)
 end
 
 """
@@ -108,13 +109,13 @@ function setpauli(pstr::PauliStringType, target_pauli::PauliType, index::Integer
 end
 
 """
-    setpauli(pstr::PauliStringType, pauli::PauliType, index::Integer)
+    setpauli(pstr::PauliStringType, target_pauli::PauliType, index::Integer)
 
 Sets the Pauli on index `index` of an integer Pauli string to `target_pauli`. That Pauli should be provided as a symbol (:I, :X, :Y, :Z).
 """
-function setpauli(pstr::PauliStringType, pauli::Symbol, index::Integer)
+function setpauli(pstr::PauliStringType, target_pauli::Symbol, index::Integer)
     # `symboltoint` to ensure we work with `PauliType`, i.e., integers
-    return setpauli(pstr, symboltoint(pauli), index)
+    return setpauli(pstr, symboltoint(target_pauli), index)
 end
 
 ## Helper functions for pretty printing
