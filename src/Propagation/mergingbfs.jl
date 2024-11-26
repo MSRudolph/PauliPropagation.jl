@@ -95,7 +95,7 @@ This function can be overwritten for a custom gate if the lower-level functions 
 """
 function applygatetoall!(gate, thetas, param_idx, operator_dict, new_operator_dict, args...; kwargs...)
     # TODO: Move this theta and parameter index logic to `mergingapply`. Currently only necessary for the surrogate lower down.
-    theta = _gettheta(thetas, param_idx)
+    theta = thetas[param_idx]
     for (operator, coeff) in operator_dict
         applygatetoone!(gate, operator, coeff, theta, param_idx, operator_dict, new_operator_dict; kwargs...)
     end
@@ -134,7 +134,7 @@ function applygatetoall!(gate::PauliGateUnion, thetas, param_idx, operator_dict,
     # TODO: there is a lot of code duplication. Can we write a more general function?
     # TODO: could remove the need of this function by making the logic in `mergingapply` smarter.
 
-    theta = _gettheta(thetas, param_idx)
+    theta = thetas[param_idx]
     for (operator, coeff) in operator_dict
         applygatetoone!(gate, operator, coeff, theta, param_idx, operator_dict, new_operator_dict; kwargs...)
     end
@@ -169,7 +169,7 @@ end
 Overload of `applygatetoall!` for `AmplitudeDampingNoise` gates. Both `operator_dict` and `new_operator_dict` contain operators which will be merged later.
 """
 function applygatetoall!(gate::AmplitudeDampingNoise, thetas, param_idx, operator_dict, new_operator_dict, args...; kwargs...)  # TODO: there is a lot of code duplication. Can we write a more general function?
-    theta = _gettheta(thetas, param_idx)
+    theta = thetas[param_idx]
     for (operator, coeff) in operator_dict
         applygatetoone!(gate, operator, coeff, theta, param_idx, operator_dict, new_operator_dict; kwargs...)
     end
@@ -303,6 +303,3 @@ A custom truncation function can be passed as `customtruncatefn` with the signat
     end
     return
 end
-
-## A utility function for potentially 0 index
-_gettheta(arr::AbstractArray, idx::Integer) = idx > 0 ? arr[idx] : eltype(arr)(0)
