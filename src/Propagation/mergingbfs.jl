@@ -80,7 +80,7 @@ function mergingapply(gate, operator_dict::Dict, new_operator_dict::Dict, thetas
 
     checktruncationonall!(operator_dict; kwargs...)
 
-    if isa(gate, ParametrizedGate)  # decrement parameter index by one
+    if isa(gate, ParametrizedGate) && param_idx > 1  # decrement parameter index by one if it is not the last parameter
         param_idx -= 1
     end
 
