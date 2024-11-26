@@ -125,6 +125,14 @@ function setcummulativevalue(node::CircuitNode, val)
 end
 
 """
+    getnumcoeff(val::NodePathProperties)
+
+Get the cummulative coefficient of a `NodePathProperties` node.
+This assumes that the surrogate has already been evaluated.
+"""
+getnumcoeff(node::NodePathProperties) = node.coeff.cummulative_value
+
+"""
 Pretty print for `CircuitNode`
 """
 Base.show(io::IO, node::CircuitNode) = print(io, "$(typeof(node))($(length(node.parents)) parent(s), param_idx=$(node.param_idx))")

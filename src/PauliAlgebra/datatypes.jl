@@ -172,6 +172,8 @@ function getcoeff(psum::PauliSum{OpType,CoeffType}, pstr::Vector{Symbol}) where 
     return getcoeff(psum, symboltoint(pstr))
 end
 
+# TODO: Add functions for extracting paulis and coefficients from the PauliSum (as iterable)
+
 """
     topaulistrings(psum::PauliSum)
 

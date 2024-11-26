@@ -223,7 +223,7 @@ function getnumcoeff(val::Number)
 end
 
 """
-    getnumcoeff(val::Number)
+    getnumcoeff(val::PathProperties)
 
 Get the numerical coefficient of a `PathProperties` wrapper.
 """

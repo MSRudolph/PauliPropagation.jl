@@ -3,6 +3,9 @@
 
 This package is currently targeted at estimating expectation values, but many underlying data structures and functions may be used for other purposes involving Pauli operators. 
 
+[comment]: <> TODO: Explain some of the goals of the library better here.
+[comment]: <> Link to Slack
+
 ## Installation
 
 The `PauliPropagation.jl` package is not yet registered. But you can install it in at least the following two ways:

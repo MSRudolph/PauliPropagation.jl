@@ -1,6 +1,7 @@
 module PauliPropagation
 
 using Base.Threads
+using ThreadsX
 
 include("./PauliAlgebra/PauliAlgebra.jl")
 export
@@ -25,7 +26,8 @@ export
     containsYorZ,
     pauliprod,
     commutes,
-    commutator
+    commutator,
+    getinttype
 
 
 include("pathproperties.jl")
@@ -108,6 +110,7 @@ export
     EvalEndNode,
     PauliGateNode,
     gettraceevalorder,
+    traceevalorder,
     expectation,
     resetnodes
 
