@@ -54,6 +54,7 @@ export
     ParametrizedNoiseChannel,
     PauliNoise,
     DepolarizingNoise,
+    DephasingNoise,
     PauliXNoise,
     PauliYNoise,
     PauliZNoise,
