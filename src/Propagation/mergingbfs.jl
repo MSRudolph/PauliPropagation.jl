@@ -72,10 +72,10 @@ and merges everything back into `operator_dict`. Truncations are checked here af
 This function can be overwritten for a custom gate if the lower-level functions `applygatetoall!`, `applygatetoone!`, and `apply` are not sufficient.
 A custom truncation function can be passed as `customtruncatefn` with the signature customtruncatefn(pstr::PauliStringType, coefficient)::Bool.
 """
-function mergingapply(gate, operator_dict::Dict, new_operator_dict::Dict, thetas, param_idx, args...; kwargs...)
+function mergingapply(gate, operator_dict, new_operator_dict, thetas, param_idx, args...; kwargs...)
 
     theta = thetas[param_idx]
-    operator_dict, new_operator_dict = applygatetoall!(gate, theta, operator_dict, new_operator_dict)
+    operator_dict, new_operator_dict = applygatetoall!(gate, theta, operator_dict, new_operator_dict; kwargs...)
 
     mergeandclear!(operator_dict, new_operator_dict)
 
@@ -114,7 +114,7 @@ This is likely the the case if `apply` is not type-stable because it does not re
 """
 @inline function applygatetoone!(gate, operator, coefficient, theta, operator_dict, new_operator_dict, args...; kwargs...)
 
-    ops_and_coeffs = apply(gate, operator, theta, coefficient)
+    ops_and_coeffs = apply(gate, operator, theta, coefficient; kwargs...)
 
     for ii in 1:2:length(ops_and_coeffs)
         op, coeff = ops_and_coeffs[ii], ops_and_coeffs[ii+1]
@@ -151,7 +151,7 @@ Overload of `applygatetoone!` for `PauliGate` and `FastPauliGate` gates. Checks 
         return
     end
 
-    operator, coeff1, new_oper, coeff2 = applynoncummuting(gate, operator, theta, coefficient)
+    operator, coeff1, new_oper, coeff2 = applynoncummuting(gate, operator, theta, coefficient; kwargs...)
 
     operator_dict[operator] = coeff1
     new_operator_dict[new_oper] = coeff2
@@ -184,12 +184,12 @@ Overload of `applygatetoone!` for `AmplitudeDampingNoise` gates. Checks for whet
 @inline function applygatetoone!(gate::AmplitudeDampingNoise, operator, coefficient, theta, operator_dict, new_operator_dict, args...; kwargs...)
 
     if actsdiagonally(gate, operator)
-        operator, coeff = diagonalapply(gate, operator, theta, coefficient)
+        operator, coeff = diagonalapply(gate, operator, theta, coefficient; kwargs...)
         operator_dict[operator] = coeff
         return
     end
 
-    operator, coeff1, new_oper, coeff2 = splitapply(gate, operator, theta, coefficient)
+    operator, coeff1, new_oper, coeff2 = splitapply(gate, operator, theta, coefficient; kwargs...)
 
     operator_dict[operator] = coeff1
     new_operator_dict[new_oper] = coeff2
@@ -199,8 +199,18 @@ end
 
 ### Clifford gates
 
-## NOTE: Currently, a slightly more optimized applygatetoall! function that gets the map_array once and passes that to applygatetoone! is not significantly faster than the general function
+"""
+    applygatetoone!(gate::CliffordGate, operator, coefficient, theta, operator_dict, new_operator_dict, args...; kwargs...)
 
+Overload of `applygatetoone!` for `CliffordGate` gates. Simplified logic for readability.
+"""
+@inline function applygatetoone!(gate::CliffordGate, operator, coefficient, theta, operator_dict, new_operator_dict, args...; kwargs...)
+
+    op, coeff = apply(gate, operator, theta, coefficient; kwargs...)
+    new_operator_dict[op] = coeff
+
+    return
+end
 
 ### MERGE
 """

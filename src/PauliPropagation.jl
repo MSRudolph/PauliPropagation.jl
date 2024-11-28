@@ -93,8 +93,14 @@ export
     overlapwithplus,
     orthogonaltozero,
     orthogonaltoplus,
+    overlapwithpaulisum,
+    overlapwithmaxmixed,
     filter,
+    filter!,
     zerofilter,
+    zerofilter!,
+    plusfilter,
+    plusfilter!,
     evaluateagainstdict,
     getnumcoeff
 
@@ -105,14 +111,12 @@ export
     montecarlopropagation,
     mcapply
 
-include("surrogate.jl")
+include("Surrogate/Surrogate.jl")
 export
     NodePathProperties,
     EvalEndNode,
     PauliGateNode,
-    gettraceevalorder,
-    traceevalorder,
-    expectation,
-    resetnodes
+    evaluate!,
+    reset!
 
 end

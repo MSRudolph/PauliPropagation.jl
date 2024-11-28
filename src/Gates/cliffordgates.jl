@@ -100,7 +100,7 @@ end
 
 Apply a `CliffordGate` to a `PauliString`. Returns a new `PauliString`.
 """
-function apply(gate::CliffordGate, pstr::PauliString, args...)
+function apply(gate::CliffordGate, pstr::PauliString, args...; kwargs...)
     return PauliString(pstr.nqubits, apply(gate, pstr.operator, pstr.coeff)...)
 end
 
@@ -109,7 +109,7 @@ end
 
 Apply a `CliffordGate` to an integer Pauli string and an optional coefficient. 
 """
-function apply(gate::CliffordGate, pstr::PauliStringType, coefficient=1.0)
+function apply(gate::CliffordGate, pstr::PauliStringType, coefficient=1.0; kwargs...)
     map_array = clifford_map[gate.symbol]
     return applywithmap(gate, pstr, coefficient, map_array)
 end
@@ -120,7 +120,7 @@ end
 Apply a `CliffordGate` to an integer Pauli string and a coefficient. 
 The extra `theta` argument may arise in other parts of the package.
 """
-function apply(gate::CliffordGate, pstr::PauliStringType, theta, coefficient)
+function apply(gate::CliffordGate, pstr::PauliStringType, theta, coefficient; kwargs...)
     return apply(gate, pstr, coefficient)
 end
 
@@ -130,8 +130,7 @@ end
 Apply a `CliffordGate` to an integer Pauli string and a coefficient 
 using the a `map_array` corresponding to the `CliffordGate`.
 """
-function applywithmap(gate::CliffordGate, pstr::PauliStringType, coefficient, map_array)
-    pstr = copy(pstr)
+function applywithmap(gate::CliffordGate, pstr::PauliStringType, coefficient, map_array; kwargs...)
     qinds = gate.qinds
 
     lookup_op = _extractlookupop(pstr, qinds)
