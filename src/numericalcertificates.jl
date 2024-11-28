@@ -166,11 +166,11 @@ function mcapply(gate::PauliGateUnion, pauli, coeff, theta, split_prob=0.5; kwar
             # branch into the new Pauli
             pauli, sign = getnewoperator(gate, pauli) # TODO: This allocates
             # for PathProperties: increment sin and frequency count
-            _incrementsinandfreq!(coeff)
+            coeff = _incrementsinandfreq(coeff)
         else
             # Pauli doesn't get changed
             # for PathProperties: increment cos and frequency count
-            _incrementcosandfreq!(coeff)
+            coeff = _incrementcosandfreq(coeff)
         end
     end
     # the sign has abs(sign) = 1, so updating the coefficient with abs(sign) doesn't do anything

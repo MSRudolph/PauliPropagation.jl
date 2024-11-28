@@ -81,7 +81,7 @@ function mergingapply(gate, operator_dict::Dict, new_operator_dict::Dict, thetas
 
     checktruncationonall!(operator_dict; kwargs...)
 
-    if isa(gate, ParametrizedGate)  # decrement parameter index by one
+    if isa(gate, ParametrizedGate) && param_idx > 1  # decrement parameter index by one if it is not the last parameter
         param_idx -= 1
     end
 
@@ -226,30 +226,17 @@ function merge(coeff1, coeff2)
     return coeff1 + coeff2
 end
 
-"""
-    merge(pth1::PathProperties, pth2::PathProperties)
-
-Merging two `PathProperties` coefficients will merge the `coeff` fields and attempt to take the minimum of the `ncos`, `nsins`, and `freq` fields.
-This function needs be overloaded for custom `PathProperties` types with different fields. 
-"""
-function merge(pth1::PathProperties, pth2::PathProperties)
-    pth1.coeff = merge(pth1.coeff, pth2.coeff)
-    pth1.ncos = min(pth1.ncos, pth2.ncos)
-    pth1.nsins = min(pth1.nsins, pth2.nsins)
-    pth1.freq = min(pth1.freq, pth2.freq)
-    return pth1
-end
 
 ### TRUNCATE
 """
-    checktruncationonall!(operator_dict; max_weight::Real=Inf, min_abs_coeff=0.0, max_freq::Real=Inf, max_sins::Real=Inf, kwargs...)
+    checktruncationonall!(operator_dict; max_weight::Real=Inf, min_abs_coeff=1e-10, max_freq::Real=Inf, max_sins::Real=Inf, kwargs...)
 
 Check truncation conditions on all operators in `operator_dict` and remove them if they are truncated.
 This function supports the default truncations based on `max_weight`, `min_abs_coeff`, `max_freq`, and `max_sins`.
 A custom truncation function can be passed as `customtruncatefn` with the signature customtruncatefn(pstr::PauliStringType, coefficient)::Bool.
 """
 function checktruncationonall!(
-    operator_dict; max_weight::Real=Inf, min_abs_coeff=0.0, max_freq::Real=Inf,
+    operator_dict; max_weight::Real=Inf, min_abs_coeff=1e-10, max_freq::Real=Inf,
     max_sins::Real=Inf,
     kwargs...
 )
@@ -269,7 +256,7 @@ end
 """
     checktruncationonone!(
     operator_dict, operator, coeff;
-    max_weight::Real=Inf, min_abs_coeff=0.0,
+    max_weight::Real=Inf, min_abs_coeff=1e-10,
     max_freq::Real=Inf, max_sins::Real=Inf,
     customtruncatefn=nothing,
     kwargs...
@@ -280,7 +267,7 @@ A custom truncation function can be passed as `customtruncatefn` with the signat
 """
 @inline function checktruncationonone!(
     operator_dict, operator, coeff;
-    max_weight::Real=Inf, min_abs_coeff=0.0,
+    max_weight::Real=Inf, min_abs_coeff=1e-10,
     max_freq::Real=Inf, max_sins::Real=Inf,
     customtruncatefn=nothing,
     kwargs...

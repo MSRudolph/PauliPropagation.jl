@@ -36,8 +36,34 @@ function apply(gate::DepolarizingNoise, pstr::PauliStringType, p, coefficient=1.
     return pstr, coefficient
 end
 
+"""
+    DephasingNoise(qind::Int)
 
-### Pauli noise channels
+A dephasing noise channel acting on the qubit at index `qind`.
+Will damp X and Y equally.
+"""
+struct DephasingNoise <: PauliNoise
+    qind::Int
+end
+
+"""
+    apply(gate::DephasingNoise, pstr::PauliStringType, p, coefficient=1.0)
+
+Apply a dephasing noise channel to an integer Pauli string `pstr` with noise strength `p`.
+Physically `p` is restricted to the range `[0, 1]`.
+A coefficient of the Pauli string can optionally be passed as `coefficient`.
+"""
+function apply(gate::DephasingNoise, pstr::PauliStringType, p, coefficient=1.0)
+
+    pauli = getpauli(pstr, gate.qind)
+    if pauli == 1 || pauli == 2   # X or Y operator
+        coefficient *= (1 - p)
+    end
+
+    return pstr, coefficient
+end
+
+### Individual Pauli noise channels
 """
     PauliXNoise(qind::Int)
 

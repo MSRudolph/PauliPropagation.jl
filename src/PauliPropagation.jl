@@ -1,6 +1,7 @@
 module PauliPropagation
 
 using Base.Threads
+using ThreadsX
 
 include("./PauliAlgebra/PauliAlgebra.jl")
 export
@@ -25,7 +26,8 @@ export
     containsYorZ,
     pauliprod,
     commutes,
-    commutator
+    commutator,
+    getinttype
 
 
 include("pathproperties.jl")
@@ -45,13 +47,14 @@ export
     apply,
     applynoncummuting,
     CliffordGate,
-    default_clifford_map,
+    clifford_map,
     reset_clifford_map!,
     createcliffordmap,
     applywithmap,
     ParametrizedNoiseChannel,
     PauliNoise,
     DepolarizingNoise,
+    DephasingNoise,
     PauliXNoise,
     PauliYNoise,
     PauliZNoise,
@@ -108,6 +111,7 @@ export
     EvalEndNode,
     PauliGateNode,
     gettraceevalorder,
+    traceevalorder,
     expectation,
     resetnodes
 
