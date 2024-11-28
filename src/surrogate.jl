@@ -18,7 +18,7 @@ Node type for the Pauli strings in the observable to be backpropagated.
 """
 @kwdef mutable struct EvalEndNode <: CircuitNode
     operator::Integer
-    coefficient::Real
+    coefficient::Float64
     cummulative_value::Float64 = 0.0
     is_evaluated::Bool = false
 end
@@ -85,19 +85,18 @@ function wrapcoefficients(psum::PauliSum, ::Type{NodePathProperties})
 end
 
 
-function _multiplysign!(path_property::NodePathProperties, sign)
-    _multiplysign!(path_property.coeff, sign)
-    return path_property
+function _multiplysign(pth::NodePathProperties, sign)
+    return NodePathProperties(_multiplysign(pth.coeff, sign), pth.ncos, pth.nsins, pth.nfreq)
 end
 
-function _multiplysign!(pauli_node::PauliGateNode, sign)
+function _multiplysign(pauli_node::PauliGateNode, sign)
     for ii in eachindex(pauli_node.signs)
         pauli_node.signs[ii] *= sign
     end
     return pauli_node
 end
 
-function _multiplysign!(eval_endnode::EvalEndNode, sign)
+function _multiplysign(eval_endnode::EvalEndNode, sign)
     eval_endnode.coefficient *= sign
     return eval_endnode
 end
@@ -134,13 +133,21 @@ Pretty print for `EvalEndNode`
 Base.show(io::IO, node::EvalEndNode) = print(io, "$(typeof(node))(Operator=$(node.operator), coefficient=$(node.coefficient))")
 
 
-
 function applycos(node::CircuitNode, theta; sign=1, param_idx=0)
     return PauliGateNode(parents=[node], trig_inds=[1], signs=[sign], param_idx=param_idx)
 end
 
 function applysin(node::CircuitNode, theta; sign=1, param_idx=0)
     return PauliGateNode(parents=[node], trig_inds=[-1], signs=[sign], param_idx=param_idx)
+end
+
+function merge(pth1::NodePathProperties, pth2::NodePathProperties)
+    return NodePathProperties(
+        merge(pth1.coeff, pth2.coeff),
+        min(pth1.ncos, pth2.ncos),
+        min(pth1.nsins, pth2.nsins),
+        min(pth1.freq, pth2.freq)
+    )
 end
 
 function merge(node1::CircuitNode, node2::CircuitNode)

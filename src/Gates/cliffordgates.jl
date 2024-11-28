@@ -134,7 +134,7 @@ function applywithmap(gate::CliffordGate, pstr::PauliStringType, coefficient, ma
     sign, new_op = map_array[lookup_op+1]  # +1 because Julia is 1-indexed and lookup_op is 0-indexed
     pstr = _insertnewop!(pstr, new_op, qinds)
 
-    coefficient = _multiplysign!(coefficient, sign)
+    coefficient = _multiplysign(coefficient, sign)
     return pstr, coefficient
 end
 
@@ -153,11 +153,6 @@ function _insertnewop!(operator, new_op, qinds)
     return operator
 end
 
-function _multiplysign!(coefficient::Number, sign)
+function _multiplysign(coefficient, sign)
     return coefficient * sign
-end
-
-function _multiplysign!(coefficient::NumericPathProperties, sign)
-    coefficient.coeff *= sign
-    return coefficient
 end

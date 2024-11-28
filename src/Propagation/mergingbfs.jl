@@ -227,19 +227,6 @@ function merge(coeff1, coeff2)
     return coeff1 + coeff2
 end
 
-"""
-    merge(pth1::PathProperties, pth2::PathProperties)
-
-Merging two `PathProperties` coefficients will merge the `coeff` fields and attempt to take the minimum of the `ncos`, `nsins`, and `freq` fields.
-This function needs be overloaded for custom `PathProperties` types with different fields. 
-"""
-function merge(pth1::PathProperties, pth2::PathProperties)
-    pth1.coeff = merge(pth1.coeff, pth2.coeff)
-    pth1.ncos = min(pth1.ncos, pth2.ncos)
-    pth1.nsins = min(pth1.nsins, pth2.nsins)
-    pth1.freq = min(pth1.freq, pth2.freq)
-    return pth1
-end
 
 ### TRUNCATE
 """
