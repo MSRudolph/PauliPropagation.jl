@@ -74,7 +74,8 @@ A custom truncation function can be passed as `customtruncatefn` with the signat
 """
 function mergingapply(gate, operator_dict::Dict, new_operator_dict::Dict, thetas, param_idx, args...; kwargs...)
 
-    operator_dict, new_operator_dict, param_idx = applygatetoall!(gate, thetas, param_idx, operator_dict, new_operator_dict)
+    theta = thetas[param_idx]
+    operator_dict, new_operator_dict = applygatetoall!(gate, theta, operator_dict, new_operator_dict)
 
     mergeandclear!(operator_dict, new_operator_dict)
 
@@ -88,31 +89,30 @@ function mergingapply(gate, operator_dict::Dict, new_operator_dict::Dict, thetas
 end
 
 """
-    applygatetoall!(gate, thetas, param_idx, operator_dict, new_operator_dict, args...; kwargs...)
+    applygatetoall!(gate, theta operator_dict, new_operator_dict, args...; kwargs...)
 
 2nd-level function below `mergingapply!` that applies one gate to all operators in `operator_dict`, potentially using `new_operator_dict` in the process.
 This function can be overwritten for a custom gate if the lower-level functions `applygatetoone!` and `apply` are not sufficient.
 """
-function applygatetoall!(gate, thetas, param_idx, operator_dict, new_operator_dict, args...; kwargs...)
-    # TODO: Move this theta and parameter index logic to `mergingapply`. Currently only necessary for the surrogate lower down.
-    theta = thetas[param_idx]
+function applygatetoall!(gate, theta, operator_dict, new_operator_dict, args...; kwargs...)
+
     for (operator, coeff) in operator_dict
-        applygatetoone!(gate, operator, coeff, theta, param_idx, operator_dict, new_operator_dict; kwargs...)
+        applygatetoone!(gate, operator, coeff, theta, operator_dict, new_operator_dict; kwargs...)
     end
 
     empty!(operator_dict)  # empty old dict because next generation of operators should by default stored in new_operator_dict (unless this is a overwritten by a custom function)
 
-    return new_operator_dict, operator_dict, param_idx  # swap dicts around
+    return new_operator_dict, operator_dict  # swap dicts around
 end
 
 """
-    applygatetoone!(gate, operator, coefficient, theta, param_idx, operator_dict, new_operator_dict, args...; kwargs...)
+    applygatetoone!(gate, operator, coefficient, theta, operator_dict, new_operator_dict, args...; kwargs...)
 
 3nd-level function below `mergingapply!` that applies one gate to one Pauli string in `operator_dict`, potentially using `new_operator_dict` in the process.
 This function can be overwritten for a custom gate if the lower-level function `apply` is not sufficient. 
 This is likely the the case if `apply` is not type-stable because it does not return a unique number of outputs. E.g., a Pauli gate returns 1 or 2 (operator, coefficient) outputs.
 """
-@inline function applygatetoone!(gate, operator, coefficient, theta, param_idx, operator_dict, new_operator_dict, args...; kwargs...)
+@inline function applygatetoone!(gate, operator, coefficient, theta, operator_dict, new_operator_dict, args...; kwargs...)
 
     ops_and_coeffs = apply(gate, operator, theta, coefficient)
 
@@ -126,34 +126,32 @@ end
 
 ### PAULI GATES
 """
-    applygatetoall!(gate::PauliGateUnion, thetas, param_idx, operator_dict, new_operator_dict, args...; kwargs...)
+    applygatetoall!(gate::PauliGateUnion, thetas, operator_dict, new_operator_dict, args...; kwargs...)
 
 Overload of `applygatetoall!` for `PauliGate` and `FastPauliGate` gates. Both `operator_dict` and `new_operator_dict` contain operators which will be merged later.
 """
-function applygatetoall!(gate::PauliGateUnion, thetas, param_idx, operator_dict, new_operator_dict, args...; kwargs...)
+function applygatetoall!(gate::PauliGateUnion, theta, operator_dict, new_operator_dict, args...; kwargs...)
     # TODO: there is a lot of code duplication. Can we write a more general function?
-    # TODO: could remove the need of this function by making the logic in `mergingapply` smarter.
 
-    theta = thetas[param_idx]
     for (operator, coeff) in operator_dict
-        applygatetoone!(gate, operator, coeff, theta, param_idx, operator_dict, new_operator_dict; kwargs...)
+        applygatetoone!(gate, operator, coeff, theta, operator_dict, new_operator_dict; kwargs...)
     end
 
-    return operator_dict, new_operator_dict, param_idx
+    return operator_dict, new_operator_dict
 end
 
 """
-    applygatetoone!(gate::PauliGateUnion, operator, coefficient, theta, param_idx, operator_dict, new_operator_dict, args...; kwargs...)
+    applygatetoone!(gate::PauliGateUnion, operator, coefficient, theta, operator_dict, new_operator_dict, args...; kwargs...)
 
 Overload of `applygatetoone!` for `PauliGate` and `FastPauliGate` gates. Checks for commutation of `gate` and `operator`, and applies the gate to the operator if they don't.
 """
-@inline function applygatetoone!(gate::PauliGateUnion, operator, coefficient, theta, param_idx, operator_dict, new_operator_dict, args...; kwargs...)
+@inline function applygatetoone!(gate::PauliGateUnion, operator, coefficient, theta, operator_dict, new_operator_dict, args...; kwargs...)
 
     if commutes(gate, operator)
         return
     end
 
-    operator, coeff1, new_oper, coeff2 = applynoncummuting(gate, operator, theta, coefficient; param_idx=param_idx)  # TODO: remove the param_idx from here because it is only specific to the Surrogate
+    operator, coeff1, new_oper, coeff2 = applynoncummuting(gate, operator, theta, coefficient)
 
     operator_dict[operator] = coeff1
     new_operator_dict[new_oper] = coeff2
@@ -164,25 +162,26 @@ end
 
 ### Amplitude Damping Noise
 """
-    applygatetoall!(gate::PauliGateUnion, thetas, param_idx, operator_dict, new_operator_dict, args...; kwargs...)
+    applygatetoall!(gate::PauliGateUnion, thetas, operator_dict, new_operator_dict, args...; kwargs...)
 
 Overload of `applygatetoall!` for `AmplitudeDampingNoise` gates. Both `operator_dict` and `new_operator_dict` contain operators which will be merged later.
 """
-function applygatetoall!(gate::AmplitudeDampingNoise, thetas, param_idx, operator_dict, new_operator_dict, args...; kwargs...)  # TODO: there is a lot of code duplication. Can we write a more general function?
-    theta = thetas[param_idx]
+function applygatetoall!(gate::AmplitudeDampingNoise, theta, operator_dict, new_operator_dict, args...; kwargs...)
+    # TODO: there is a lot of code duplication. Can we write a more general function? 
+
     for (operator, coeff) in operator_dict
-        applygatetoone!(gate, operator, coeff, theta, param_idx, operator_dict, new_operator_dict; kwargs...)
+        applygatetoone!(gate, operator, coeff, theta, operator_dict, new_operator_dict; kwargs...)
     end
 
-    return operator_dict, new_operator_dict, param_idx
+    return operator_dict, new_operator_dict
 end
 
 """
-    applygatetoone!(gate::PauliGateUnion, operator, coefficient, theta, param_idx, operator_dict, new_operator_dict, args...; kwargs...)
+    applygatetoone!(gate::PauliGateUnion, operator, coefficient, theta, operator_dict, new_operator_dict, args...; kwargs...)
 
 Overload of `applygatetoone!` for `AmplitudeDampingNoise` gates. Checks for whether `gate` will cause splitting and has tailored logic.
 """
-@inline function applygatetoone!(gate::AmplitudeDampingNoise, operator, coefficient, theta, param_idx, operator_dict, new_operator_dict, args...; kwargs...)
+@inline function applygatetoone!(gate::AmplitudeDampingNoise, operator, coefficient, theta, operator_dict, new_operator_dict, args...; kwargs...)
 
     if actsdiagonally(gate, operator)
         operator, coeff = diagonalapply(gate, operator, theta, coefficient)
