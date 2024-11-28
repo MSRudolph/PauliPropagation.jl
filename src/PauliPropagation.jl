@@ -47,7 +47,7 @@ export
     apply,
     applynoncummuting,
     CliffordGate,
-    default_clifford_map,
+    clifford_map,
     reset_clifford_map!,
     createcliffordmap,
     applywithmap,

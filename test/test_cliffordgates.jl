@@ -22,7 +22,11 @@ using Test
         (:Z, :Z) => (1, :I, :Z),
     )
     mapped_CNOT = createcliffordmap(CNOT_relations)
-    @test mapped_CNOT == default_clifford_map[:CNOT]
+    @test mapped_CNOT == clifford_map[:CNOT]
+
+    clifford_map[:CNOT2] = mapped_CNOT
+    reset_clifford_map!()
+    @test clifford_map == PauliPropagation._default_clifford_map
 
     # H
     H_relations = Dict(
@@ -32,5 +36,6 @@ using Test
         (:Z,) => (1, :X),
     )
     mapped_H = createcliffordmap(H_relations)
-    @test mapped_H == default_clifford_map[:H]
+    @test mapped_H == clifford_map[:H]
+
 end

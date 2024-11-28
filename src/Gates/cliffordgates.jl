@@ -2,7 +2,7 @@
     CliffordGate(symbol::Symbol, qinds::Vector{Int})
 
 A Clifford gate with the name `symbol` acting on the qubits `qinds`.
-`symbol` needs to match any of the implemented Clifford gates in the global `default_clifford_map`.
+`symbol` needs to match any of the implemented Clifford gates in the global `clifford_map`.
 """
 struct CliffordGate <: StaticGate
     symbol::Symbol
@@ -44,22 +44,26 @@ const _default_clifford_map = Dict(
     ],
 )
 
-const default_clifford_map = deepcopy(_default_clifford_map)
+const clifford_map = deepcopy(_default_clifford_map)
 
 """
     reset_clifford_map!()
 
-Reset global `default_clifford_map` to the CLifford gate implemented by default.
+Reset global `clifford_map` to the CLifford gate implemented by default.
 """
 function reset_clifford_map!()
-    global default_clifford_map = deepcopy(_default_clifford_map)
+    println(
+        "Resetting the global clifford_map to the default Clifford gates.\n
+        The warning may be ignored."
+    )
+    global clifford_map = deepcopy(_default_clifford_map)
     return
 end
 
 """
     createcliffordmap(gate_relations::Dict)
 
-Create a Clifford gate map from a dictionary of gate relations which can then be pushed to the global `default_clifford_map`.
+Create a Clifford gate map from a dictionary of gate relations which can then be pushed to the global `clifford_map`.
 `gate_relations` is a dictionary with pairs like `(:X, :X) => (-1, :Z, :X)`,
 describing the action of the Clifford gate on symbols (including the sign change).
 """
@@ -106,7 +110,7 @@ end
 Apply a `CliffordGate` to an integer Pauli string and an optional coefficient. 
 """
 function apply(gate::CliffordGate, pstr::PauliStringType, coefficient=1.0)
-    map_array = default_clifford_map[gate.symbol]
+    map_array = clifford_map[gate.symbol]
     return applywithmap(gate, pstr, coefficient, map_array)
 end
 
