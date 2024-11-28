@@ -29,6 +29,15 @@ function PauliGate(symbols::Union{AbstractArray,Tuple,Base.Generator}, qinds::Un
 end
 
 """
+    PauliGate(symbols, qinds, theta)
+
+Constructor for a frozen `PauliGate` acting on the qubits `qinds` with the Pauli operators `symbols`, and with fixed parameter `theta`.
+"""
+function PauliGate(symbols, qinds, theta)
+    return FrozenGate(PauliGate(symbols, qinds), theta)
+end
+
+"""
     FastPauliGate(symbols::Vector{Symbol}, qinds::Vector{Int}, bitoperator::PauliStringType)
 
 A parametrized Pauli rotation gate acting on the qubits `qinds` with the Pauli operators `symbols`.
@@ -58,14 +67,6 @@ Union type for `PauliGate` and `FastPauliGate`.
 PauliGateUnion = Union{PauliGate,FastPauliGate}
 
 """
-    tofastgates(gate::Gate, nqubits::Integer)
-
-Transforms a gate to a potentially faster but more involved gate type. 
-This is currently only for `PauliGate` to `FastPauliGate`.
-"""
-tofastgates(gate::Gate, nqubits::Integer) = gate  # TODO: move this to a more general place
-
-"""
     tofastgates(pauli_gate::PauliGate, nqubits::Integer)
 
 Transforms a `PauliGate` to a `FastPauliGate` which carries the integer representation of the gate generator.
@@ -77,44 +78,6 @@ function tofastgates(pauli_gate::PauliGate, nqubits::Integer)
         base_pstr = setpauli(base_pstr, pauli, qind)
     end
     return FastPauliGate(pauli_gate.symbols, pauli_gate.qinds, base_pstr)
-end
-
-"""
-    tofastgates(circ::Vector{G}) where {G<:Gate}
-
-Transforms a circuit in the form of a vector of gates to a vector of potentially faster gates where applicable.
-"""
-function tofastgates(circ::Vector{G}) where {G<:Gate}
-    # Find the maximum number of qubits
-    nq = 1
-    for gate in circ
-        nq = max(nq, maximum(gate.qinds))
-    end
-
-    fast_circ = similar(circ)
-    for (ii, gate) in enumerate(circ)
-        fast_circ[ii] = tofastgates(gate, nq)
-    end
-    return fast_circ
-end
-
-"""
-    tofastgates!(circ::Vector{G}) where {G<:Gate}
-
-Transforms a circuit in the form of a vector of gates, converting gates in-place to potentially faster gates where applicable.
-"""
-function tofastgates!(circ::Vector{G}) where {G<:Gate}
-    # Find the maximum number of qubits
-    nq = 1
-    for gate in circ
-        nq = max(nq, maximum(gate.qinds))
-    end
-
-    # TODO: This could fail if circ is too concretely typed
-    for (ii, gate) in enumerate(circ)
-        circ[ii] = tofastgates(gate, nq)
-    end
-    return circ
 end
 
 
