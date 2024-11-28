@@ -252,6 +252,15 @@ function *(psum::PauliSum, c::Number)
 end
 
 """
+    *(c::Number, psum::PauliSum)
+
+Multiply a `PauliSum` by a scalar `c`. This copies the PauliSum.
+"""
+function *(c::Number, psum::PauliSum)
+    return psum * c
+end
+
+"""
     /(psum::PauliSum, c::Number)
 
 Divide a `PauliSum` by a scalar `c`. This copies the PauliSum.
@@ -306,13 +315,27 @@ function add!(psum::PauliSum, pstr::PauliString)
 end
 
 """
-    add!(psum1::PauliSum, psum2::PauliSum)
+    add!(psum1::PauliSum, psum2::PauliSum; precision=_DEFAULT_PRECISION)
 
 Addition of two `PauliSum`s. Changes the first `PauliSum` in-place.
+Uses a default precision for coefficients under which a coefficient is considered to be 0.
 """
-function add!(psum1::PauliSum, psum2::PauliSum)
+function add!(psum1::PauliSum, psum2::PauliSum, precision=_DEFAULT_PRECISION)
     _checknumberofqubits(psum1, psum2)
-    mergewith!(+, psum1.op_dict, psum2.op_dict)
+    for (operator, coeff) in psum2.op_dict
+        if haskey(psum1.op_dict, operator)
+            psum1.op_dict[operator] += coeff
+
+            # Remove the operator if the resulting coefficient is small
+            if abs(psum1.op_dict[operator]) < precision
+                delete!(psum1.op_dict, operator)
+            end
+
+        else
+            psum1.op_dict[operator] = -coeff
+        end
+    end
+
     return psum1
 end
 
@@ -377,7 +400,8 @@ end
 """
     ubtract!(psum::PauliSum, pstr::PauliString; precision=_DEFAULT_PRECISION)
 
-In-place subtraction a `PauliString` from a `PauliSum`. Uses a default precision for coefficients under which a coefficient is considered to be 0.
+In-place subtraction a `PauliString` from a `PauliSum`. 
+Uses a default precision for coefficients under which a coefficient is considered to be 0.
 """
 function subtract!(psum::PauliSum, pstr::PauliString; precision=_DEFAULT_PRECISION)
     _checknumberofqubits(psum, pstr)
