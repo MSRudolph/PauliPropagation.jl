@@ -124,6 +124,16 @@ This is likely the the case if `apply` is not type-stable because it does not re
     return
 end
 
+### Frozen Gates
+"""
+    applygatetoall!(gate::FrozenGate, thetas, operator_dict, new_operator_dict, args...; kwargs...)
+
+Overload of `applygatetoall!` for `FrozenGate`s. Re-directs to `applygatetoall!` for the wrapped `FrozenGate.gate`.
+"""
+function applygatetoall!(gate::FrozenGate, theta, operator_dict, new_operator_dict, args...; kwargs...)
+    return applygatetoall!(gate.gate, gate.parameter, operator_dict, new_operator_dict, args...; kwargs...)
+end
+
 ### PAULI GATES
 """
     applygatetoall!(gate::PauliGateUnion, thetas, param_idx, operator_dict, new_operator_dict, args...; kwargs...)
