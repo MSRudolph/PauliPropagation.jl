@@ -154,7 +154,7 @@ end
 Filter a `PauliSum` in-place by removing all Pauli strings that satisfy the `filterfunc`.
 """
 function filter!(psum::PauliSum, filterfunc::Function)
-    psum.op_dict = filter!(psum.op_dict, filterfunc)
+    filter!(psum.op_dict, filterfunc)
     return psum
 end
 
@@ -223,7 +223,7 @@ function getnumcoeff(val::Number)
 end
 
 """
-    getnumcoeff(val::Number)
+    getnumcoeff(val::PathProperties)
 
 Get the numerical coefficient of a `PathProperties` wrapper.
 """

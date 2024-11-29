@@ -1,6 +1,7 @@
 module PauliPropagation
 
 using Base.Threads
+using ThreadsX
 
 include("./PauliAlgebra/PauliAlgebra.jl")
 export
@@ -25,7 +26,8 @@ export
     containsYorZ,
     pauliprod,
     commutes,
-    commutator
+    commutator,
+    getinttype
 
 
 include("pathproperties.jl")
@@ -45,13 +47,14 @@ export
     apply,
     applynoncummuting,
     CliffordGate,
-    default_clifford_map,
+    clifford_map,
     reset_clifford_map!,
     createcliffordmap,
     applywithmap,
     ParametrizedNoiseChannel,
     PauliNoise,
     DepolarizingNoise,
+    DephasingNoise,
     PauliXNoise,
     PauliYNoise,
     PauliZNoise,
@@ -91,8 +94,14 @@ export
     overlapwithplus,
     orthogonaltozero,
     orthogonaltoplus,
+    overlapwithpaulisum,
+    overlapwithmaxmixed,
     filter,
+    filter!,
     zerofilter,
+    zerofilter!,
+    plusfilter,
+    plusfilter!,
     evaluateagainstdict,
     getnumcoeff
 
@@ -103,13 +112,12 @@ export
     montecarlopropagation,
     mcapply
 
-include("surrogate.jl")
+include("Surrogate/Surrogate.jl")
 export
     NodePathProperties,
     EvalEndNode,
     PauliGateNode,
-    gettraceevalorder,
-    expectation,
-    resetnodes
+    evaluate!,
+    reset!
 
 end

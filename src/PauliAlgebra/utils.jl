@@ -120,9 +120,11 @@ end
 
 ## Helper functions for pretty printing
 """
-Returns a string representation of an integer Pauli string.
+    inttostring(pstr::PauliType, nqubits::Integer)
+
+Returns a string representation of an integer Pauli string `pstr` on `nqubits` qubits.
 """
-inttostring(pstr::PauliType, nqubits) = prod("$(inttosymbol(getpauli(pstr, ii)))" for ii in 1:nqubits)
+inttostring(pstr::PauliType, nqubits::Integer) = prod("$(inttosymbol(getpauli(pstr, ii)))" for ii in 1:nqubits)
 
 """
 Pretty string function.

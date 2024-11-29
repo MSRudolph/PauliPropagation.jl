@@ -8,20 +8,43 @@ Pretty print for PathProperties
 """
 Base.show(io::IO, pth::PathProperties) = print(io, "PathProperties($(typeof(pth.coeff)), nsins=$(pth.nsins), ncos=$(pth.ncos), freq=$(pth.freq))")
 
-import Base: *
-"""
-Multiplication of `PathProperties` with a number modifies coefficient in-place.
-"""
-function *(pth::PathProperties, val::Number)
-    pth.coeff *= val
-    return pth
-end
 import Base: copy
 """
-Copy a `PathProperties` object. Does not copy the coefficient `coeff`.
+Copy a `PathProperties` object. Does not deepcopy, i.e., the fields are not copied.
 """
-function copy(path_properties::PathProperties)
-    return typeof(path_properties)(path_properties.coeff, path_properties.nsins, path_properties.ncos, path_properties.freq)
+function copy(pth::T) where {T<:PathProperties}
+    fields = fieldnames(T)
+    return T((getfield(pth, field) for field in fields)...)
+end
+
+
+import Base: *
+"""
+Multiplication of the `coeff` field in a `PathProperties` object with a number.
+Requires that the `PathProperties` object has a `coeff` field as the first field.
+"""
+function *(pth::T, val::Number) where {T<:PathProperties}
+    fields = fieldnames(T)
+    return T(getfield(pth, :coeff) * val, (getfield(pth, fields[ii]) for ii in 2:length(fields))...)
+end
+
+"""
+Multiplication of a `PathProperties` object with a number.
+Requires that the `PathProperties` object has a `coeff` field as the first field which will be multiplied.
+"""
+function *(val::Number, pth::T) where {T<:PathProperties}
+    return pth * val
+end
+
+import Base: +
+"""
+Addition of two `PathProperties` objects of equal concrete type.
+Adds the `coeff` fields and takes the minimum of the other fields.
+Requires that the `PathProperties` object has a `coeff` field as the first field.
+"""
+function +(pth1::T, pth2::T) where {T<:PathProperties}
+    fields = fieldnames(T)
+    return T(getfield(pth1, :coeff) + getfield(pth2, :coeff), (min(getfield(pth1, fields[ii]), getfield(pth2, fields[ii])) for ii in 2:length(fields))...)
 end
 
 """
@@ -31,14 +54,13 @@ Wrapper type for numerical coefficients in Pauli propagation that records
 the number of sin and cos terms applied, and the so-called frequency, which is their sum.
 It appears redundant but these three properties need to be tracked separately because of how merging affects them.
 """
-mutable struct NumericPathProperties <: PathProperties
-    coeff::Float64
+struct NumericPathProperties <: PathProperties
+    coeff::Float64 # TODO: Adapt to non-Float64 coefficients.
     nsins::Int
     ncos::Int
     freq::Int
 end
 
-#TODO: Adapt to non-Float64 coefficients.
 """
     NumericPathProperties(coeff::Number)
 
@@ -47,6 +69,7 @@ Initializes `nsins`, `ncos`, and `freq` to zero.
 """
 NumericPathProperties(coeff::Number) = NumericPathProperties(float(coeff), 0, 0, 0)
 
+# TODO: More general show method for general fields.
 """
 Pretty print for NumericPathProperties
 """

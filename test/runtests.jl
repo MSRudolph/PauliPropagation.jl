@@ -27,6 +27,7 @@ using Random
     Random.seed!(42)
     include("test_noisechannels.jl")
     @test paulinoise(8, 4, Inf, 0.0)
+    @test dephasingnoise(17, 3, Inf, 0.0)
 
     include("test_cliffordgates.jl")
 

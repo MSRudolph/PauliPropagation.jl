@@ -54,13 +54,9 @@ function surrogatePP(nq, nl, W, max_freq)
     Random.seed!(42)
     thetas = randn(m)
 
-    dsym = mergingbfs(circ, wrapped_op, zeros(m); max_weight=W, max_freq=max_freq)
+    dsym = mergingbfs(circ, wrapped_op; max_weight=W, max_freq=max_freq)
+    zerofilter!(dsym)  # Filter the nodes that you find relevant
+    evaluate!(dsym, thetas)
 
-    final_nodes = collect(pth.coeff for (obs, pth) in zerofilter(dsym))
-    final_eval_node = PauliGateNode(parents=final_nodes, trig_inds=zeros(Int, length(final_nodes)), signs=ones(length(final_nodes)), param_idx=1, cummulative_value=0.0)
-    resetnodes(final_eval_node)
-    resetnodes(final_eval_node)
-    eval_list = gettraceevalorder(final_eval_node, zeros(m))
-
-    return expectation(eval_list, thetas)
+    return overlapwithzero(dsym)
 end
