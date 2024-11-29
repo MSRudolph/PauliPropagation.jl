@@ -8,7 +8,7 @@ Perform merging breadth-first search (BFS) surrogation of a `PauliString` propag
 A custom truncation function can be passed as `customtruncatefn` with the signature customtruncatefn(pstr::PauliStringType, coefficient)::Bool.
 """
 function mergingbfs(circ, pstr::PauliString; kwargs...)
-    pstr = _checkandconvert(pstr)
+    _checkcoefftype(pstr)
     psum = PauliSum(pstr.nqubits, pstr)
     return mergingbfs(circ, psum; kwargs...)
 end
@@ -21,7 +21,7 @@ Perform merging breadth-first search (BFS) surrogation of a `PauliSum` propagati
 A custom truncation function can be passed as `customtruncatefn` with the signature customtruncatefn(pstr::PauliStringType, coefficient)::Bool.
 """
 function mergingbfs(circ, psum::PauliSum; kwargs...)
-    psum = _checkandconvert(psum)
+    _checkcoefftype(psum)
     pauli_dict = mergingbfs!(circ, deepcopy(psum.op_dict); kwargs...)
     return PauliSum(psum.nqubits, pauli_dict)
 end
@@ -55,7 +55,7 @@ A custom truncation function can be passed as `customtruncatefn` with the signat
 """
 function mergingbfs!(circ, d::Dict{OpType,NodePathProperties}; kwargs...) where {OpType<:PauliStringType}
     thetas = Array{Float64}(undef, countparameters(circ))
-    # TODO: Should we have a version of this that doesn't require thetas and uses surrogate code?
+
     param_idx = length(thetas)
 
     second_d = typeof(d)()  # pre-allocating somehow doesn't do anything
@@ -72,14 +72,17 @@ function mergingbfs!(circ, d::Dict{OpType,NodePathProperties}; kwargs...) where 
 end
 
 
-function _checkandconvert(pobj::Union{PauliString,PauliSum})
+function _checkcoefftype(pobj::Union{PauliString,PauliSum})
     # convert numerical coefficients to `NodePathProperties` 
     CoeffType = typeof(pobj).parameters[2]
     if CoeffType <: Number
-        println("Converting coefficient of type `$(CoeffType)` to `NodePathProperties` for the Surrogate.")
-        pobj = wrapcoefficients(pobj, NodePathProperties)
+        throw(
+            "`You are using the Surrogate's propagation function without passing parameters. " *
+            "But the current coefficient type is $(CoeffType)`. " *
+            "Consider converting to `NodePathProperties` via `wrapcoefficients(your_current_paulis, NodePathProperties)`."
+        )
     end
-    return pobj
+    return
 end
 
 
