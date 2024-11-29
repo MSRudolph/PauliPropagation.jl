@@ -15,16 +15,6 @@ Node type for the Pauli strings in the observable to be backpropagated.
     is_evaluated::Bool = false
 end
 
-# import Base: +
-# function +(end_node::EvalEndNode, val::Number)
-#     end_node.coefficient += val
-#     return end_node
-# end
-
-# function +(val::Number, end_node::EvalEndNode)
-#     return end_node + val
-# end
-
 """
     EvalEndNode(operator::Integer)
 
