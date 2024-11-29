@@ -8,6 +8,7 @@ Perform merging breadth-first search (BFS) surrogation of a `PauliString` propag
 A custom truncation function can be passed as `customtruncatefn` with the signature customtruncatefn(pstr::PauliStringType, coefficient)::Bool.
 """
 function mergingbfs(circ, pstr::PauliString; kwargs...)
+    pstr = _checkandconvert(pstr)
     psum = PauliSum(pstr.nqubits, pstr)
     return mergingbfs(circ, psum; kwargs...)
 end
@@ -20,6 +21,7 @@ Perform merging breadth-first search (BFS) surrogation of a `PauliSum` propagati
 A custom truncation function can be passed as `customtruncatefn` with the signature customtruncatefn(pstr::PauliStringType, coefficient)::Bool.
 """
 function mergingbfs(circ, psum::PauliSum; kwargs...)
+    psum = _checkandconvert(psum)
     pauli_dict = mergingbfs!(circ, deepcopy(psum.op_dict); kwargs...)
     return PauliSum(psum.nqubits, pauli_dict)
 end
@@ -34,6 +36,11 @@ The input `psum` will be modified.
 A custom truncation function can be passed as `customtruncatefn` with the signature customtruncatefn(pstr::PauliStringType, coefficient)::Bool.
 """
 function mergingbfs!(circ, psum::PauliSum; kwargs...)
+    # check that circ only constists of Pauli gates and Clifford gates
+    if !all(isa(gate, CliffordGate) || isa(gate, PauliGateUnion) for gate in circ)
+        throw(ArgumentError("The surrogate currently only accepts Clifford gates and (Fast)Pauli gates."))
+    end
+
     pauli_dict = mergingbfs!(circ, psum.op_dict; kwargs...)
     return PauliSum(psum.nqubits, pauli_dict)
 end
@@ -62,6 +69,17 @@ function mergingbfs!(circ, d::Dict{OpType,NodePathProperties}; kwargs...) where 
         d, second_d, param_idx = mergingapply(gate, d, second_d, thetas, param_idx; param_idx=param_idx, kwargs...)
     end
     return d
+end
+
+
+function _checkandconvert(pobj::Union{PauliString,PauliSum})
+    # convert numerical coefficients to `NodePathProperties` 
+    CoeffType = typeof(pobj).parameters[2]
+    if CoeffType <: Number
+        println("Converting coefficient of type `$(CoeffType)` to `NodePathProperties` for the Surrogate.")
+        pobj = wrapcoefficients(pobj, NodePathProperties)
+    end
+    return pobj
 end
 
 
