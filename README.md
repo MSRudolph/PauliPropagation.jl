@@ -72,7 +72,7 @@ max_weight = 6
 min_abs_coeff = 1e-4
 
 ## propagate through the circuit with our best (and currently only propagation method)
-pauli_sum = mergingbfs(circuit, observable, parameters; max_weight=max_weight, min_abs_coeff=min_abs_coeff)
+pauli_sum = propagate(circuit, observable, parameters; max_weight=max_weight, min_abs_coeff=min_abs_coeff)
 
 ## overlap with the initial state
 overlapwithzero(pauli_sum)
