@@ -4,9 +4,6 @@
 The current focus of the package is to estimate quantities like $`Tr[\rho U^\dagger \hat{O} U]`$ where $`\hat{O}`$ is an observable sparse in Pauli basis, $`U`$ as a quantum circuit, and $`\rho`$ a quantum state.
 
 
-[comment]: <> TODO: Explain some of the goals of the library better here.
-[comment]: <> Link to Slack
-
 ## Installation
 
 The `PauliPropagation.jl` package is not yet registered. But you can install it in at least the following two ways:
