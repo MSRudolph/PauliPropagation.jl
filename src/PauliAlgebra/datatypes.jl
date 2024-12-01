@@ -350,7 +350,7 @@ function add!(psum::PauliSum, pauli::Symbol, qind::Integer, coeff=1.0)
 end
 
 
-# TODO: add! for PauliStringType with coefficient. Use these functions throughout mergingbfs
+# TODO: add! for PauliStringType with coefficient. Use these functions throughout `propagate`
 
 """
     add!(psum::PauliSum, pstr_vec::Vector{Symbol}, qinds::Vector{Int}, coeff=1.0)

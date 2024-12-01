@@ -26,9 +26,9 @@ function paulinoise(nq, nl, W, min_abs_coeff)
     insert!(thetas2, where_ind, noise_p)
     insert!(thetas2, where_ind, noise_p)
 
-    dnum1 = mergingbfs(depolarizing_circ, op, thetas1; max_weight=W, min_abs_coeff=min_abs_coeff)
+    dnum1 = propagate(depolarizing_circ, op, thetas1; max_weight=W, min_abs_coeff=min_abs_coeff)
 
-    dnum2 = mergingbfs(pauli_circ, op, thetas2; max_weight=W, min_abs_coeff=min_abs_coeff)
+    dnum2 = propagate(pauli_circ, op, thetas2; max_weight=W, min_abs_coeff=min_abs_coeff)
 
     return overlapwithzero(dnum1) ≈ overlapwithzero(dnum2)
 end
@@ -59,9 +59,9 @@ function dephasingnoise(nq, nl, W, min_abs_coeff)
     insert!(thetas2, where_ind, noise_p)
     insert!(thetas2, where_ind, noise_p)
 
-    dnum1 = mergingbfs(dephasing_circ, op, thetas1; max_weight=W, min_abs_coeff=min_abs_coeff)
+    dnum1 = propagate(dephasing_circ, op, thetas1; max_weight=W, min_abs_coeff=min_abs_coeff)
 
-    dnum2 = mergingbfs(pauli_circ, op, thetas2; max_weight=W, min_abs_coeff=min_abs_coeff)
+    dnum2 = propagate(pauli_circ, op, thetas2; max_weight=W, min_abs_coeff=min_abs_coeff)
 
     return overlapwithzero(dnum1) ≈ overlapwithzero(dnum2)
 end

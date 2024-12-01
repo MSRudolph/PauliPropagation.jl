@@ -59,20 +59,20 @@ function propagate!(circ, psum::Dict, thetas; kwargs...)
     # - verbose option  
     # - more elegant param_idx incrementation
     for gate in reverse(circ)
-        psum, second_psum, param_idx = mergingapply(gate, psum, second_psum, thetas, param_idx; kwargs...)
+        psum, second_psum, param_idx = mergingapply!(gate, psum, second_psum, thetas, param_idx; kwargs...)
     end
     return psum
 end
 
 """
-    mergingapply(gate, psum, second_psum, thetas, param_idx, args...; kwargs...)
+    mergingapply!(gate, psum, second_psum, thetas, param_idx, args...; kwargs...)
 
 1st-level function below `propagate!` that applies one gate to all operators in `psum`, potentially using `second_psum` in the process,
 and merges everything back into `psum`. Truncations are checked here after merging.
 This function can be overwritten for a custom gate if the lower-level functions `applygatetoall!`, `applygatetoone!`, and `apply` are not sufficient.
 A custom truncation function can be passed as `customtruncatefn` with the signature customtruncatefn(pstr::PauliStringType, coefficient)::Bool.
 """
-function mergingapply(gate, psum, second_psum, thetas, param_idx, args...; kwargs...)
+function mergingapply!(gate, psum, second_psum, thetas, param_idx, args...; kwargs...)
 
     theta = thetas[param_idx]
     psum, second_psum = applygatetoall!(gate, theta, psum, second_psum; kwargs...)

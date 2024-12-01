@@ -1,64 +1,64 @@
-### Mergingbfs necessities
+### Propagation necessities
 
 """
-    mergingbfs(circ, pstr::PauliString; kwargs...)
+    propagate(circ, pstr::PauliString; kwargs...)
 
-Perform merging breadth-first search (BFS) surrogation of a `PauliString` propagating through the circuit `circ` in the Heisenberg picture. 
+Propagate a `PauliString` through the circuit `circ` in the Heisenberg picture. 
 `kwargs` are passed to the truncation function. Supported by default are `max_weight`, `min_abs_coeff`, `max_freq`, and `max_sins`.
 A custom truncation function can be passed as `customtruncatefn` with the signature customtruncatefn(pstr::PauliStringType, coefficient)::Bool.
 """
-function mergingbfs(circ, pstr::PauliString; kwargs...)
+function propagate(circ, pstr::PauliString; kwargs...)
     _checkcoefftype(pstr)
     psum = PauliSum(pstr.nqubits, pstr)
-    return mergingbfs(circ, psum; kwargs...)
+    return propagate(circ, psum; kwargs...)
 end
 
 """
-    mergingbfs(circ, psum::PauliSum; kwargs...)
+    propagate(circ, psum::PauliSum; kwargs...)
 
-Perform merging breadth-first search (BFS) surrogation of a `PauliSum` propagating through the circuit `circ` in the Heisenberg picture. 
+Propagate a `PauliSum` through the circuit `circ` in the Heisenberg picture. 
 `kwargs` are passed to the truncation function. Supported by default are `max_weight`, `min_abs_coeff`, `max_freq`, and `max_sins`.
 A custom truncation function can be passed as `customtruncatefn` with the signature customtruncatefn(pstr::PauliStringType, coefficient)::Bool.
 """
-function mergingbfs(circ, psum::PauliSum; kwargs...)
+function propagate(circ, psum::PauliSum; kwargs...)
     _checkcoefftype(psum)
-    pauli_dict = mergingbfs!(circ, deepcopy(psum.op_dict); kwargs...)
+    pauli_dict = propagate!(circ, deepcopy(psum.op_dict); kwargs...)
     return PauliSum(psum.nqubits, pauli_dict)
 end
 
 
 """
-    mergingbfs!(circ, psum::PauliSum; kwargs...)
+    propagate!(circ, psum::PauliSum; kwargs...)
 
-Perform in-place merging breadth-first search (BFS) surrogation of a `PauliSum` propagating through the circuit `circ` in the Heisenberg picture. 
+Propagate a `PauliSum` through the circuit `circ` in the Heisenberg picture. 
 The input `psum` will be modified.
 `kwargs` are passed to the truncation function. Supported by default are `max_weight`, `min_abs_coeff`, `max_freq`, and `max_sins`.
 A custom truncation function can be passed as `customtruncatefn` with the signature customtruncatefn(pstr::PauliStringType, coefficient)::Bool.
 """
-function mergingbfs!(circ, psum::PauliSum; kwargs...)
+function propagate!(circ, psum::PauliSum; kwargs...)
     # check that circ only constists of Pauli gates and Clifford gates
     if !all(isa(gate, CliffordGate) || isa(gate, PauliGateUnion) for gate in circ)
         throw(ArgumentError("The surrogate currently only accepts Clifford gates and (Fast)Pauli gates."))
     end
 
-    pauli_dict = mergingbfs!(circ, psum.op_dict; kwargs...)
-    return PauliSum(psum.nqubits, pauli_dict)
+    propagate!(circ, psum.op_dict; kwargs...)
+    return psum
 end
 
 """
-    mergingbfs!(circ, d::Dict; kwargs...)
+    propagate!(circ, d::Dict{OpType,NodePathProperties}; kwargs...)
 
-Perform in-place merging breadth-first search (BFS) simulation of a `Dict{PauliStringType,CoeffType}` propagating through the circuit `circ` in the Heisenberg picture. 
+Propagate a `Dict{PauliStringType,CoeffType}` through the circuit `circ` in the Heisenberg picture. 
 The input `psum` will be modified.
 `kwargs` are passed to the truncation function. Supported by default are `max_weight`, `min_abs_coeff`, `max_freq`, and `max_sins`.
 A custom truncation function can be passed as `customtruncatefn` with the signature customtruncatefn(pstr::PauliStringType, coefficient)::Bool.
 """
-function mergingbfs!(circ, d::Dict{OpType,NodePathProperties}; kwargs...) where {OpType<:PauliStringType}
+function propagate!(circ, psum::Dict{OpType,NodePathProperties}; kwargs...) where {OpType<:PauliStringType}
     thetas = Array{Float64}(undef, countparameters(circ))
 
     param_idx = length(thetas)
 
-    second_d = typeof(d)()  # pre-allocating somehow doesn't do anything
+    second_d = typeof(psum)()  # pre-allocating somehow doesn't do anything
 
     ## TODO:
     # - decide where to reverse the circuit
@@ -66,9 +66,9 @@ function mergingbfs!(circ, d::Dict{OpType,NodePathProperties}; kwargs...) where 
     # - more elegant param_idx incrementation
     for gate in reverse(circ)
         # add param_index as kwarg, which will descend into the apply function eventually
-        d, second_d, param_idx = mergingapply(gate, d, second_d, thetas, param_idx; param_idx=param_idx, kwargs...)
+        psum, second_d, param_idx = mergingapply!(gate, psum, second_d, thetas, param_idx; param_idx=param_idx, kwargs...)
     end
-    return d
+    return psum
 end
 
 
