@@ -40,6 +40,7 @@ function freeze(gates, parameters)
             frozen_gates[i] = gate
         end
     end
+    return frozen_gates
 end
 
 """

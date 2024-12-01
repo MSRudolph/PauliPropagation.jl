@@ -31,6 +31,8 @@ using Random
 
     include("test_cliffordgates.jl")
 
+    include("test_frozengates.jl")
+
     include("test_pauligates.jl")
 
     include("test_paulioperations.jl")
