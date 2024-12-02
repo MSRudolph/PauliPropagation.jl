@@ -4,7 +4,7 @@ using Test
 function brickcircuit(seed)
     nq = 8
     nl = 4
-    op = PauliString(nq, :Z, round(Int, nq / 2))
+    pstr = PauliString(nq, :Z, round(Int, nq / 2))
 
     topo = bricklayertopology(nq; periodic=false)
     circ = hardwareefficientcircuit(nq, nl; topology=topo)
@@ -12,18 +12,18 @@ function brickcircuit(seed)
     Random.seed!(seed)
     thetas = randn(length(circ))
 
-    return circ, op, thetas
+    return circ, pstr, thetas
 end
 
 @testset "Truncate damping coefficients Tests" begin
     """Test the truncations by damped coefficients."""
     seed = 42
-    circ, op, thetas = brickcircuit(seed)
+    circ, pstr, thetas = brickcircuit(seed)
 
     W = Inf
     min_abs_coeff = 0.0
     evolved_p = propagate(
-        circ, op, thetas;
+        circ, pstr, thetas;
         max_weight=W, min_abs_coeff=min_abs_coeff
     )
     expected_expval = overlapwithzero(evolved_p)
@@ -33,7 +33,7 @@ end
         pstr, coeff, gamma, min_abs_coeff
     )
     evolved_p = propagate(
-        circ, op, thetas;
+        circ, pstr, thetas;
         max_weight=W, min_abs_coeff=min_abs_coeff,
         customtruncatefn=truncategamma
     )
@@ -46,7 +46,7 @@ end
         pstr, coeff, gamma, min_abs_coeff
     )
     evolved_p = propagate(
-        circ, op, thetas;
+        circ, pstr, thetas;
         max_weight=W, min_abs_coeff=min_abs_coeff,
         customtruncatefn=truncategamma
     )

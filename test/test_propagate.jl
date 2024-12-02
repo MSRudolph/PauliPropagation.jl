@@ -3,7 +3,7 @@ using Random
 
 function numericalPP(nq, nl, W, min_abs_coeff)
 
-    op = PauliString(nq, :Z, round(Int, nq / 2))
+    pstr = PauliString(nq, :Z, round(Int, nq / 2))
 
     topo = bricklayertopology(nq; periodic=false)
     circ = hardwareefficientcircuit(nq, nl; topology=topo)
@@ -13,7 +13,7 @@ function numericalPP(nq, nl, W, min_abs_coeff)
     Random.seed!(42)
     thetas = randn(m)
 
-    dnum = propagate(circ, op, thetas; max_weight=W, min_abs_coeff=min_abs_coeff)
+    dnum = propagate(circ, pstr, thetas; max_weight=W, min_abs_coeff=min_abs_coeff)
 
     return overlapwithzero(dnum) # expectation
 end
@@ -22,9 +22,9 @@ end
 
 function hybridPP(nq, nl, W, min_abs_coeff, max_freq)
 
-    op = PauliString(nq, :Z, round(Int, nq / 2))
+    pstr = PauliString(nq, :Z, round(Int, nq / 2))
 
-    wrapped_op = wrapcoefficients(op, NumericPathProperties)
+    wrapped_op = wrapcoefficients(pstr, NumericPathProperties)
 
     topo = bricklayertopology(nq; periodic=false)
     circ = hardwareefficientcircuit(nq, nl; topology=topo)
@@ -42,9 +42,9 @@ end
 
 function surrogatePP(nq, nl, W, max_freq)
 
-    op = PauliString(nq, :Z, round(Int, nq / 2))
+    pstr = PauliString(nq, :Z, round(Int, nq / 2))
 
-    wrapped_op = wrapcoefficients(op, NodePathProperties)
+    wrapped_op = wrapcoefficients(pstr, NodePathProperties)
 
     topo = bricklayertopology(nq; periodic=false)
     circ = hardwareefficientcircuit(nq, nl; topology=topo)
