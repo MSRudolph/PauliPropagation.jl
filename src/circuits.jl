@@ -1,3 +1,9 @@
+#=
+Functions for defining circuits for unitary evolution.
+=#
+
+#TODO: refactor this to add building blocks for circuit layers.
+
 """
     countparameters(circuit)
 
@@ -245,6 +251,50 @@ function tfitrottercircuit(nqubits::Integer, nlayers::Integer; topology=nothing,
     end
 
     tofastgates!(circuit)
+    return circuit
+end
+
+"""
+    tiltedtfitrottercircuit(n_qubits, n_layers; topology=nothing)
+
+Returns a Trottterized circuit for the tilted transverse field Ising model.
+H = Sum_{(i, i+1) in topology} Z_i Z_{i+1} 
+  + Sum_{i=1}^{n_qubits} Z_i + Sum_{i=1}^{n_qubits} X_i
+
+# Arguments
+- `n_qubits::Integer`: The number of qubits in the circuit.
+- `n_layers::Integer`: The number of Trotter steps to perform.
+- `topology=nothing`: The topology of the qubits in the circuit. 
+    Default (nothing): A linear chain.
+
+# Returns
+The Trottterized circuit as a vector of Gate.
+"""
+function tiltedtfitrottercircuit(n_qubits, n_layers; topology=nothing)
+    circuit::Vector{Gate} = []
+
+    if isnothing(topology)
+        topology = [(ii, ii + 1) for ii in 1:n_qubits-1]
+    end
+
+    zzlayer(circuit) = append!(
+        circuit, (PauliGate([:Z, :Z], collect(pair)) for pair in topology)
+    )
+    zlayer(circuit) = append!(
+        circuit, (PauliGate([:Z], [ii]) for ii in 1:n_qubits)
+    )
+    xlayer(circuit) = append!(
+        circuit, (PauliGate([:X], [ii]) for ii in 1:n_qubits)
+    )
+
+    for _ in 1:n_layers
+        zzlayer(circuit)
+        zlayer(circuit)
+        xlayer(circuit)
+    end
+
+    tofastgates!(circuit)
+    
     return circuit
 end
 
