@@ -1,3 +1,6 @@
+## This file contains the foundational functions for the `propagation` function. 
+## They can be overloaded to custom gate types or custom behaviour in `specializations.jl`.
+
 """
     propagate(circ, pstr::PauliString, thetas; kwargs...)
 
