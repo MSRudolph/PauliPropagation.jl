@@ -86,10 +86,13 @@ export
 
 include("Propagation/Propagation.jl")
 export
-    mergingbfs,
-    mergingbfs!,
+    propagate,
+    propagate!,
+    mergingapply!,
     applygatetoall!,
-    applygatetoone!
+    applygatetoone!,
+    mergeandclear!,
+    merge
 
 include("stateoverlap.jl")
 export

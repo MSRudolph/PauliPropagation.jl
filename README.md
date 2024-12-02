@@ -4,9 +4,6 @@
 The current focus of the package is to estimate quantities like $`Tr[\rho U^\dagger \hat{O} U]`$ where $`\hat{O}`$ is an observable sparse in Pauli basis, $`U`$ as a quantum circuit, and $`\rho`$ a quantum state.
 
 
-[comment]: <> TODO: Explain some of the goals of the library better here.
-[comment]: <> Link to Slack
-
 ## Installation
 
 The `PauliPropagation.jl` package is not yet registered. But you can install it in at least the following two ways:
@@ -72,7 +69,7 @@ max_weight = 6
 min_abs_coeff = 1e-4
 
 ## propagate through the circuit with our best (and currently only propagation method)
-pauli_sum = mergingbfs(circuit, observable, parameters; max_weight=max_weight, min_abs_coeff=min_abs_coeff)
+pauli_sum = propagate(circuit, observable, parameters; max_weight=max_weight, min_abs_coeff=min_abs_coeff)
 
 ## overlap with the initial state
 overlapwithzero(pauli_sum)

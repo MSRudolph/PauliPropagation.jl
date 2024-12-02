@@ -13,7 +13,7 @@ function numericalPP(nq, nl, W, min_abs_coeff)
     Random.seed!(42)
     thetas = randn(m)
 
-    dnum = mergingbfs(circ, op, thetas; max_weight=W, min_abs_coeff=min_abs_coeff)
+    dnum = propagate(circ, op, thetas; max_weight=W, min_abs_coeff=min_abs_coeff)
 
     return overlapwithzero(dnum) # expectation
 end
@@ -34,7 +34,7 @@ function hybridPP(nq, nl, W, min_abs_coeff, max_freq)
     Random.seed!(42)
     thetas = randn(m)
 
-    dhyb = mergingbfs(circ, wrapped_op, thetas; max_weight=W, max_freq=max_freq, min_abs_coeff=min_abs_coeff)
+    dhyb = propagate(circ, wrapped_op, thetas; max_weight=W, max_freq=max_freq, min_abs_coeff=min_abs_coeff)
 
     return overlapwithzero(dhyb)
 end
@@ -54,7 +54,7 @@ function surrogatePP(nq, nl, W, max_freq)
     Random.seed!(42)
     thetas = randn(m)
 
-    dsym = mergingbfs(circ, wrapped_op; max_weight=W, max_freq=max_freq)
+    dsym = propagate(circ, wrapped_op; max_weight=W, max_freq=max_freq)
     zerofilter!(dsym)  # Filter the nodes that you find relevant
     evaluate!(dsym, thetas)
 
