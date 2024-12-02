@@ -21,18 +21,18 @@ end
     circ, op, thetas = brickcircuit(seed)
 
     W = Inf
-    min_abs_coeff = 0.
-    evolved_p = mergingbfs(
+    min_abs_coeff = 0.0
+    evolved_p = propagate(
         circ, op, thetas;
         max_weight=W, min_abs_coeff=min_abs_coeff
     )
     expected_expval = overlapwithzero(evolved_p)
 
-    gamma = 0.
+    gamma = 0.0
     truncategamma = (pstr, coeff) -> truncatedampingcoeff(
         pstr, coeff, gamma, min_abs_coeff
     )
-    evolved_p = mergingbfs(
+    evolved_p = propagate(
         circ, op, thetas;
         max_weight=W, min_abs_coeff=min_abs_coeff,
         customtruncatefn=truncategamma
@@ -45,7 +45,7 @@ end
     truncategamma = (pstr, coeff) -> truncatedampingcoeff(
         pstr, coeff, gamma, min_abs_coeff
     )
-    evolved_p = mergingbfs(
+    evolved_p = propagate(
         circ, op, thetas;
         max_weight=W, min_abs_coeff=min_abs_coeff,
         customtruncatefn=truncategamma

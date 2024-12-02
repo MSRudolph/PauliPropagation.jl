@@ -66,6 +66,14 @@ One-argument constructor for `NodePathProperties`. Initializes `nsins`, `ncos`, 
 NodePathProperties(coeff::CircuitNode) = NodePathProperties(coeff, 0, 0, 0)
 
 """
+    numcoefftype(node::NodePathProperties)
+
+Get the type of the numerical coefficient of a `NodePathProperties` object.
+Returns the type of the `cummulative_value` field of the stored `CircuitNode`.
+"""
+numcoefftype(node::NodePathProperties) = typeof(getnumcoeff(node))
+
+"""
     getnumcoeff(val::NodePathProperties)
 
 Get the cummulative coefficient of a `NodePathProperties` node.

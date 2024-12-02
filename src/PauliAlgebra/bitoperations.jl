@@ -4,6 +4,8 @@
 Function to return the smallest integer type that can hold nqubits for memory and speed.
 """
 function getinttype(nqubits::Integer)
+    # TODO: This function is type unstable
+
     # we need 2 bits per qubit
     nbits = 2 * nqubits
 

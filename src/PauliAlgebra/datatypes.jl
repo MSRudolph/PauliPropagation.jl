@@ -26,15 +26,44 @@ function PauliString(nqubits::Integer, pauli::Symbol, qind::Integer, coeff=1.0)
 end
 
 """
-    PauliString(nqubits, pstr::Vector{Symbol}, qinds::Vector{Int}, coeff=1.0)
+    PauliString(nqubits, pstr, qinds, coeff=1.0)
 
 Constructor for a `PauliString` on `nqubits` qubits from a list of Symbols representing non-identity Pauli operator on qubits `qinds` with coefficient `coeff`.
 """
-function PauliString(nqubits, pstr::Vector{Symbol}, qinds::Vector{Int}, coeff=1.0)
+function PauliString(nqubits, pstr, qinds, coeff=1.0)
     pauli = symboltoint(nqubits, pstr, qinds)
     coeff = _convertcoefficients(coeff)
     return PauliString(nqubits, pauli, coeff)
 end
+
+"""
+    paulitype(pstr::PauliString)
+
+Get the Pauli integer type of a `PauliString`.
+"""
+function paulitype(pstr::PauliString)
+    return typeof(pstr.operator)
+end
+
+"""
+    coefftype(pstr::PauliString)
+
+Get the coefficient type of a `PauliString`.
+"""
+function coefftype(pstr::PauliString)
+    return typeof(pstr.coeff)
+end
+
+"""
+    numcoefftype(pstr::PauliString)
+
+Get the type of the numerical coefficient of a `PauliString`. 
+Will get the type of the `coeff` field of a potential PathProperties type.
+"""
+function numcoefftype(pstr::PauliString)
+    return numcoefftype(pstr.coeff)
+end
+
 
 import Base.show
 """
@@ -61,7 +90,7 @@ end
 
 
 """
-    PauliSum(nqubits::Int, op_dict::Dict{OpType,CoeffType})
+    PauliSum(nqubits::Int, op_dict::Dict)
 
 `PauliSum`` is a struct that represents a sum of Pauli operators acting on `nqubits` qubits.
 It is a wrapper around a dictionary Dict(Pauli string => coefficient}, where the Pauli strings are typically unsigned Integers for efficiency reasons.
@@ -83,7 +112,10 @@ PauliSum(nqubits::Integer) = PauliSum(nqubits, Float64)
 
 Contructor for an empty `PauliSum` on `nqubits` qubits. Element type can be provided.
 """
-PauliSum(nq::Int, ELTYPE::T) where {T<:DataType} = PauliSum(nq, Dict{getinttype(nq),ELTYPE}())
+function PauliSum(nq::Int, ELTYPE::T) where {T<:DataType}
+    OpType = getinttype(nq)
+    return PauliSum(nq, Dict{OpType,ELTYPE}())
+end
 
 """
     PauliSum(nqubits::Integer, psum::Dict{Vector{Symbol},CoeffType}) where {CoeffType}
@@ -124,6 +156,91 @@ function PauliSum(nq::Integer, pstr::PauliString{OpType,CoeffType}) where {OpTyp
 end
 
 """
+    paulis(psum::PauliSum)
+
+Returns an iterator over the integer pauli strings of a `PauliSum`.
+Call `topaulistrings` to receive entries as `PauliString`s.
+"""
+function paulis(psum::PauliSum)
+    return keys(psum.op_dict)
+end
+
+"""
+    coefficients(psum::PauliSum)
+
+Returns an iterator over the coefficients of a `PauliSum`.
+Call `topaulistrings` to receive entries as `PauliString`s.
+"""
+function coefficients(psum::PauliSum)
+    return values(psum.op_dict)
+end
+
+"""
+    paulitype(psum::PauliSum)
+
+Get the Pauli integer type of a `PauliSum`.
+"""
+function paulitype(psum::PauliSum)
+    return keytype(psum.op_dict)
+end
+
+"""
+    paulitype(psum::Dict)
+
+Get the Pauli integer type of a Pauli sum dict.
+"""
+function paulitype(psum::Dict)
+    return keytype(psum)
+end
+
+"""
+    coefftype(psum::PauliSum)
+
+Get the coefficient type of a `PauliSum`.
+"""
+function coefftype(psum::PauliSum)
+    return valtype(psum.op_dict)
+end
+
+"""
+    coefftype(psum::Dict)
+
+Get the coefficient type of a `PauliSum`.
+"""
+function coefftype(psum::Dict)
+    return valtype(psum)
+end
+
+"""
+    numcoefftype(psum::PauliSum)
+
+Get the type of the numerical coefficient of a `PauliSum`. 
+Will get the type of the `coeff` field of a potential PathProperties type.
+"""
+function numcoefftype(psum::PauliSum)
+    return numcoefftype(psum.op_dict)
+end
+
+"""
+    numcoefftype(psum::Dict)
+
+Get the type of the numerical coefficient of a pauli sum dict. 
+Will get the type of the `coeff` field of a potential PathProperties type.
+"""
+function numcoefftype(psum::Dict)
+    return numcoefftype(first(values(psum)))
+end
+
+"""
+    numcoefftype(::Number)
+
+Get the type of the number.
+"""
+function numcoefftype(::T) where {T<:Number}
+    return T
+end
+
+"""
     getcoeff(psum::PauliSum{OpType,CoeffType}, operator::Integer) where {OpType,CoeffType}
 
 Get the coefficient of an integer Pauli string in a `PauliSum`. Defaults to 0 if the Pauli string is not in the `PauliSum`.
@@ -153,23 +270,32 @@ function getcoeff(psum::PauliSum{OpType,CoeffType}, pauli::Symbol, qind::Integer
 end
 
 """
-    getcoeff(psum::PauliSum{OpType,CoeffType}, pstr::Vector{Symbol}, qinds) where {OpType,CoeffType}
+    getcoeff(psum::PauliSum{OpType,CoeffType}, pstr, qinds) where {OpType,CoeffType}
 
-Get the coefficient of a Pauli string in a `PauliSum` by providing the Pauli string as a vector of Symbols acting on qubits `qinds`. 
+Get the coefficient of a Pauli string in a `PauliSum` by providing the Pauli string `pstr` as a vector of Symbols acting on qubits `qinds`. 
 This is consistent with how operators can be added to a `PauliSum` via `add!()`. Defaults to 0 if the operator is not in the `PauliSum`.
 """
-function getcoeff(psum::PauliSum{OpType,CoeffType}, pstr::Vector{Symbol}, qinds) where {OpType,CoeffType}
+function getcoeff(psum::PauliSum{OpType,CoeffType}, pstr, qinds) where {OpType,CoeffType}
     return getcoeff(psum, symboltoint(psum.nqubits, pstr, qinds))
 end
 
 """
-    getcoeff(psum::PauliSum{OpType,CoeffType}, pstr::Vector{Symbol}) where {OpType,CoeffType}
+    getcoeff(psum::PauliSum{OpType,CoeffType}, pstr) where {OpType,CoeffType}
 
-Get the coefficient of a Pauli string in a `PauliSum` by providing the Pauli string as a vector of Symbols acting on all qubits. 
+Get the coefficient of a Pauli string in a `PauliSum` by providing the Pauli string `pstr` as a vector of Symbols acting on all qubits. 
 This is consistent with how operators can be added to a `PauliSum` via `add!()`. Defaults to 0 if the operator is not in the `PauliSum`.
 """
-function getcoeff(psum::PauliSum{OpType,CoeffType}, pstr::Vector{Symbol}) where {OpType,CoeffType}
+function getcoeff(psum::PauliSum{OpType,CoeffType}, pstr) where {OpType,CoeffType}
     return getcoeff(psum, symboltoint(pstr))
+end
+
+"""
+    getnumcoeff(val::Number)
+
+Trivial function returning a numerical value of a number.
+"""
+function getnumcoeff(val::Number)
+    return val
 end
 
 # TODO: Add functions for extracting paulis and coefficients from the PauliSum (as iterable)
@@ -350,15 +476,15 @@ function add!(psum::PauliSum, pauli::Symbol, qind::Integer, coeff=1.0)
 end
 
 
-# TODO: add! for PauliStringType with coefficient. Use these functions throughout mergingbfs
+# TODO: add! for PauliStringType with coefficient. Use these functions throughout `propagate`
 
 """
-    add!(psum::PauliSum, pstr_vec::Vector{Symbol}, qinds::Vector{Int}, coeff=1.0)
+    add!(psum::PauliSum, pstr, qinds, coeff=1.0)
 
-In-place addition a Pauli string to `PauliSum` by providing the Pauli string as a vector of Symbols acting on qubits `qinds`.
+In-place addition a Pauli string to `PauliSum` by providing the Pauli string `pstr` as a vector of Symbols acting on qubits `qinds`.
 Coefficient defaults to 1.0.
 """
-function add!(psum::PauliSum, pstr::Vector{Symbol}, qinds::Vector{Int}, coeff=1.0) # TODO: don't strictly type qinds or similar here or elsewhere
+function add!(psum::PauliSum, pstr, qinds, coeff=1.0) # TODO: don't strictly type qinds or similar here or elsewhere
     return add!(psum, PauliString(psum.nqubits, pstr, qinds, coeff))
 end
 
@@ -473,7 +599,7 @@ end
 """
 Checks whether the number of qubits `nqubits` is the same between as the length of the vector `pstr`.
 """
-function _checknumberofqubits(nqubits::Int, pstr::Vector{Symbol})
+function _checknumberofqubits(nqubits::Int, pstr)
     if nqubits != length(pstr)
         throw(
             ArgumentError(

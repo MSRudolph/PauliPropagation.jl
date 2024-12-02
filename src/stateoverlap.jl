@@ -33,7 +33,7 @@ If not orthogonal, then a Pauli string contributes with its coefficient.
 This is particularly useful for overlaps with stabilizer states.
 """
 function overlapbyorthogonality(psum::Dict, orthogonalfunc::Function)
-    val = keytype(psum)(0)
+    val = numcoefftype(psum)(0)
     for (operator, coeff) in psum
         if overlapbyorthogonality(operator, orthogonalfunc)
             val += getnumcoeff(coeff)
@@ -100,9 +100,9 @@ end
 
 Calculates the overlap of a Pauli sum dict with the maximally mixed state 1/2^n I.
 """
-function overlapwithmaxmixed(psum::Dict)
-    IntType = keytype(psum)
-    return get(psum, IntType(0), 0.0)
+function overlapwithmaxmixed(psum::Dict{OpType,CoeffType}) where {OpType<:PauliStringType,CoeffType}
+    NumType = numcoefftype(psum)
+    return get(psum, OpType(0), NumType(0.0))
 end
 
 """
@@ -119,8 +119,10 @@ end
 
 Calculates the overlap between two Pauli sum dicts.
 """
-function overlapwithpaulisum(psum1::Dict, psum2::Dict)
-    val = 0.0
+function overlapwithpaulisum(psum1::Dict{OpType,CoeffType}, psum2::Dict{OpType,CoeffType}) where {OpType,CoeffType}
+    NumberType = numcoefftype(psum1)
+
+    val = NumberType(0.0)
 
     longer_psum = psum1
     shorter_psum = psum2
@@ -131,8 +133,8 @@ function overlapwithpaulisum(psum1::Dict, psum2::Dict)
     end
 
     # looping over d2 (default initstate_dict) because we know that this one is sparser
-    for operator in keys(shorter_psum)
-        val += getnumcoeff(get(longer_psum, operator, 0.0)) * getnumcoeff(get(shorter_psum, operator, 0.0))
+    for pstr in keys(shorter_psum)
+        val += getnumcoeff(get(longer_psum, pstr, NumberType(0.0))) * getnumcoeff(get(shorter_psum, pstr, NumberType(0.0)))
     end
     return val
 end
@@ -210,26 +212,6 @@ plusfilter(psum) = filter(psum, containsYorZ)
 Filter a Pauli sum in-place with only Pauli strings that are not orthogonal to the plus state |+><+|.
 """
 plusfilter!(psum) = filter!(psum, containsYorZ)
-
-
-## Interface functions for extracting the numerical coefficients
-"""
-    getnumcoeff(val::Number)
-
-Trivial function returning a numerical value of a number.
-"""
-function getnumcoeff(val::Number)
-    return val
-end
-
-"""
-    getnumcoeff(val::PathProperties)
-
-Get the numerical coefficient of a `PathProperties` wrapper.
-"""
-function getnumcoeff(val::PathProperties)
-    return val.coeff
-end
 
 
 

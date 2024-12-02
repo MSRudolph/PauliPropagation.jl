@@ -1,3 +1,2 @@
-include("mergingbfs.jl")
-
-# TODO: dfs
+include("template.jl")
+include("specializations.jl")

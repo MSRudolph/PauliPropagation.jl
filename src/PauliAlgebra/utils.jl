@@ -2,11 +2,11 @@
 const pauli_symbols::Vector{Symbol} = [:I, :X, :Y, :Z]
 
 """
-    symboltoint(pstr::Vector{Symbol})
+    symboltoint(pstr)
 
-Maps a vector of symbols to an integer Pauli string.
+Maps a vector of symbols `pstr` to an integer Pauli string.
 """
-function symboltoint(pstr::Vector{Symbol})
+function symboltoint(pstr)
     nqubits = length(pstr)
     converted_pstr = getinttype(nqubits)(0)
     for (qind, pauli) in enumerate(pstr)
@@ -16,12 +16,12 @@ function symboltoint(pstr::Vector{Symbol})
 end
 
 """
-    symboltoint(nqubits::Integer, pstr::Vector{Symbol}, qinds)
+    symboltoint(nqubits::Integer, pstr, qinds)
 
-Maps a vector of symbols acting on the indices `qinds` to an integer Pauli string. Other sites are set to the identity.
+Maps a vector of symbols `pstr` acting on the indices `qinds` to an integer Pauli string. Other sites are set to the identity.
 `qinds` can be any iterable.
 """
-function symboltoint(nqubits::Integer, pstr::Vector{Symbol}, qinds)
+function symboltoint(nqubits::Integer, pstr, qinds)
     inttype = getinttype(nqubits)
     converted_pstr = inttype(0)
     for (qind, pauli) in zip(qinds, pstr)
@@ -33,7 +33,7 @@ end
 """
     symboltoint(nqubits::Integer, pauli::Symbol, qind::Integer)
 
-Maps a single symbol acting on the index `qind` to an integer Pauli string. Other sites are set to the identity.
+Maps a single symbol `pauli` acting on the index `qind` to an integer Pauli string. Other sites are set to the identity.
 """
 function symboltoint(nqubits::Integer, pauli::Symbol, qind::Integer)
     inttype = getinttype(nqubits)
@@ -61,7 +61,6 @@ end
 Maps a single symbol to its corresponding integer representation.
 """
 symboltoint(pauli::Symbol) = findfirst(s -> s == pauli, pauli_symbols) - 1
-symboltoint(pauli) = pauli
 
 """
     inttosymbol(pauli::PauliType)
@@ -69,7 +68,6 @@ symboltoint(pauli) = pauli
 Maps an integer Pauli to its corresponding symbol.
 """
 inttosymbol(pauli::PauliType) = pauli_symbols[pauli+1]
-inttosymbol(pauli) = pauli
 
 ## get and set functions
 """

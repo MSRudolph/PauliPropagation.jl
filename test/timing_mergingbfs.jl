@@ -21,11 +21,11 @@ function timingnumericalPP()
     Random.seed!(42)
     thetas = randn(m)
 
-    res1 = mergingbfs(circ, op, thetas; max_weight=W, min_abs_coeff=min_abs_coeff)
-    res2 = mergingbfs(circ, opsum, thetas; max_weight=W, min_abs_coeff=min_abs_coeff)
+    res1 = propagate(circ, op, thetas; max_weight=W, min_abs_coeff=min_abs_coeff)
+    res2 = propagate(circ, opsum, thetas; max_weight=W, min_abs_coeff=min_abs_coeff)
     @show overlapwithzero(res1), overlapwithzero(res2)
-    @btime mergingbfs($circ, $op, $thetas; max_weight=$W, min_abs_coeff=$min_abs_coeff)
-    @btime mergingbfs($circ, $opsum, $thetas; max_weight=$W, min_abs_coeff=$min_abs_coeff)
+    @btime propagate($circ, $op, $thetas; max_weight=$W, min_abs_coeff=$min_abs_coeff)
+    @btime propagate($circ, $opsum, $thetas; max_weight=$W, min_abs_coeff=$min_abs_coeff)
 
     return
 end

@@ -7,6 +7,11 @@ include("./PauliAlgebra/PauliAlgebra.jl")
 export
     PauliSum,
     PauliString,
+    paulis,
+    coefficients,
+    paulitype,
+    coefftype,
+    numcoefftype,
     getcoeff,
     topaulistrings,
     add,
@@ -83,10 +88,13 @@ export
 
 include("Propagation/Propagation.jl")
 export
-    mergingbfs,
-    mergingbfs!,
+    propagate,
+    propagate!,
+    mergingapply!,
     applygatetoall!,
-    applygatetoone!
+    applygatetoone!,
+    mergeandclear!,
+    merge
 
 include("stateoverlap.jl")
 export
