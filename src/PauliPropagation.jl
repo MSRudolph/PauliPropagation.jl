@@ -48,6 +48,7 @@ export
     PauliGate,
     FastPauliGate,
     tofastgates,
+    tofastgates!,
     apply,
     applynoncummuting,
     CliffordGate,

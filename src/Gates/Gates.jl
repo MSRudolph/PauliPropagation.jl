@@ -33,18 +33,23 @@ tofastgates(gate::Gate, nqubits::Integer) = gate
     tofastgates(circ::Vector{G}) where {G<:Gate}
 
 Transforms a circuit in the form of a vector of gates to a vector of potentially faster gates where applicable.
+The maximum number of qubits is determined from the gates in the circuit, but they all require a `qinds` field.
 """
 function tofastgates(circ::Vector{G}) where {G<:Gate}
     # Find the maximum number of qubits
-    nq = 1
-    for gate in circ
-        nq = max(nq, maximum(gate.qinds))
-    end
+    nqubits = _getmaxqubits(circ)
+    fast_circ = tofastgates(circ, nqubits)
+    return fast_circ
+end
 
+"""
+    tofastgates(circ::Vector{G}, nqubits::Integer) where {G<:Gate}
+
+Transforms a circuit in the form of a vector of gates to a vector of potentially faster gates where applicable.
+"""
+function tofastgates(circ::Vector{G}, nqubits::Integer) where {G<:Gate}
     fast_circ = Vector{Gate}(undef, length(circ))
-    for (ii, gate) in enumerate(circ)
-        fast_circ[ii] = tofastgates(gate, nq)
-    end
+    tofastgates!(fast_circ, nqubits)
     return fast_circ
 end
 
@@ -52,17 +57,41 @@ end
     tofastgates!(circ::Vector{G}) where {G<:Gate}
 
 Transforms a circuit in the form of a vector of gates, converting gates in-place to potentially faster gates where applicable.
+The maximum number of qubits is determined from the gates in the circuit, but they all require a `qinds` field.
 """
 function tofastgates!(circ::Vector{G}) where {G<:Gate}
     # Find the maximum number of qubits
-    nq = 1
-    for gate in circ
-        nq = max(nq, maximum(gate.qinds))
-    end
+    nqubits = _getmaxqubits(circ)
+    tofastgates!(circ, nqubits)
+    return circ
+end
 
+"""
+    tofastgates!(circ::Vector{G}) where {G<:Gate}
+
+Transforms a circuit in the form of a vector of gates, converting gates in-place to potentially faster gates where applicable.
+"""
+function tofastgates!(circ::Vector{G}, nqubits::Integer) where {G<:Gate}
     # TODO: This could fail if circ is too concretely typed
     for (ii, gate) in enumerate(circ)
-        circ[ii] = tofastgates(gate, nq)
+        circ[ii] = tofastgates(gate, nqubits)
     end
     return circ
+end
+
+
+function _getmaxqubits(circ::Vector{G}) where {G<:Gate}
+    nqubits = 1
+    for gate in circ
+        if !hasfield(typeof(gate), :qinds)
+            throw(
+                ArgumentError(
+                    "Gate $(typeof(gate)) does not have `qinds` field defined.
+                    Use tofastgates!(circ, nqubits) instead."
+                )
+            )
+        end
+        nqubits = max(nqubits, maximum(gate.qinds))
+    end
+    return nqubits
 end

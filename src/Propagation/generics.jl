@@ -99,7 +99,7 @@ function applygatetoall!(gate, theta, psum, second_psum, args...; kwargs...)
     for (operator, coeff) in psum
         applygatetoone!(gate, operator, coeff, theta, psum, second_psum; kwargs...)
     end
-
+    # TODO: This should not be the default behavior. Absorb more logic into `mergeandclear!`, perhaps.
     empty!(psum)  # empty old dict because next generation of operators should by default stored in second_psum (unless this is overwritten by a custom function)
 
     return second_psum, psum  # swap dicts around
@@ -114,11 +114,13 @@ This is likely the the case if `apply` is not type-stable because it does not re
 E.g., a Pauli gate returns 1 or 2 (operator, coefficient) outputs.
 """
 @inline function applygatetoone!(gate, operator, coefficient, theta, psum, second_psum, args...; kwargs...)
-
+    # TODO: dispatch to different apply functions with and without theta depending on gate type.
     ops_and_coeffs = apply(gate, operator, theta, coefficient; kwargs...)
 
     for ii in 1:2:length(ops_and_coeffs)
         op, coeff = ops_and_coeffs[ii], ops_and_coeffs[ii+1]
+        # TODO the zero should be of the same type as the coefficient
+        # TODO: see if this can be optimally fast with padding with zeros and if else here 
         second_psum[ops_and_coeffs[ii]] = get(second_psum, op, 0.0) + coeff
     end
 
