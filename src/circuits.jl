@@ -271,6 +271,8 @@ H = Sum_{(i, i+1) in topology} Z_i Z_{i+1}
 The Trottterized circuit as a vector of Gate.
 """
 function tiltedtfitrottercircuit(n_qubits, n_layers; topology=nothing)
+    # TODO(YT): the ordering of the Trotter circuit layer will be important
+    # for shallow circuits to minimize the Trotter error.
     circuit::Vector{Gate} = []
 
     if isnothing(topology)
