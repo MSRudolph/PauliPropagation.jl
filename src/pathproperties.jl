@@ -113,7 +113,7 @@ A one-argument constructor of the custom `PathProperties` type from a coefficien
 """
 function wrapcoefficients(pstr::PauliString, PathPropertiesType::Type{PP}) where {PP<:PathProperties}
     # the one-argument constructor of your PathProperties type must be defined
-    return PauliString(pstr.nqubits, pstr.operator, PathPropertiesType(pstr.coeff))
+    return PauliString(pstr.nqubits, term(pstr), PathPropertiesType(pstr.coeff))
 end
 
 """

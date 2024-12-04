@@ -10,7 +10,7 @@ import Base: -
 """
 struct PauliString{TermType<:PauliStringType,CoeffType}
     nqubits::Int
-    operator::TermType  # TODO: rename
+    term::TermType
     coeff::CoeffType
 end
 
@@ -37,12 +37,20 @@ function PauliString(nqubits, pstr, qinds, coeff=1.0)
 end
 
 """
+    term(pstr::PauliString)
+
+Get the lower-level representation of a `PauliString`.
+This returns the `term` field of the `PauliString`. 
+"""
+term(pstr::PauliString) = pstr.term
+
+"""
     paulitype(pstr::PauliString)
 
 Get the Pauli integer type of a `PauliString`.
 """
 function paulitype(pstr::PauliString)
-    return typeof(pstr.operator)
+    return typeof(term(pstr))
 end
 
 """
@@ -70,7 +78,7 @@ import Base.show
 Pretty print for `PauliString`.
 """
 function show(io::IO, pstr::PauliString)
-    pauli_string = inttostring(pstr.operator, pstr.nqubits)
+    pauli_string = inttostring(term(pstr), pstr.nqubits)
     if length(pauli_string) > 20
         pauli_string = pauli_string[1:20] * "..."
     end
@@ -152,7 +160,7 @@ Constructor for a `PauliSum` on `nqubits` qubits from a `PauliString`.
 """
 function PauliSum(nq::Integer, pstr::PauliString{TermType,CoeffType}) where {TermType,CoeffType}
     _checknumberofqubits(nq, pstr)
-    return PauliSum(nq, Dict{TermType,CoeffType}(pstr.operator => pstr.coeff))
+    return PauliSum(nq, Dict{TermType,CoeffType}(term(pstr) => pstr.coeff))
 end
 
 """
@@ -257,7 +265,7 @@ Get the coefficient of a `PauliString` in a `PauliSum`. Defaults to 0 if the Pau
 Requires that the integer Pauli string in `pstr` is the same type as the integer Pauli strings in `psum`.
 """
 function getcoeff(psum::PauliSum{TermType,CoeffType1}, pstr::PauliString{TermType,CoeffType2}) where {TermType<:PauliStringType,CoeffType1,CoeffType2}
-    return get(psum.op_dict, pstr.operator, CoeffType1(0))
+    return get(psum.op_dict, term(pstr), CoeffType1(0))
 end
 
 
@@ -441,7 +449,7 @@ Addition of a `PauliString` to a `PauliSum`. Changes the `PauliSum` in-place.
 """
 function add!(psum::PauliSum, pstr::PauliString)
     _checknumberofqubits(psum, pstr)
-    psum.op_dict[pstr.operator] = get(psum.op_dict, pstr.operator, keytype(psum.op_dict)(0.0)) + pstr.coeff
+    psum.op_dict[term(pstr)] = get(psum.op_dict, term(pstr), keytype(psum.op_dict)(0.0)) + pstr.coeff
     return psum
 end
 
@@ -536,16 +544,16 @@ Uses a default precision for coefficients under which a coefficient is considere
 """
 function subtract!(psum::PauliSum, pstr::PauliString; precision=_DEFAULT_PRECISION)
     _checknumberofqubits(psum, pstr)
-    if haskey(psum.op_dict, pstr.operator)
-        psum.op_dict[pstr.operator] -= pstr.coeff
+    if haskey(psum.op_dict, term(pstr))
+        psum.op_dict[term(pstr)] -= pstr.coeff
 
         # Remove the Pauli string if the resulting coefficient is small
-        if abs(psum.op_dict[pstr.operator]) < precision
-            delete!(psum.op_dict, pstr.operator)
+        if abs(psum.op_dict[term(pstr)]) < precision
+            delete!(psum.op_dict, term(pstr))
         end
 
     else
-        psum.op_dict[pstr.operator] = -pstr.coeff
+        psum.op_dict[term(pstr)] = -pstr.coeff
     end
     return psum
 end
