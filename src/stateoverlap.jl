@@ -21,7 +21,7 @@ If not orthogonal, then the overlap is the coefficient of the `PauliString`.
 This is particularly useful for overlaps with stabilizer states.
 """
 function overlapbyorthogonality(pstr::PauliString, orthogonalfunc::Function)
-    return !orthogonalfunc(operator) * getnumcoeff(pstr.coeff)
+    return !orthogonalfunc(pstr) * getnumcoeff(pstr.coeff)
 end
 
 """
