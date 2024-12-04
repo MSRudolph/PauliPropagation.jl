@@ -64,6 +64,8 @@ function propagate!(circ, psum::Dict, thetas; kwargs...)
     return psum
 end
 
+# TODO: somehow propagate is not type stable
+
 """
     mergingapply!(gate, psum, second_psum, thetas, param_idx, args...; kwargs...)
 
