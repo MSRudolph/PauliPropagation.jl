@@ -77,6 +77,7 @@ export
     hardwareefficientcircuit,
     efficientsu2circuit,
     tfitrottercircuit,
+    tiltedtfitrottercircuit,
     heisenbergtrottercircuit,
     su4ansatz,
     qcnnansatz,

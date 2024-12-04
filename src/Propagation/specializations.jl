@@ -1,3 +1,5 @@
+## This file contains specialized functions for some of our gates. 
+
 ### PAULI GATES
 """
     applygatetoall!(gate::PauliGateUnion, thetas, psum, second_psum, args...; kwargs...)

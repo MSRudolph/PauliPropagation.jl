@@ -23,7 +23,7 @@ include("noisechannels.jl")
 """
     tofastgates(gate::Gate, nqubits::Integer)
 
-Transforms a gate to a potentially faster but more involved gate type. 
+Transforms a gate to a potentially faster but more involved gate type when the total number of qubits `nqubits` is known.`
 This is currently only for `PauliGate` to `FastPauliGate`.
 """
 tofastgates(gate::Gate, nqubits::Integer) = gate
