@@ -139,9 +139,9 @@ Wrap the coefficient of a `PauliString` into a custom `PathProperties` type.
 For anything that is not natively supported by the library, you can subtype `PathProperties`.
 A one-argument constructor of the custom `PathProperties` type from a coefficient must be defined.
 """
-function wrapcoefficients(pstr::PauliString, PathPropertiesType::Type{PP}) where {PP<:PathProperties}
+function wrapcoefficients(pstr::PauliString, ::Type{PProp}) where {PProp<:PathProperties}
     # the one-argument constructor of your PathProperties type must be defined
-    return PauliString(pstr.nqubits, pstr.operator, PathPropertiesType(pstr.coeff))
+    return PauliString(pstr.nqubits, pstr.operator, PProp(pstr.coeff))
 end
 
 """
@@ -154,7 +154,6 @@ function wrapcoefficients(psum::PauliSum)
     return wrapcoefficients(psum, NumericPathProperties)
 end
 
-# TODO: This is not type stable
 """
     wrapcoefficients(psum::PauliSum, PathPropertiesType::Type{PP}) where {PP<:PathProperties}
 
@@ -162,6 +161,6 @@ Wrap the coefficients of a `PauliSum` into a custom `PathProperties` type.
 For anything that is not natively supported by the library, you can subtype `PathProperties`.
 A one-argument constructor of the custom `PathProperties` type from a coefficient must be defined.
 """
-function wrapcoefficients(psum::PauliSum, PathPropertiesType::Type{PP}) where {PP<:PathProperties}
-    return PauliSum(psum.nqubits, Dict(op => PathPropertiesType(coeff) for (op, coeff) in psum.op_dict))
+function wrapcoefficients(psum::PauliSum, ::Type{PProp}) where {PProp<:PathProperties}
+    return PauliSum(psum.nqubits, Dict(op => PProp(coeff) for (op, coeff) in psum.op_dict))
 end
