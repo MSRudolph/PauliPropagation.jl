@@ -4,13 +4,13 @@ import Base: +
 import Base: -
 
 """
-    PauliString(nqubits::Int, operator::OpType, coeff::CoeffType)
+    PauliString(nqubits::Int, operator::TermType, coeff::CoeffType)
 
 `PauliString` is a struct that represents a Pauli string on `nqubits` qubits.
 """
-struct PauliString{OpType<:PauliStringType,CoeffType}
+struct PauliString{TermType<:PauliStringType,CoeffType}
     nqubits::Int
-    operator::OpType  # TODO: rename
+    operator::TermType  # TODO: rename
     coeff::CoeffType
 end
 
@@ -95,9 +95,9 @@ end
 `PauliSum`` is a struct that represents a sum of Pauli strings acting on `nqubits` qubits.
 It is a wrapper around a dictionary Dict(Pauli string => coefficient}, where the Pauli strings are typically unsigned Integers for efficiency reasons.
 """
-struct PauliSum{OpType<:Integer,CoeffType}
+struct PauliSum{TermType<:Integer,CoeffType}
     nqubits::Int
-    op_dict::Dict{OpType,CoeffType}
+    op_dict::Dict{TermType,CoeffType}
 end
 
 """
@@ -113,8 +113,8 @@ PauliSum(nqubits::Integer) = PauliSum(nqubits, Float64)
 Contructor for an empty `PauliSum` on `nqubits` qubits. Element type can be provided.
 """
 function PauliSum(nq::Int, ELTYPE::T) where {T<:DataType}
-    OpType = getinttype(nq)
-    return PauliSum(nq, Dict{OpType,ELTYPE}())
+    TermType = getinttype(nq)
+    return PauliSum(nq, Dict{TermType,ELTYPE}())
 end
 
 """
@@ -146,13 +146,13 @@ Constructor for a `PauliSum` on `nqubits` qubits from a `PauliString`.
 PauliSum(pstr::PauliString) = PauliSum(pstr.nqubits, pstr)
 
 """
-    PauliSum(nq::Integer, pstr::PauliString{OpType,CoeffType}) where {OpType,CoeffType}
+    PauliSum(nq::Integer, pstr::PauliString{TermType,CoeffType}) where {TermType,CoeffType}
 
 Constructor for a `PauliSum` on `nqubits` qubits from a `PauliString`.
 """
-function PauliSum(nq::Integer, pstr::PauliString{OpType,CoeffType}) where {OpType,CoeffType}
+function PauliSum(nq::Integer, pstr::PauliString{TermType,CoeffType}) where {TermType,CoeffType}
     _checknumberofqubits(nq, pstr)
-    return PauliSum(nq, Dict{OpType,CoeffType}(pstr.operator => pstr.coeff))
+    return PauliSum(nq, Dict{TermType,CoeffType}(pstr.operator => pstr.coeff))
 end
 
 """
@@ -246,7 +246,7 @@ end
 Get the coefficient of an integer Pauli string in a `PauliSum`. Defaults to 0 if the Pauli string is not in the `PauliSum`.
 Requires that the integer Pauli string `pstr` is the same type as the integer Pauli strings in `psum`.
 """
-function getcoeff(psum::PauliSum{OpType,CoeffType}, pstr::OpType) where {OpType<:PauliStringType,CoeffType}
+function getcoeff(psum::PauliSum{TermType,CoeffType}, pstr::TermType) where {TermType<:PauliStringType,CoeffType}
     return get(psum.op_dict, pstr, CoeffType(0))
 end
 
@@ -256,7 +256,7 @@ end
 Get the coefficient of a `PauliString` in a `PauliSum`. Defaults to 0 if the Pauli string is not in the `PauliSum`.
 Requires that the integer Pauli string in `pstr` is the same type as the integer Pauli strings in `psum`.
 """
-function getcoeff(psum::PauliSum{OpType,CoeffType1}, pstr::PauliString{OpType,CoeffType2}) where {OpType<:PauliStringType,CoeffType1,CoeffType2}
+function getcoeff(psum::PauliSum{TermType,CoeffType1}, pstr::PauliString{TermType,CoeffType2}) where {TermType<:PauliStringType,CoeffType1,CoeffType2}
     return get(psum.op_dict, pstr.operator, CoeffType1(0))
 end
 

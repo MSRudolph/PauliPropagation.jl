@@ -100,9 +100,9 @@ end
 
 Calculates the overlap of a Pauli sum dict with the maximally mixed state 1/2^n I.
 """
-function overlapwithmaxmixed(psum::Dict{OpType,CoeffType}) where {OpType<:PauliStringType,CoeffType}
+function overlapwithmaxmixed(psum::Dict{TermType,CoeffType}) where {TermType<:PauliStringType,CoeffType}
     NumType = numcoefftype(psum)
-    return get(psum, OpType(0), NumType(0.0))
+    return get(psum, TermType(0), NumType(0.0))
 end
 
 """
@@ -119,7 +119,7 @@ end
 
 Calculates the overlap between two Pauli sum dicts.
 """
-function overlapwithpaulisum(psum1::Dict{OpType,CoeffType}, psum2::Dict{OpType,CoeffType}) where {OpType,CoeffType}
+function overlapwithpaulisum(psum1::Dict{TermType,CoeffType}, psum2::Dict{TermType,CoeffType}) where {TermType,CoeffType}
     NumberType = numcoefftype(psum1)
 
     val = NumberType(0.0)
