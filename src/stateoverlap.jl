@@ -1,4 +1,4 @@
-### This file contains the functions to calculate the overlap between between backpropagated operators and the initial state.
+### This file contains the functions to calculate the overlap between between backpropagated pauli strings and states or general operators.
 
 """
     overlapbyorthogonality(psum::PauliSum, orthogonalfunc::Function)
@@ -21,7 +21,7 @@ If not orthogonal, then the overlap is the coefficient of the `PauliString`.
 This is particularly useful for overlaps with stabilizer states.
 """
 function overlapbyorthogonality(pstr::PauliString, orthogonalfunc::Function)
-    return !orthogonalfunc(operator) * getnumcoeff(pstr.coeff)
+    return !orthogonalfunc(pstr) * getnumcoeff(pstr.coeff)
 end
 
 """
@@ -34,8 +34,8 @@ This is particularly useful for overlaps with stabilizer states.
 """
 function overlapbyorthogonality(psum::Dict, orthogonalfunc::Function)
     val = numcoefftype(psum)(0)
-    for (operator, coeff) in psum
-        if overlapbyorthogonality(operator, orthogonalfunc)
+    for (pstr, coeff) in psum
+        if overlapbyorthogonality(pstr, orthogonalfunc)
             val += getnumcoeff(coeff)
         end
     end
