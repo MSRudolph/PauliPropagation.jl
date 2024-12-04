@@ -133,27 +133,27 @@ using the a `map_array` corresponding to the `CliffordGate`.
 function applywithmap(gate::CliffordGate, pstr::PauliStringType, coefficient, map_array; kwargs...)
     qinds = gate.qinds
 
-    lookup_op = _extractlookupop(pstr, qinds)
-    sign, new_op = map_array[lookup_op+1]  # +1 because Julia is 1-indexed and lookup_op is 0-indexed
-    pstr = _insertnewop!(pstr, new_op, qinds)
+    lookup_int = _extractlookupop(pstr, qinds)
+    sign, partial_pstr = map_array[lookup_int+1]  # +1 because Julia is 1-indexed and lookup_op is 0-indexed
+    pstr = _insertnewop!(pstr, partial_pstr, qinds)
 
     coefficient = _multiplysign(coefficient, sign)
     return pstr, coefficient
 end
 
-function _extractlookupop(operator, qinds)
-    lookup_op = typeof(operator)(0)
+function _extractlookupop(lookup_int::PauliStringType, qinds)
+    partial_pstr = typeof(lookup_int)(0)
     for ii in eachindex(qinds)
-        lookup_op = setpauli(lookup_op, getpauli(operator, qinds[ii]), ii)
+        partial_pstr = setpauli(partial_pstr, getpauli(lookup_int, qinds[ii]), ii)
     end
-    return lookup_op
+    return partial_pstr
 end
 
-function _insertnewop!(operator, new_op, qinds)
+function _insertnewop!(pstr::PauliStringType, partial_pstr::PauliStringType, qinds)
     for ii in eachindex(qinds)
-        operator = setpauli(operator, getpauli(new_op, ii), qinds[ii])
+        pstr = setpauli(pstr, getpauli(partial_pstr, ii), qinds[ii])
     end
-    return operator
+    return pstr
 end
 
 function _multiplysign(coefficient, sign)

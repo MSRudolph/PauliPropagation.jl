@@ -39,7 +39,7 @@ A coefficient of the Pauli string can optionally be passed as `coefficient`.
 """
 function apply(gate::DepolarizingNoise, pstr::PauliStringType, p, coefficient=1.0; kwargs...)
 
-    if getpauli(pstr, gate.qind) != 0   # non-identity operator
+    if getpauli(pstr, gate.qind) != 0   # non-identity Pauli
         coefficient *= (1 - p)
     end
 
@@ -66,7 +66,7 @@ A coefficient of the Pauli string can optionally be passed as `coefficient`.
 function apply(gate::DephasingNoise, pstr::PauliStringType, p, coefficient=1.0; kwargs...)
 
     pauli = getpauli(pstr, gate.qind)
-    if pauli == 1 || pauli == 2   # X or Y operator
+    if pauli == 1 || pauli == 2   # X or Y Pauli
         coefficient *= (1 - p)
     end
 
@@ -103,7 +103,7 @@ A coefficient of the Pauli string can optionally be passed as `coefficient`.
 """
 function apply(gate::PauliXNoise, pstr::PauliStringType, p, coefficient=1.0; kwargs...)
 
-    if getpauli(pstr, gate.qind) == 1   # X operator
+    if getpauli(pstr, gate.qind) == 1   # X Pauli
         coefficient *= (1 - p)
     end
 
@@ -139,7 +139,7 @@ A coefficient of the Pauli string can optionally be passed as `coefficient`.
 """
 function apply(gate::PauliYNoise, pstr::PauliStringType, p, coefficient=1.0; kwargs...)
 
-    if getpauli(pstr, gate.qind) == 2   # Y operator
+    if getpauli(pstr, gate.qind) == 2   # Y Pauli
         coefficient *= (1 - p)
     end
 
@@ -175,7 +175,7 @@ A coefficient of the Pauli string can optionally be passed as `coefficient`.
 """
 function apply(gate::PauliZNoise, pstr::PauliStringType, p, coefficient=1.0; kwargs...)
 
-    if getpauli(pstr, gate.qind) == 3   # Z operator
+    if getpauli(pstr, gate.qind) == 3   # Z Pauli
         coefficient *= (1 - p)
     end
 
@@ -212,7 +212,7 @@ A coefficient of the Pauli string can optionally be passed as `coefficient`.
 """
 function apply(gate::AmplitudeDampingNoise, pstr::PauliStringType, gamma, coefficient=1.0; kwargs...)
 
-    if actsdiagonally(gate, pstr)  # test for Z operator
+    if actsdiagonally(gate, pstr)  # test for Z Pauli
         return diagonalapply(gate, pstr, gamma, coefficient)
     end
 
@@ -242,7 +242,7 @@ function diagonalapply(gate::AmplitudeDampingNoise, pstr::PauliStringType, gamma
 
     local_pauli = getpauli(pstr, gate.qind)
 
-    if local_pauli != 0  # non-identity operator
+    if local_pauli != 0  # non-identity Pauli
         coefficient *= sqrt(1 - gamma)
     end
 

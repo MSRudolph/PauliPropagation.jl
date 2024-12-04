@@ -2,7 +2,7 @@
 """
     PauliGate(symbols::Vector{Symbol}, qinds::Vector{Int})
 
-A parametrized Pauli rotation gate acting on the qubits `qinds` with the Pauli operators `symbols`.
+A parametrized Pauli rotation gate acting on the qubits `qinds` with the Pauli string `symbols`.
 """
 struct PauliGate <: ParametrizedGate
     symbols::Vector{Symbol}
@@ -21,7 +21,7 @@ end
 """
     PauliGate(symbols::Union{AbstractArray,Tuple,Base.Generator}, qinds::Union{AbstractArray,Tuple,Base.Generator})
 
-Constructor for a `PauliGate` acting on the qubits `qinds` with the Pauli operators `symbols`. 
+Constructor for a `PauliGate` acting on the qubits `qinds` with the Pauli string `symbols`. 
 Converts the types of the input arguments to the correct types for `PauliGate`.
 """
 function PauliGate(symbols::Union{AbstractArray,Tuple,Base.Generator}, qinds::Union{AbstractArray,Tuple,Base.Generator})
@@ -31,7 +31,7 @@ end
 """
     PauliGate(symbols, qinds, theta)
 
-Constructor for a frozen `PauliGate` acting on the qubits `qinds` with the Pauli operators `symbols`, and with fixed parameter `theta`.
+Constructor for a frozen `PauliGate` acting on the qubits `qinds` with the Pauli string `symbols`, and with fixed parameter `theta`.
 """
 function PauliGate(symbols, qinds, theta)
     return FrozenGate(PauliGate(symbols, qinds), theta)
@@ -40,12 +40,12 @@ end
 """
     FastPauliGate(symbols::Vector{Symbol}, qinds::Vector{Int}, bitoperator::PauliStringType)
 
-A parametrized Pauli rotation gate acting on the qubits `qinds` with the Pauli operators `symbols`.
-The `bitoperator` is the integer representation of the Pauli operators with the correct integer type for the total number of qubits.
+A parametrized Pauli rotation gate acting on the qubits `qinds` with the Pauli string `symbols`.
+The `bitoperator` is the integer representation of the Pauli string with the correct integer type for the total number of qubits.
 This allows for faster application of the gate.
 See `tofastgates` for conversion from `PauliGate`, which is the easiest way to construct a `FastPauliGate`.
 """
-struct FastPauliGate{T} <: ParametrizedGate where {T<:PauliStringType}
+struct FastPauliGate{T} <: ParametrizedGate where {T<:PauliStringType}  # TODO rename
     symbols::Vector{Symbol}
     qinds::Vector{Int}
     bitoperator::T
@@ -125,7 +125,7 @@ Currently `kwargs` are passed to `applycos` and `applysin` for the Surrogate.
 """
 function applynoncummuting(gate::PauliGateUnion, pstr::PauliStringType, theta, coefficient=1.0; kwargs...)
     coeff1 = applycos(coefficient, theta; kwargs...)
-    new_pstr, sign = getnewoperator(gate, pstr)
+    new_pstr, sign = getnewpaulistring(gate, pstr)
     coeff2 = applysin(coefficient, theta; sign=sign, kwargs...)
 
     return pstr, coeff1, new_pstr, coeff2
@@ -226,12 +226,12 @@ function applycos(pth::T, theta; sign=1, kwargs...) where {T<:PathProperties}
 end
 
 """
-    getnewoperator(gate::PauliGate, pstr::PauliStringType)
+    getnewpaulistring(gate::PauliGate, pstr::PauliStringType)
 
 Get the new Pauli string after applying a `PauliGate` to an integer Pauli string,
 as well as the corresponding ±1 coefficient.
 """
-function getnewoperator(gate::PauliGate, pstr::PauliStringType)
+function getnewpaulistring(gate::PauliGate, pstr::PauliStringType)
     new_pstr = copy(pstr)
 
     total_sign = 1  # this coefficient will be imaginary
@@ -244,12 +244,12 @@ function getnewoperator(gate::PauliGate, pstr::PauliStringType)
 end
 
 """
-    getnewoperator(gate::FastPauliGate, pstr::PauliStringType)
+    getnewpaulistring(gate::FastPauliGate, pstr::PauliStringType)
 
 Get the new Pauli string after applying a `FastPauliGate` to an integer Pauli string,
 as well as the corresponding ±1 coefficient.
 """
-function getnewoperator(gate::FastPauliGate, pstr::PauliStringType)
+function getnewpaulistring(gate::FastPauliGate, pstr::PauliStringType)
     # TODO: This allocates memory
     sign, new_pstr = pauliprod(gate.bitoperator, pstr, gate.qinds)
     return new_pstr, real(1im * sign)
