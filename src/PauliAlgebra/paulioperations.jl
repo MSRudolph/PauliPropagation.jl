@@ -111,28 +111,28 @@ end
 """
     containsXorY(pstr::PauliString)
 
-Check if a Pauli string contains an X or Y operator.
+Check if a Pauli string contains an X or Y Pauli.
 """
 containsXorY(pstr::PauliString) = containsXorY(pstr.operator)
 
 """
     containsXorY(pstr::PauliStringType)
 
-Check if an integer Pauli string contains an X or Y operator.
+Check if an integer Pauli string contains an X or Y Pauli.
 """
 containsXorY(pstr::PauliStringType) = countxy(pstr) > 0
 
 """
     containsXorY(pstr::PauliString)
 
-Check if a Pauli string contains a Y or Z operator.
+Check if a Pauli string contains a Y or Z Pauli.
 """
 containsYorZ(pstr::PauliString) = containsYorZ(pstr.operator)
 
 """
     containsYorZ(pstr::PauliStringType)
 
-Check if an integer Pauli string contains a Y or Z operator.
+Check if an integer Pauli string contains a Y or Z Pauli.
 """
 containsYorZ(pstr::PauliStringType) = countyz(pstr) > 0
 
@@ -167,7 +167,7 @@ function commutes(psum1::PauliSum, psum2::PauliSum)
 end
 
 """
-    function commutes(psum1::Dict{OpType,CoeffType1}, psum2::Dict{OpType,CoeffType2}) where {OpType<:PauliStringType,CoeffType1,CoeffType2}
+    function commutes(psum1::Dict{OpType,CoeffType1}, psum2::Dict{OpType,CoeffType2})
 
 Check if two Pauli sums of type `PauliSum` commute.
 """
@@ -214,8 +214,8 @@ end
 Calculate the commutator of two `PauliSum`s.
 """
 function commutator(psum1::PauliSum, psum2::PauliSum)
-    new_op_dict = commutator(psum1.op_dict, psum2.op_dict)
-    return PauliSum(psum1.nqubits, new_op_dict)
+    new_pstr_dict = commutator(psum1.op_dict, psum2.op_dict)
+    return PauliSum(psum1.nqubits, new_pstr_dict)
 end
 
 """
@@ -224,8 +224,8 @@ end
 Calculate the commutator of two `PauliString`s.
 """
 function commutator(pstr1::PauliString, pstr2::PauliString)
-    new_coeff, new_op = commutator(pstr1.operator, pstr2.operator)
-    return PauliString(pstr1.nqubits, new_op, new_coeff)
+    new_coeff, new_pstr = commutator(pstr1.operator, pstr2.operator)
+    return PauliString(pstr1.nqubits, new_pstr, new_coeff)
 end
 
 """
@@ -253,12 +253,12 @@ function commutator(pstr1::PauliStringType, pstr2::PauliStringType)
     # TODO: adapt order of outputs.
     if commutes(pstr1, pstr2)
         total_sign = ComplexF64(0.0)
-        new_oper = zero(typeof(pstr1))
+        new_pstr = zero(typeof(pstr1))
     else
-        total_sign, new_oper = pauliprod(pstr1, pstr2)
+        total_sign, new_pstr = pauliprod(pstr1, pstr2)
     end
     # commutator is [A, B] = AB - BA = 2AB for non-commuting (meaning anti-commuting) Paulis
-    return 2 * total_sign, new_oper
+    return 2 * total_sign, new_pstr
 end
 
 
@@ -268,14 +268,14 @@ end
 Calculate the commutator of two Pauli sums in the form of a `Dict`.
 """
 function commutator(psum1::Dict{OpType,CoeffType1}, psum2::Dict{OpType,CoeffType2}) where {OpType<:PauliStringType,CoeffType1,CoeffType2}
-    # different types of coefficients are allowed but not different types of operators
+    # different types of coefficients are allowed but not different types of Pauli strings
 
     new_pauli_dict = Dict{OpType,ComplexF64}()
 
     for (pauli1, coeff1) in psum1, (pauli2, coeff2) in psum2
         if !commutes(pauli1, pauli2)
-            sign, new_op = commutator(pauli1, pauli2)
-            new_pauli_dict[new_op] = get(new_pauli_dict, new_op, ComplexF64(0.0)) + sign * coeff1 * coeff2
+            sign, new_pstr = commutator(pauli1, pauli2)
+            new_pauli_dict[new_pstr] = get(new_pauli_dict, new_pstr, ComplexF64(0.0)) + sign * coeff1 * coeff2
         end
     end
 
@@ -372,7 +372,7 @@ Calculate the sign of the product of two integer Pauli strings. Outcomes are eit
 Takes the product of the Paulis `pauli3` as argument for efficiency. 
 """
 function calculatesign(pauli1::PauliStringType, pauli2::PauliStringType, pauli3::PauliStringType)
-    # Calculate the sign of the product, loop as long as neither of the operators are Identity
+    # Calculate the sign of the product, loop as long as neither of the Paulis are Identity
     sign = Complex{Int64}(1)
     identity_pauli = 0
     while pauli1 > identity_pauli || pauli2 > identity_pauli  # while both are not identity

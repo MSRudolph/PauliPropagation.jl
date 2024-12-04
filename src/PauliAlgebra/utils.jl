@@ -132,13 +132,13 @@ function _getprettystr(psum::Dict, nqubits::Int; max_lines=20)
     header = length(psum) == 1 ? "1 Pauli term: \n" : "$(length(psum)) Pauli terms:\n"
     str *= header
 
-    for (ii, (op, coeff)) in enumerate(psum)
+    for (ii, (pstr, coeff)) in enumerate(psum)
         if ii > max_lines
             new_str = "  ⋮"
             str *= new_str
             break
         end
-        pauli_string = inttostring(op, nqubits)
+        pauli_string = inttostring(pstr, nqubits)
         if length(pauli_string) > 20
             pauli_string = pauli_string[1:20] * "..."
         end
