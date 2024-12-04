@@ -74,6 +74,15 @@ Returns the type of the `cummulative_value` field of the stored `CircuitNode`.
 numcoefftype(node::NodePathProperties) = typeof(getnumcoeff(node))
 
 """
+    numcoefftype(::Type{NodePathProperties})
+
+Currently returns `Float64` as the type of the `cummulative_value` in `CircuitNode`s.
+"""
+numcoefftype(::Type{NodePathProperties}) = Float64
+
+
+
+"""
     getnumcoeff(val::NodePathProperties)
 
 Get the cummulative coefficient of a `NodePathProperties` node.
