@@ -22,7 +22,7 @@ A custom truncation function can be passed as `customtruncatefn` with the signat
 """
 function propagate(circ, psum::PauliSum; kwargs...)
     _checkcoefftype(psum)
-    pauli_dict = propagate!(circ, deepcopy(psum.op_dict); kwargs...)
+    pauli_dict = propagate!(circ, deepcopy(psum.terms); kwargs...)
     return PauliSum(psum.nqubits, pauli_dict)
 end
 
@@ -41,7 +41,7 @@ function propagate!(circ, psum::PauliSum; kwargs...)
         throw(ArgumentError("The surrogate currently only accepts Clifford gates and (Fast)Pauli gates."))
     end
 
-    propagate!(circ, psum.op_dict; kwargs...)
+    propagate!(circ, psum.terms; kwargs...)
     return psum
 end
 

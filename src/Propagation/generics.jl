@@ -23,7 +23,7 @@ Parameters for the parametrized gates in `circ` are given by `thetas`.
 A custom truncation function can be passed as `customtruncatefn` with the signature customtruncatefn(pstr::PauliStringType, coefficient)::Bool.
 """
 function propagate(circ, psum::PauliSum, thetas; kwargs...)
-    pauli_dict = propagate!(circ, deepcopy(psum.op_dict), thetas; kwargs...)
+    pauli_dict = propagate!(circ, deepcopy(psum.terms), thetas; kwargs...)
     return PauliSum(psum.nqubits, pauli_dict)
 end
 
@@ -38,7 +38,7 @@ Parameters for the parametrized gates in `circ` are given by `thetas`.
 A custom truncation function can be passed as `customtruncatefn` with the signature customtruncatefn(pstr::PauliStringType, coefficient)::Bool.
 """
 function propagate!(circ, psum::PauliSum, thetas; kwargs...)
-    propagate!(circ, psum.op_dict, thetas; kwargs...)
+    propagate!(circ, psum.terms, thetas; kwargs...)
     return psum
 end
 

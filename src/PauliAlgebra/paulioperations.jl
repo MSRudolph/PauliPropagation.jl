@@ -24,7 +24,7 @@ end
 Function to count the weight Pauli strings in a `PauliSum`. Returns an array of weights.
 """
 function countweight(psum::PauliSum)
-    return countweight(psum.op_dict)
+    return countweight(psum.terms)
 end
 
 """
@@ -60,7 +60,7 @@ end
 Function to count the number of X and Y Paulis in a `PauliSum`. Returns an array of counts.
 """
 function countxy(psum::PauliSum)
-    return countxy(psum.op_dict)
+    return countxy(psum.terms)
 end
 
 """
@@ -96,7 +96,7 @@ end
 Function to count the number of Y and Z Paulis in a `PauliSum`. Returns an array of counts.
 """
 function countyz(psum::PauliSum)
-    return countxy(psum.op_dict)
+    return countxy(psum.terms)
 end
 
 """
@@ -162,7 +162,7 @@ end
 Check if two Pauli sums of type `PauliSum` commute.
 """
 function commutes(psum1::PauliSum, psum2::PauliSum)
-    comm = commutator(psum1.op_dict, psum2.op_dict)
+    comm = commutator(psum1.terms, psum2.terms)
     return isempty(comm)
 end
 
@@ -214,7 +214,7 @@ end
 Calculate the commutator of two `PauliSum`s.
 """
 function commutator(psum1::PauliSum, psum2::PauliSum)
-    new_pstr_dict = commutator(psum1.op_dict, psum2.op_dict)
+    new_pstr_dict = commutator(psum1.terms, psum2.terms)
     return PauliSum(psum1.nqubits, new_pstr_dict)
 end
 

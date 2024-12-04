@@ -98,7 +98,7 @@ end
 Wrap the coefficients of a `PauliSum` into `NodePathProperties`.
 """
 function wrapcoefficients(psum::PauliSum, ::Type{NodePathProperties})
-    return PauliSum(psum.nqubits, Dict(op => NodePathProperties(EvalEndNode(op, coeff, 0.0, false)) for (op, coeff) in psum.op_dict))
+    return PauliSum(psum.nqubits, Dict(op => NodePathProperties(EvalEndNode(op, coeff, 0.0, false)) for (op, coeff) in psum.terms))
 end
 
 

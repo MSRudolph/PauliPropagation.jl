@@ -9,7 +9,7 @@ If not orthogonal, then a Pauli string contributes with its coefficient.
 This is particularly useful for overlaps with stabilizer states.
 """
 function overlapbyorthogonality(psum::PauliSum, orthogonalfunc::Function)
-    return overlapbyorthogonality(psum.op_dict, orthogonalfunc)
+    return overlapbyorthogonality(psum.terms, orthogonalfunc)
 end
 
 """
@@ -92,7 +92,7 @@ orthogonaltoplus(pstr) = containsYorZ(pstr)
 Calculates the overlap of a `PauliSum` with the maximally mixed state 1/2^n I.
 """
 function overlapwithmaxmixed(psum::PauliSum)
-    return overlapwithmaxmixed(psum.op_dict)
+    return overlapwithmaxmixed(psum.terms)
 end
 
 """
@@ -111,7 +111,7 @@ end
 Calculates the overlap between two `PauliSum`s.
 """
 function overlapwithpaulisum(psum1::PauliSum, psum2::PauliSum)
-    return overlapwithpaulisum(psum1.op_dict, psum2.op_dict)
+    return overlapwithpaulisum(psum1.terms, psum2.terms)
 end
 
 """
@@ -146,7 +146,7 @@ end
 Return a filtered `PauliSum` by removing all Pauli strings that satisfy the `filterfunc`.
 """
 function filter(psum::PauliSum, filterfunc::Function)
-    op_dict = filter(psum.op_dict, filterfunc)
+    op_dict = filter(psum.terms, filterfunc)
     return PauliSum(psum.nqubits, op_dict)
 end
 
@@ -156,7 +156,7 @@ end
 Filter a `PauliSum` in-place by removing all Pauli strings that satisfy the `filterfunc`.
 """
 function filter!(psum::PauliSum, filterfunc::Function)
-    filter!(psum.op_dict, filterfunc)
+    filter!(psum.terms, filterfunc)
     return psum
 end
 
