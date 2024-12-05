@@ -319,6 +319,7 @@ function getnumcoeff(val::Number)
     return val
 end
 
+# TODO: implement norm for PauliSum
 
 """
     topaulistrings(psum::PauliSum)
