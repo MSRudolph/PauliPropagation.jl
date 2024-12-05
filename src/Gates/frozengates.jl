@@ -56,6 +56,11 @@ function tofastgates(frozen_gate::FrozenGate, nqubits::Integer)
 end
 
 """
+Get the maximum qubit index that the frozen gate acts on.
+"""
+_getmaxqubits(frozen_gate::FrozenGate) = _getmaxqubits(frozen_gate.gate)
+
+"""
     apply(frozen_gate::FrozenGate, pstr, theta, args...)
 
 Apply a `FrozenGate` to a Pauli string `pstr` with the parameter `FrozenGate.parameter`.

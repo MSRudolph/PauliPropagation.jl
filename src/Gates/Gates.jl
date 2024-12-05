@@ -83,15 +83,29 @@ end
 function _getmaxqubits(circ::Vector{G}) where {G<:Gate}
     nqubits = 1
     for gate in circ
-        if !hasfield(typeof(gate), :qinds)
-            throw(
-                ArgumentError(
-                    "Gate $(typeof(gate)) does not have `qinds` field defined.
-                    Use tofastgates!(circ, nqubits) instead."
-                )
-            )
-        end
-        nqubits = max(nqubits, maximum(gate.qinds))
+        nqubits = max(nqubits, _getmaxqubits(gate))
     end
     return nqubits
+end
+
+"""
+Get the maximum qubit index that a gate acts on by checking whether it has `qind` or `qinds` fields.
+"""
+function _getmaxqubits(gate::Gate)
+    has_qind_field = hasfield(typeof(gate), :qind)
+    has_qinds_field = hasfield(typeof(gate), :qinds)
+    if !(has_qind_field || has_qinds_field)
+        throw(
+            ArgumentError(
+                "Gate $(typeof(gate)) does not have `qind` or `qinds` fields defined.
+                Use tofastgates!(circ, nqubits) instead."
+            )
+        )
+    end
+
+    if has_qind_field
+        return maximum(gate.qind)
+    else
+        return maximum(gate.qinds)
+    end
 end
