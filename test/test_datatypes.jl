@@ -37,7 +37,7 @@ function addtopaulisum(nq)
     pstr_temp = pstr + pstr
     @test isa(pstr_temp, PauliSum)
     add!(psum, pstr)
-    @test getcoeff(psum, pstr.operator) == pstr.coeff
+    @test getcoeff(psum, pstr.term) == pstr.coeff
 
     symbol = rand([:I, :X, :Y, :Z])
     qind = rand(1:nq)
@@ -69,7 +69,7 @@ function test_paulisum_from_dict()
     psum = PauliSum(3, Dict([:I, :I, :I] => 1.5, [:I, :I, :Y] => 1.0))
 
     # Collect and return keys and values for testing
-    return collect(keys(psum.op_dict)), collect(values(psum.op_dict))
+    return collect(keys(psum.terms)), collect(values(psum.terms))
 end
 
 # Test subtraction of PauliSum

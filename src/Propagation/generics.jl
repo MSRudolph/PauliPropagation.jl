@@ -23,7 +23,7 @@ Parameters for the parametrized gates in `circ` are given by `thetas`.
 A custom truncation function can be passed as `customtruncatefn` with the signature customtruncatefn(pstr::PauliStringType, coefficient)::Bool.
 """
 function propagate(circ, psum::PauliSum, thetas; kwargs...)
-    pauli_dict = propagate!(circ, deepcopy(psum.op_dict), thetas; kwargs...)
+    pauli_dict = propagate!(circ, deepcopy(psum.terms), thetas; kwargs...)
     return PauliSum(psum.nqubits, pauli_dict)
 end
 
@@ -38,7 +38,7 @@ Parameters for the parametrized gates in `circ` are given by `thetas`.
 A custom truncation function can be passed as `customtruncatefn` with the signature customtruncatefn(pstr::PauliStringType, coefficient)::Bool.
 """
 function propagate!(circ, psum::PauliSum, thetas; kwargs...)
-    propagate!(circ, psum.op_dict, thetas; kwargs...)
+    propagate!(circ, psum.terms, thetas; kwargs...)
     return psum
 end
 
@@ -72,7 +72,7 @@ end
 """
     mergingapply!(gate, psum, second_psum, thetas, param_idx, args...; kwargs...)
 
-1st-level function below `propagate!` that applies one gate to all operators in `psum`, potentially using `second_psum` in the process,
+1st-level function below `propagate!` that applies one gate to all Pauli strings in `psum`, potentially using `second_psum` in the process,
 and merges everything back into `psum`. Truncations are checked here after merging.
 This function can be overwritten for a custom gate if the lower-level functions `applygatetoall!`, `applygatetoone!`, and `apply` are not sufficient.
 A custom truncation function can be passed as `customtruncatefn` with the signature customtruncatefn(pstr::PauliStringType, coefficient)::Bool.
@@ -96,13 +96,13 @@ end
 """
     applygatetoall!(gate, theta psum, second_psum, args...; kwargs...)
 
-2nd-level function below `mergingapply!` that applies one gate to all operators in `psum`, potentially using `second_psum` in the process.
+2nd-level function below `mergingapply!` that applies one gate to all Pauli strings in `psum`, potentially using `second_psum` in the process.
 This function can be overwritten for a custom gate if the lower-level functions `applygatetoone!` and `apply` are not sufficient.
 """
 function applygatetoall!(gate, theta, psum, second_psum, args...; kwargs...)
 
-    for (operator, coeff) in psum
-        applygatetoone!(gate, operator, coeff, theta, psum, second_psum; kwargs...)
+    for (pstr, coeff) in psum
+        applygatetoone!(gate, pstr, coeff, theta, psum, second_psum; kwargs...)
     end
     # TODO: This should not be the default behavior. Absorb more logic into `mergeandclear!`, perhaps.
     empty!(psum)  # empty old dict because next generation of operators should by default stored in second_psum (unless this is overwritten by a custom function)
@@ -111,22 +111,21 @@ function applygatetoall!(gate, theta, psum, second_psum, args...; kwargs...)
 end
 
 """
-    applygatetoone!(gate, operator, coefficient, theta, psum, second_psum, args...; kwargs...)
+    applygatetoone!(gate, pstr, coefficient, theta, psum, second_psum, args...; kwargs...)
 
 3nd-level function below `mergingapply!` that applies one gate to one Pauli string in `psum`, potentially using `second_psum` in the process.
 This function can be overwritten for a custom gate if the lower-level function `apply` is not sufficient. 
 This is likely the the case if `apply` is not type-stable because it does not return a unique number of outputs. 
-E.g., a Pauli gate returns 1 or 2 (operator, coefficient) outputs.
+E.g., a Pauli gate returns 1 or 2 (pstr, coefficient) outputs.
 """
-@inline function applygatetoone!(gate, operator, coefficient, theta, psum, second_psum, args...; kwargs...)
-    # TODO: dispatch to different apply functions with and without theta depending on gate type.
-    ops_and_coeffs = apply(gate, operator, theta, coefficient; kwargs...)
+@inline function applygatetoone!(gate, pstr, coefficient, theta, psum, second_psum, args...; kwargs...)
 
-    for ii in 1:2:length(ops_and_coeffs)
-        op, coeff = ops_and_coeffs[ii], ops_and_coeffs[ii+1]
+    pstrs_and_coeffs = apply(gate, pstr, theta, coefficient; kwargs...)
+
+    for ii in 1:2:length(pstrs_and_coeffs)
+        pstr, coeff = pstrs_and_coeffs[ii], pstrs_and_coeffs[ii+1]
         # TODO the zero should be of the same type as the coefficient
-        # TODO: see if this can be optimally fast with padding with zeros and if else here 
-        second_psum[ops_and_coeffs[ii]] = get(second_psum, op, 0.0) + coeff
+        second_psum[pstrs_and_coeffs[ii]] = get(second_psum, pstr, 0.0) + coeff
     end
 
     return
@@ -162,7 +161,7 @@ end
 """
     checktruncationonall!(psum; max_weight::Real=Inf, min_abs_coeff=1e-10, max_freq::Real=Inf, max_sins::Real=Inf, kwargs...)
 
-Check truncation conditions on all operators in `psum` and remove them if they are truncated.
+Check truncation conditions on all Pauli strings in `psum` and remove them if they are truncated.
 This function supports the default truncations based on `max_weight`, `min_abs_coeff`, `max_freq`, and `max_sins`.
 A custom truncation function can be passed as `customtruncatefn` with the signature customtruncatefn(pstr::PauliStringType, coefficient)::Bool.
 """
@@ -173,9 +172,9 @@ function checktruncationonall!(
 )
     # TODO: This does currently hinder performance, even if we don't truncated
     # approx 55ms -> 66ms for the test case
-    for (operator, coeff) in psum
+    for (pstr, coeff) in psum
         checktruncationonone!(
-            psum, operator, coeff;
+            psum, pstr, coeff;
             max_weight=max_weight, min_abs_coeff=min_abs_coeff,
             max_freq=max_freq, max_sins=max_sins,
             kwargs...
@@ -186,25 +185,25 @@ end
 
 """
     checktruncationonone!(
-    psum, operator, coeff;
+    psum, pstr, coeff;
     max_weight::Real=Inf, min_abs_coeff=1e-10,
     max_freq::Real=Inf, max_sins::Real=Inf,
     customtruncatefn=nothing,
     kwargs...
 
-Check truncation conditions one operator in `psum` and it them if it is truncated.
+Check truncation conditions one Pauli string in `psum` and it them if it is truncated.
 This function supports the default truncations based on `max_weight`, `min_abs_coeff`, `max_freq`, and `max_sins`.
 A custom truncation function can be passed as `customtruncatefn` with the signature customtruncatefn(pstr::PauliStringType, coefficient)::Bool.
 """
 @inline function checktruncationonone!(
-    psum, operator, coeff;
+    psum, pstr, coeff;
     max_weight::Real=Inf, min_abs_coeff=1e-10,
     max_freq::Real=Inf, max_sins::Real=Inf,
     customtruncatefn=nothing,
     kwargs...
 )
     is_truncated = false
-    if truncateweight(operator, max_weight)
+    if truncateweight(pstr, max_weight)
         is_truncated = true
     elseif truncatemincoeff(coeff, min_abs_coeff)
         is_truncated = true
@@ -212,11 +211,11 @@ A custom truncation function can be passed as `customtruncatefn` with the signat
         is_truncated = true
     elseif truncatesins(coeff, max_sins)
         is_truncated = true
-    elseif !isnothing(customtruncatefn) && customtruncatefn(operator, coeff)
+    elseif !isnothing(customtruncatefn) && customtruncatefn(pstr, coeff)
         is_truncated = true
     end
     if is_truncated
-        delete!(psum, operator)
+        delete!(psum, pstr)
     end
     return
 end

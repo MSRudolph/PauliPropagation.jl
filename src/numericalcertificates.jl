@@ -66,8 +66,8 @@ function estimateaverageerror!(circ, pstr::PauliString, error_array::AbstractVec
 
         # multiply the coefficient of the backpropagated Pauli with the overlap with the initial state
         # and then multply with `is_truncated` to get the final error.
-        # if truncated, then the error is coeff * initial_state_func(final_operator), if not truncated, then the error is 0
-        error_array[ii] = getnumcoeff(final_pstr.coeff)^2 * stateoverlapfunc(final_pstr.operator)^2 * is_truncated
+        # if truncated, then the error is coeff * initial_state_func(final_pstr), if not truncated, then the error is 0
+        error_array[ii] = getnumcoeff(final_pstr.coeff)^2 * stateoverlapfunc(term(final_pstr))^2 * is_truncated
     end
 
     return mean(error_array)
@@ -116,7 +116,7 @@ function montecarlopropagation(circ, pstr::PauliString, thetas, split_probabilit
 
     is_truncated = false
 
-    pauli = pstr.operator
+    pauli = pstr.term
     coeff = copy(pstr.coeff)
     for gate in circ
 
@@ -156,15 +156,16 @@ mcapply(gate, pauli, coeff, theta, split_probability; kwargs...) = apply(gate, p
 """
     mcapply(gate::PauliGateUnion, pauli, coeff, theta, split_prob=0.5; kwargs...) 
 
-MC apply function for Pauli gates. If the gate commutes with the operator, the operator is left unchanged. Else the operator is split off with a probability 1 - `split_prob`.
+MC apply function for Pauli gates. If the gate commutes with the pauli string, the pauli string is left unchanged. 
+Else the pauli string is split off with a probability 1 - `split_prob`.
 """
 function mcapply(gate::PauliGateUnion, pauli, coeff, theta, split_prob=0.5; kwargs...)
 
     if !commutes(gate, pauli)
-        # if the gate does not commute with the operator, remain with probability `split_prob` and split off with probability 1 - `split_prob`.
+        # if the gate does not commute with the pauli string, remain with probability `split_prob` and split off with probability 1 - `split_prob`.
         if rand() > split_prob
             # branch into the new Pauli
-            pauli, sign = getnewoperator(gate, pauli) # TODO: This allocates
+            pauli, sign = getnewpaulistring(gate, pauli) # TODO: This allocates
             # for PathProperties: increment sin and frequency count
             coeff = _incrementsinandfreq(coeff)
         else

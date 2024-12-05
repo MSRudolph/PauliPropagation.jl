@@ -9,8 +9,8 @@ function timingnumericalPP()
     W = Inf
     min_abs_coeff = 0
 
-    op = PauliString(nq, :Z, round(Int, nq / 2))
-    opsum = PauliSum(nq, op)
+    pstr = PauliString(nq, :Z, round(Int, nq / 2))
+    opsum = PauliSum(nq, pstr)
 
     topo = bricklayertopology(nq; periodic=false)
     # topo = get2dtopology(4, 4)
@@ -21,10 +21,10 @@ function timingnumericalPP()
     Random.seed!(42)
     thetas = randn(m)
 
-    res1 = propagate(circ, op, thetas; max_weight=W, min_abs_coeff=min_abs_coeff)
+    res1 = propagate(circ, pstr, thetas; max_weight=W, min_abs_coeff=min_abs_coeff)
     res2 = propagate(circ, opsum, thetas; max_weight=W, min_abs_coeff=min_abs_coeff)
     @show overlapwithzero(res1), overlapwithzero(res2)
-    @btime propagate($circ, $op, $thetas; max_weight=$W, min_abs_coeff=$min_abs_coeff)
+    @btime propagate($circ, $pstr, $thetas; max_weight=$W, min_abs_coeff=$min_abs_coeff)
     @btime propagate($circ, $opsum, $thetas; max_weight=$W, min_abs_coeff=$min_abs_coeff)
 
     return

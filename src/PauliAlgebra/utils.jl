@@ -76,7 +76,7 @@ inttosymbol(pauli::PauliType) = pauli_symbols[pauli+1]
 Gets the Pauli on index `index` of a `PauliString` in the integer representation.
 """
 function getpauli(pstr::PauliString, index::Integer)
-    return getpauli(pstr.operator, index)
+    return getpauli(pstr.term, index)
 end
 
 """
@@ -94,7 +94,7 @@ end
 Sets the Pauli on index `index` of an integer `PauliString` to `target_pauli`. That Pauli can be provided as integer (0, 1, 2, 3) or as a symbol (:I, :X, :Y, :Z).
 """
 function setpauli(pstr::PauliString, target_pauli::T, index::Integer) where {T<:Union{Symbol,PauliType}}
-    return PauliString(pstr.nqubits, setpauli(pstr.operator, target_pauli, index), str.coeff)
+    return PauliString(pstr.nqubits, setpauli(pstr.term, target_pauli, index), str.coeff)
 end
 
 """
@@ -132,13 +132,13 @@ function _getprettystr(psum::Dict, nqubits::Int; max_lines=20)
     header = length(psum) == 1 ? "1 Pauli term: \n" : "$(length(psum)) Pauli terms:\n"
     str *= header
 
-    for (ii, (op, coeff)) in enumerate(psum)
+    for (ii, (pstr, coeff)) in enumerate(psum)
         if ii > max_lines
             new_str = "  ⋮"
             str *= new_str
             break
         end
-        pauli_string = inttostring(op, nqubits)
+        pauli_string = inttostring(pstr, nqubits)
         if length(pauli_string) > 20
             pauli_string = pauli_string[1:20] * "..."
         end

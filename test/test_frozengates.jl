@@ -18,10 +18,10 @@ using Test
 
     frozen_circ = freeze(circ, thetas)
 
-    op = PauliString(nq, [:Y, :X], [3, 6])
+    pstr = PauliString(nq, [:Y, :X], [3, 6])
 
-    psum1 = propagate(circ, op, thetas)
-    psum2 = propagate(frozen_circ, op, [0])
+    psum1 = propagate(circ, pstr, thetas)
+    psum2 = propagate(frozen_circ, pstr, [0])
 
     @test overlapwithzero(psum1) ≈ overlapwithzero(psum2)
 

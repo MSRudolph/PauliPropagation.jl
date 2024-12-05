@@ -1,4 +1,4 @@
-### This file contains the functions to calculate the overlap between between backpropagated operators and the initial state.
+### This file contains the functions to calculate the overlap between between backpropagated pauli strings and states or general operators.
 
 """
     overlapbyorthogonality(psum::PauliSum, orthogonalfunc::Function)
@@ -9,7 +9,7 @@ If not orthogonal, then a Pauli string contributes with its coefficient.
 This is particularly useful for overlaps with stabilizer states.
 """
 function overlapbyorthogonality(psum::PauliSum, orthogonalfunc::Function)
-    return overlapbyorthogonality(psum.op_dict, orthogonalfunc)
+    return overlapbyorthogonality(psum.terms, orthogonalfunc)
 end
 
 """
@@ -34,8 +34,8 @@ This is particularly useful for overlaps with stabilizer states.
 """
 function overlapbyorthogonality(psum::Dict, orthogonalfunc::Function)
     val = numcoefftype(psum)(0)
-    for (operator, coeff) in psum
-        if overlapbyorthogonality(operator, orthogonalfunc)
+    for (pstr, coeff) in psum
+        if overlapbyorthogonality(pstr, orthogonalfunc)
             val += getnumcoeff(coeff)
         end
     end
@@ -92,7 +92,7 @@ orthogonaltoplus(pstr) = containsYorZ(pstr)
 Calculates the overlap of a `PauliSum` with the maximally mixed state 1/2^n I.
 """
 function overlapwithmaxmixed(psum::PauliSum)
-    return overlapwithmaxmixed(psum.op_dict)
+    return overlapwithmaxmixed(psum.terms)
 end
 
 """
@@ -100,9 +100,9 @@ end
 
 Calculates the overlap of a Pauli sum dict with the maximally mixed state 1/2^n I.
 """
-function overlapwithmaxmixed(psum::Dict{OpType,CoeffType}) where {OpType<:PauliStringType,CoeffType}
+function overlapwithmaxmixed(psum::Dict{TermType,CoeffType}) where {TermType<:PauliStringType,CoeffType}
     NumType = numcoefftype(psum)
-    return get(psum, OpType(0), NumType(0.0))
+    return get(psum, TermType(0), NumType(0.0))
 end
 
 """
@@ -111,7 +111,7 @@ end
 Calculates the overlap between two `PauliSum`s.
 """
 function overlapwithpaulisum(psum1::PauliSum, psum2::PauliSum)
-    return overlapwithpaulisum(psum1.op_dict, psum2.op_dict)
+    return overlapwithpaulisum(psum1.terms, psum2.terms)
 end
 
 """
@@ -119,7 +119,7 @@ end
 
 Calculates the overlap between two Pauli sum dicts.
 """
-function overlapwithpaulisum(psum1::Dict{OpType,CoeffType}, psum2::Dict{OpType,CoeffType}) where {OpType,CoeffType}
+function overlapwithpaulisum(psum1::Dict{TermType,CoeffType}, psum2::Dict{TermType,CoeffType}) where {TermType,CoeffType}
     NumberType = numcoefftype(psum1)
 
     val = NumberType(0.0)
@@ -146,7 +146,7 @@ end
 Return a filtered `PauliSum` by removing all Pauli strings that satisfy the `filterfunc`.
 """
 function filter(psum::PauliSum, filterfunc::Function)
-    op_dict = filter(psum.op_dict, filterfunc)
+    op_dict = filter(psum.terms, filterfunc)
     return PauliSum(psum.nqubits, op_dict)
 end
 
@@ -156,7 +156,7 @@ end
 Filter a `PauliSum` in-place by removing all Pauli strings that satisfy the `filterfunc`.
 """
 function filter!(psum::PauliSum, filterfunc::Function)
-    filter!(psum.op_dict, filterfunc)
+    filter!(psum.terms, filterfunc)
     return psum
 end
 

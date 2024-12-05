@@ -5,34 +5,34 @@
     applygatetoall!(gate::PauliGateUnion, thetas, psum, second_psum, args...; kwargs...)
 
 Overload of `applygatetoall!` for `PauliGate` and `FastPauliGate` gates.
-Both `operator_dict` and `new_operator_dict` contain operators which will be merged later.
+Both `psum` and `second_psum` contain Pauli strings which will be merged later.
 """
 function applygatetoall!(gate::PauliGateUnion, theta, psum, second_psum, args...; kwargs...)
     # TODO: there is a lot of code duplication. Can we write a more general function?
 
-    for (operator, coeff) in psum
-        applygatetoone!(gate, operator, coeff, theta, psum, second_psum; kwargs...)
+    for (pstr, coeff) in psum
+        applygatetoone!(gate, pstr, coeff, theta, psum, second_psum; kwargs...)
     end
 
     return psum, second_psum  # don't swap psums around
 end
 
 """
-    applygatetoone!(gate::PauliGateUnion, operator, coefficient, theta, psum, second_psum, args...; kwargs...)
+    applygatetoone!(gate::PauliGateUnion, pstr, coefficient, theta, psum, second_psum, args...; kwargs...)
 
 Overload of `applygatetoone!` for `PauliGate` and `FastPauliGate` gates. 
-Checks for commutation of `gate` and `operator`, and applies the gate to the operator if they don't.
+Checks for commutation of `gate` and `pstr`, and applies the gate to the Pauli string if they don't.
 """
-@inline function applygatetoone!(gate::PauliGateUnion, operator, coefficient, theta, psum, second_psum, args...; kwargs...)
+@inline function applygatetoone!(gate::PauliGateUnion, pstr, coefficient, theta, psum, second_psum, args...; kwargs...)
 
-    if commutes(gate, operator)
+    if commutes(gate, pstr)
         return
     end
 
-    operator, coeff1, new_oper, coeff2 = applynoncummuting(gate, operator, theta, coefficient; kwargs...)
+    pstr, coeff1, new_pstr, coeff2 = applynoncummuting(gate, pstr, theta, coefficient; kwargs...)
 
-    psum[operator] = coeff1
-    second_psum[new_oper] = coeff2
+    psum[pstr] = coeff1
+    second_psum[new_pstr] = coeff2
 
     return
 end
@@ -40,15 +40,15 @@ end
 ### Clifford gates
 
 """
-    applygatetoone!(gate::CliffordGate, operator, coefficient, theta, psum, second_psum, args...; kwargs...)
+    applygatetoone!(gate::CliffordGate, pstr, coefficient, theta, psum, second_psum, args...; kwargs...)
 
 Overload of `applygatetoone!` for `CliffordGate` gates.
 Simplified logic for readability.
 """
-@inline function applygatetoone!(gate::CliffordGate, operator, coefficient, theta, psum, second_psum, args...; kwargs...)
+@inline function applygatetoone!(gate::CliffordGate, pstr, coefficient, theta, psum, second_psum, args...; kwargs...)
 
-    op, coeff = apply(gate, operator, theta, coefficient; kwargs...)
-    second_psum[op] = coeff
+    new_pstr, coeff = apply(gate, pstr, theta, coefficient; kwargs...)
+    second_psum[new_pstr] = coeff
 
     return
 end
@@ -58,36 +58,36 @@ end
     applygatetoall!(gate::AmplitudeDampingNoise, thetas, psum, second_psum, args...; kwargs...)
 
 Overload of `applygatetoall!` for `AmplitudeDampingNoise` gates.
-Both `operator_dict` and `new_operator_dict` contain operators which will be merged later.
+Both `psum` and `second_psum` contain Pauli strings which will be merged later.
 """
 function applygatetoall!(gate::AmplitudeDampingNoise, theta, psum, second_psum, args...; kwargs...)
     # TODO: there is a lot of code duplication. Can we write a more general function? 
 
-    for (operator, coeff) in psum
-        applygatetoone!(gate, operator, coeff, theta, psum, second_psum; kwargs...)
+    for (pstr, coeff) in psum
+        applygatetoone!(gate, pstr, coeff, theta, psum, second_psum; kwargs...)
     end
 
     return psum, second_psum
 end
 
 """
-    applygatetoone!(gate::AmplitudeDampingNoise, operator, coefficient, theta, psum, second_psum, args...; kwargs...)
+    applygatetoone!(gate::AmplitudeDampingNoise, pstr, coefficient, theta, psum, second_psum, args...; kwargs...)
 
 Overload of `applygatetoone!` for `AmplitudeDampingNoise` gates.
 Checks for whether `gate` will cause splitting and has tailored logic.
 """
-@inline function applygatetoone!(gate::AmplitudeDampingNoise, operator, coefficient, theta, psum, second_psum, args...; kwargs...)
+@inline function applygatetoone!(gate::AmplitudeDampingNoise, pstr, coefficient, theta, psum, second_psum, args...; kwargs...)
 
-    if actsdiagonally(gate, operator)
-        operator, coeff = diagonalapply(gate, operator, theta, coefficient; kwargs...)
-        psum[operator] = coeff
+    if actsdiagonally(gate, pstr)
+        pstr, coeff = diagonalapply(gate, pstr, theta, coefficient; kwargs...)
+        psum[pstr] = coeff
         return
     end
 
-    operator, coeff1, new_oper, coeff2 = splitapply(gate, operator, theta, coefficient; kwargs...)
+    pstr, coeff1, new_pstr, coeff2 = splitapply(gate, pstr, theta, coefficient; kwargs...)
 
-    psum[operator] = coeff1
-    second_psum[new_oper] = coeff2
+    psum[pstr] = coeff1
+    second_psum[new_pstr] = coeff2
 
     return
 end

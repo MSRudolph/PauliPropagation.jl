@@ -4,7 +4,7 @@
 Evaluate the expectation value of a Surrogate by evaluating all involved circuit nodes in the correct order.
 `eval_list` can be attained as the output of `gettraceevalorder()`
 """
-function evaluate!(psum::PauliSum{OpType,NodePathProperties}, thetas) where {OpType<:PauliStringType}
+function evaluate!(psum::PauliSum{TermType,NodePathProperties}, thetas) where {TermType<:PauliStringType}
     reset!(psum)
     @sync for (_, pth) in psum
         @spawn _traceevalorder(pth.coeff, thetas)
@@ -19,7 +19,7 @@ end
 
 Reset the nodes in a the Surrogate. Needs to be done in-between evaluatios with different parameters.
 """
-function reset!(psum::PauliSum{OpType,CoeffType}) where {OpType<:PauliStringType,CoeffType<:NodePathProperties}
+function reset!(psum::PauliSum{TermType,CoeffType}) where {TermType<:PauliStringType,CoeffType<:NodePathProperties}
     @sync for (_, pth) in psum
         @spawn reset!(pth.coeff)
     end

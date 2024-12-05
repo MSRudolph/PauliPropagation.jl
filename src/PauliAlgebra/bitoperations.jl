@@ -101,7 +101,7 @@ function _countbitxy(pstr::PauliStringType)
     # AND with the mask to extract the 1's
     op = op & mask
 
-    # count 1's to get the number of X or Y operators
+    # count 1's to get the number of X or Y Paulis
     return count_ones(op)
 end
 
@@ -119,7 +119,7 @@ function _countbityz(pstr::PauliStringType)
     # AND with the shifted mask to extract the 1's on the left bit
     op = pstr & (mask << 1)
 
-    # count 1's to get the number of Y or Z operators
+    # count 1's to get the number of Y or Z Paulis
     return count_ones(op)
 end
 
@@ -242,7 +242,7 @@ function _setbittoone(pstr::Integer, bitindex::Integer)
     # shift ...00100...  to bitindex
     shifted_onebit = (typeof(pstr)(1) << bitindex)
 
-    # OR with operator to make sure that that bit is 1
+    # OR with pauli string to make sure that that bit is 1
     return pstr | shifted_onebit
 end
 

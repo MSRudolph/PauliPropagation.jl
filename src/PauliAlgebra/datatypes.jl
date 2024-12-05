@@ -4,13 +4,14 @@ import Base: +
 import Base: -
 
 """
-    PauliString(nqubits::Int, operator::OpType, coeff::CoeffType)
+    PauliString(nqubits::Int, term::TermType, coeff::CoeffType)
 
-`PauliString` is a struct that represents a Pauli operator acting on `nqubits` qubits.
+`PauliString` is a struct that represents a Pauli string on `nqubits` qubits.
+Commonly `term` is an unsigned Integer. See the other `PauliString` constructors for details. 
 """
-struct PauliString{OpType<:PauliStringType,CoeffType}
+struct PauliString{TermType<:PauliStringType,CoeffType}
     nqubits::Int
-    operator::OpType  # TODO: rename
+    term::TermType
     coeff::CoeffType
 end
 
@@ -28,7 +29,7 @@ end
 """
     PauliString(nqubits, pstr, qinds, coeff=1.0)
 
-Constructor for a `PauliString` on `nqubits` qubits from a list of Symbols representing non-identity Pauli operator on qubits `qinds` with coefficient `coeff`.
+Constructor for a `PauliString` on `nqubits` qubits from a list of Symbols representing non-identity Paulis on qubits `qinds` with coefficient `coeff`.
 """
 function PauliString(nqubits, pstr, qinds, coeff=1.0)
     pauli = symboltoint(nqubits, pstr, qinds)
@@ -37,12 +38,20 @@ function PauliString(nqubits, pstr, qinds, coeff=1.0)
 end
 
 """
+    term(pstr::PauliString)
+
+Get the lower-level representation of a `PauliString`.
+This returns the `term` field of the `PauliString`. 
+"""
+term(pstr::PauliString) = pstr.term
+
+"""
     paulitype(pstr::PauliString)
 
 Get the Pauli integer type of a `PauliString`.
 """
 function paulitype(pstr::PauliString)
-    return typeof(pstr.operator)
+    return typeof(pstr.term)
 end
 
 """
@@ -70,7 +79,7 @@ import Base.show
 Pretty print for `PauliString`.
 """
 function show(io::IO, pstr::PauliString)
-    pauli_string = inttostring(pstr.operator, pstr.nqubits)
+    pauli_string = inttostring(pstr.term, pstr.nqubits)
     if length(pauli_string) > 20
         pauli_string = pauli_string[1:20] * "..."
     end
@@ -92,12 +101,12 @@ end
 """
     PauliSum(nqubits::Int, op_dict::Dict)
 
-`PauliSum`` is a struct that represents a sum of Pauli operators acting on `nqubits` qubits.
+`PauliSum`` is a struct that represents a sum of Pauli strings acting on `nqubits` qubits.
 It is a wrapper around a dictionary Dict(Pauli string => coefficient}, where the Pauli strings are typically unsigned Integers for efficiency reasons.
 """
-struct PauliSum{OpType<:Integer,CoeffType}
+struct PauliSum{TermType<:Integer,CoeffType}
     nqubits::Int
-    op_dict::Dict{OpType,CoeffType}
+    terms::Dict{TermType,CoeffType}
 end
 
 """
@@ -113,8 +122,8 @@ PauliSum(nqubits::Integer) = PauliSum(nqubits, Float64)
 Contructor for an empty `PauliSum` on `nqubits` qubits. Element type can be provided.
 """
 function PauliSum(nq::Int, ELTYPE::T) where {T<:DataType}
-    OpType = getinttype(nq)
-    return PauliSum(nq, Dict{OpType,ELTYPE}())
+    TermType = getinttype(nq)
+    return PauliSum(nq, Dict{TermType,ELTYPE}())
 end
 
 """
@@ -146,14 +155,22 @@ Constructor for a `PauliSum` on `nqubits` qubits from a `PauliString`.
 PauliSum(pstr::PauliString) = PauliSum(pstr.nqubits, pstr)
 
 """
-    PauliSum(nq::Integer, pstr::PauliString{OpType,CoeffType}) where {OpType,CoeffType}
+    PauliSum(nq::Integer, pstr::PauliString{TermType,CoeffType}) where {TermType,CoeffType}
 
 Constructor for a `PauliSum` on `nqubits` qubits from a `PauliString`.
 """
-function PauliSum(nq::Integer, pstr::PauliString{OpType,CoeffType}) where {OpType,CoeffType}
+function PauliSum(nq::Integer, pstr::PauliString{TermType,CoeffType}) where {TermType,CoeffType}
     _checknumberofqubits(nq, pstr)
-    return PauliSum(nq, Dict{OpType,CoeffType}(pstr.operator => pstr.coeff))
+    return PauliSum(nq, Dict{TermType,CoeffType}(pstr.term => pstr.coeff))
 end
+
+"""
+    terms(psum::PauliSum)
+
+Returns the data structure of the `PauliSum` containing the Pauli strings and their coefficients.
+Currently a dictionary.
+"""
+terms(psum::PauliSum) = psum.terms
 
 """
     paulis(psum::PauliSum)
@@ -162,7 +179,7 @@ Returns an iterator over the integer pauli strings of a `PauliSum`.
 Call `topaulistrings` to receive entries as `PauliString`s.
 """
 function paulis(psum::PauliSum)
-    return keys(psum.op_dict)
+    return keys(psum.terms)
 end
 
 """
@@ -172,7 +189,7 @@ Returns an iterator over the coefficients of a `PauliSum`.
 Call `topaulistrings` to receive entries as `PauliString`s.
 """
 function coefficients(psum::PauliSum)
-    return values(psum.op_dict)
+    return values(psum.terms)
 end
 
 """
@@ -181,7 +198,7 @@ end
 Get the Pauli integer type of a `PauliSum`.
 """
 function paulitype(psum::PauliSum)
-    return keytype(psum.op_dict)
+    return keytype(psum.terms)
 end
 
 """
@@ -199,7 +216,7 @@ end
 Get the coefficient type of a `PauliSum`.
 """
 function coefftype(psum::PauliSum)
-    return valtype(psum.op_dict)
+    return valtype(psum.terms)
 end
 
 """
@@ -218,7 +235,7 @@ Get the type of the numerical coefficient of a `PauliSum`.
 Will get the type of the `coeff` field of a potential PathProperties type.
 """
 function numcoefftype(psum::PauliSum)
-    return numcoefftype(psum.op_dict)
+    return numcoefftype(psum.terms)
 end
 
 """
@@ -250,59 +267,64 @@ function numcoefftype(::Type{T}) where {T<:Number}
 end
 
 """
-    getcoeff(psum::PauliSum{OpType,CoeffType}, operator::Integer) where {OpType,CoeffType}
+    getcoeff(psum::PauliSum{PauliStringType,CoeffType}, pstr::PauliStringType)
 
 Get the coefficient of an integer Pauli string in a `PauliSum`. Defaults to 0 if the Pauli string is not in the `PauliSum`.
+Requires that the integer Pauli string `pstr` is the same type as the integer Pauli strings in `psum`.
 """
-function getcoeff(psum::PauliSum{OpType,CoeffType}, operator::Integer) where {OpType,CoeffType}
+function getcoeff(psum::PauliSum{TermType,CoeffType}, pstr::TermType) where {TermType,CoeffType}
     # TODO: This is not yet compatible with `PathProperties`
     if CoeffType <: PathProperties
         throw(ArgumentError("This function is not yet compatible with PathProperties."))
     end
-    return get(psum.op_dict, operator, CoeffType(0))
+    return get(psum.terms, pstr, CoeffType(0))
 end
 
 """
-    getcoeff(psum::PauliSum{OpType,CoeffType1}, pstr::PauliString{OpType,CoeffType2}) where {OpType,CoeffType1,CoeffType2}
+    getcoeff(psum::PauliSum, pstr::PauliString)
 
 Get the coefficient of a `PauliString` in a `PauliSum`. Defaults to 0 if the Pauli string is not in the `PauliSum`.
+Requires that the integer Pauli string in `pstr` is the same type as the integer Pauli strings in `psum`.
 """
-function getcoeff(psum::PauliSum{OpType,CoeffType1}, pstr::PauliString{OpType,CoeffType2}) where {OpType,CoeffType1,CoeffType2}
+function getcoeff(psum::PauliSum{TermType,CoeffType1}, pstr::PauliString{TermType,CoeffType2}) where {TermType,CoeffType1,CoeffType2}
     # TODO: This is not yet compatible with `PathProperties`
     if CoeffType <: PathProperties
         throw(ArgumentError("This function is not yet compatible with PathProperties."))
     end
-    return get(psum.op_dict, pstr.operator, CoeffType(0))
+    return get(psum.terms, pstr.term, CoeffType(0))
 end
 
 
 """
-    getcoeff(psum::PauliSum{OpType,CoeffType}, pauli::Symbol, qind::Integer) where {OpType,CoeffType}
+    getcoeff(psum::PauliSum, pauli::Symbol, qind::Integer)
 
 Get the coefficient of a Pauli string in a `PauliSum` by providing the Pauli string as a Symbol acting on qubit `qind`. 
-This is consistent with how operators can be added to a `PauliSum` via `add!()`. Defaults to 0 if the operator is not in the `PauliSum`.
+This is consistent with how Pauli strings can be added to a `PauliSum` via `add!()`. 
+Defaults to 0 if the Pauli string is not in the `PauliSum`.
 """
-function getcoeff(psum::PauliSum{OpType,CoeffType}, pauli::Symbol, qind::Integer) where {OpType,CoeffType}
+function getcoeff(psum::PauliSum, pauli::Symbol, qind::Integer)
     return getcoeff(psum, symboltoint(psum.nqubits, pauli, qind))
 end
 
 """
-    getcoeff(psum::PauliSum{OpType,CoeffType}, pstr, qinds) where {OpType,CoeffType}
+    getcoeff(psum::PauliSum, pstr::Vector{Symbol}, qinds::Vector{Int})
 
 Get the coefficient of a Pauli string in a `PauliSum` by providing the Pauli string `pstr` as a vector of Symbols acting on qubits `qinds`. 
-This is consistent with how operators can be added to a `PauliSum` via `add!()`. Defaults to 0 if the operator is not in the `PauliSum`.
+This is consistent with how Pauli strings can be added to a `PauliSum` via `add!()`. 
+Defaults to 0 if the Pauli string is not in the `PauliSum`.
 """
-function getcoeff(psum::PauliSum{OpType,CoeffType}, pstr, qinds) where {OpType,CoeffType}
+function getcoeff(psum::PauliSum, pstr, qinds)
     return getcoeff(psum, symboltoint(psum.nqubits, pstr, qinds))
 end
 
 """
-    getcoeff(psum::PauliSum{OpType,CoeffType}, pstr) where {OpType,CoeffType}
+    getcoeff(psum::PauliSum, pstr::Vector{Symbol})
 
 Get the coefficient of a Pauli string in a `PauliSum` by providing the Pauli string `pstr` as a vector of Symbols acting on all qubits. 
-This is consistent with how operators can be added to a `PauliSum` via `add!()`. Defaults to 0 if the operator is not in the `PauliSum`.
+This is consistent with how Pauli strings can be added to a `PauliSum` via `add!()`. 
+Defaults to 0 if the Pauli string is not in the `PauliSum`.
 """
-function getcoeff(psum::PauliSum{OpType,CoeffType}, pstr) where {OpType,CoeffType}
+function getcoeff(psum::PauliSum, pstr::Vector{Symbol})
     return getcoeff(psum, symboltoint(pstr))
 end
 
@@ -326,17 +348,17 @@ end
 
 Returns the Pauli strings in a `PauliSum` and their coefficients as a list of `PauliString`.
 """
-topaulistrings(psum::PauliSum) = [PauliString(psum.nqubits, pauli, coeff) for (pauli, coeff) in psum.op_dict]
+topaulistrings(psum::PauliSum) = [PauliString(psum.nqubits, pauli, coeff) for (pauli, coeff) in psum.terms]
 
 """
 Copy a `PauliSum` by copying its `op_dict`.
 """
-Base.copy(psum::PauliSum) = PauliSum(psum.nqubits, copy(psum.op_dict))
+Base.copy(psum::PauliSum) = PauliSum(psum.nqubits, copy(psum.terms))
 
 """
 Iterator for `PauliSum` returns the iterator over its `op_dict`.
 """
-Base.iterate(psum::PauliSum, state=1) = iterate(psum.op_dict, state)
+Base.iterate(psum::PauliSum, state=1) = iterate(psum.terms, state)
 
 
 import Base.show
@@ -344,10 +366,10 @@ import Base.show
 Pretty print for `PauliSum`.
 """
 function show(io::IO, psum::PauliSum)
-    if length(psum.op_dict) == 0
-        dict_string = "(no operators)"
+    if length(psum.terms) == 0
+        dict_string = "(no Pauli strings)"
     else
-        dict_string = _getprettystr(psum.op_dict, psum.nqubits)
+        dict_string = _getprettystr(psum.terms, psum.nqubits)
     end
     print(io, "PauliSum(nqubits: $(psum.nqubits), $dict_string)")
 end
@@ -358,7 +380,7 @@ import Base.length
 
 Number of terms in the `PauliSum`.
 """
-length(psum::PauliSum) = length(psum.op_dict)
+length(psum::PauliSum) = length(psum.terms)
 
 import Base: ==
 """
@@ -371,7 +393,7 @@ function ==(psum1::PauliSum, psum2::PauliSum)
         return false
     end
 
-    return psum1.op_dict == psum2.op_dict
+    return psum1.terms == psum2.terms
 end
 
 """
@@ -381,8 +403,8 @@ Multiply a `PauliSum` by a scalar `c` in-place.
 """
 function mult!(psum::PauliSum, c::Number)
     # multiply in-place
-    for (k, v) in psum.op_dict
-        psum.op_dict[k] *= c
+    for (k, v) in psum.terms
+        psum.terms[k] *= c
     end
     return psum
 end
@@ -457,7 +479,7 @@ Addition of a `PauliString` to a `PauliSum`. Changes the `PauliSum` in-place.
 """
 function add!(psum::PauliSum, pstr::PauliString)
     _checknumberofqubits(psum, pstr)
-    psum.op_dict[pstr.operator] = get(psum.op_dict, pstr.operator, keytype(psum.op_dict)(0.0)) + pstr.coeff
+    psum.terms[pstr.term] = get(psum.terms, pstr.term, keytype(psum.terms)(0.0)) + pstr.coeff
     return psum
 end
 
@@ -469,17 +491,17 @@ Uses a default precision for coefficients under which a coefficient is considere
 """
 function add!(psum1::PauliSum, psum2::PauliSum, precision=_DEFAULT_PRECISION)
     _checknumberofqubits(psum1, psum2)
-    for (operator, coeff) in psum2.op_dict
-        if haskey(psum1.op_dict, operator)
-            psum1.op_dict[operator] += coeff
+    for (pstr, coeff) in psum2.terms
+        if haskey(psum1.terms, pstr)
+            psum1.terms[pstr] += coeff
 
-            # Remove the operator if the resulting coefficient is small
-            if abs(psum1.op_dict[operator]) < precision
-                delete!(psum1.op_dict, operator)
+            # Remove the Pauli string if the resulting coefficient is small
+            if abs(psum1.terms[pstr]) < precision
+                delete!(psum1.terms, pstr)
             end
 
         else
-            psum1.op_dict[operator] = -coeff
+            psum1.terms[pstr] = -coeff
         end
     end
 
@@ -552,16 +574,16 @@ Uses a default precision for coefficients under which a coefficient is considere
 """
 function subtract!(psum::PauliSum, pstr::PauliString; precision=_DEFAULT_PRECISION)
     _checknumberofqubits(psum, pstr)
-    if haskey(psum.op_dict, pstr.operator)
-        psum.op_dict[pstr.operator] -= pstr.coeff
+    if haskey(psum.terms, pstr.term)
+        psum.terms[pstr.term] -= pstr.coeff
 
-        # Remove the operator if the resulting coefficient is small
-        if abs(psum.op_dict[pstr.operator]) < precision
-            delete!(psum.op_dict, pstr.operator)
+        # Remove the Pauli string if the resulting coefficient is small
+        if abs(psum.terms[pstr.term]) < precision
+            delete!(psum.terms, pstr.term)
         end
 
     else
-        psum.op_dict[pstr.operator] = -pstr.coeff
+        psum.terms[pstr.term] = -pstr.coeff
     end
     return psum
 end
@@ -573,17 +595,17 @@ In-place subtraction a `PauliSum` from a `PauliSum`. Uses a default precision fo
 """
 function subtract!(psum1::PauliSum, psum2::PauliSum; precision=_DEFAULT_PRECISION)
     _checknumberofqubits(psum1, psum2)
-    for (operator, coeff) in psum2.op_dict
-        if haskey(psum1.op_dict, operator)
-            psum1.op_dict[operator] -= coeff
+    for (pstr, coeff) in psum2.terms
+        if haskey(psum1.terms, pstr)
+            psum1.terms[pstr] -= coeff
 
-            # Remove the operator if the resulting coefficient is small
-            if abs(psum1.op_dict[operator]) < precision
-                delete!(psum1.op_dict, operator)
+            # Remove the Pauli string if the resulting coefficient is small
+            if abs(psum1.terms[pstr]) < precision
+                delete!(psum1.terms, pstr)
             end
 
         else
-            psum1.op_dict[operator] = -coeff
+            psum1.terms[pstr] = -coeff
         end
     end
 

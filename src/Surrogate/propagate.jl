@@ -22,7 +22,7 @@ A custom truncation function can be passed as `customtruncatefn` with the signat
 """
 function propagate(circ, psum::PauliSum; kwargs...)
     _checkcoefftype(psum)
-    pauli_dict = propagate!(circ, deepcopy(psum.op_dict); kwargs...)
+    pauli_dict = propagate!(circ, deepcopy(psum.terms); kwargs...)
     return PauliSum(psum.nqubits, pauli_dict)
 end
 
@@ -41,24 +41,24 @@ function propagate!(circ, psum::PauliSum; kwargs...)
         throw(ArgumentError("The surrogate currently only accepts Clifford gates and (Fast)Pauli gates."))
     end
 
-    propagate!(circ, psum.op_dict; kwargs...)
+    propagate!(circ, psum.terms; kwargs...)
     return psum
 end
 
 """
-    propagate!(circ, d::Dict{OpType,NodePathProperties}; kwargs...)
+    propagate!(circ, d::Dict{TermType,NodePathProperties}; kwargs...)
 
 Propagate a `Dict{PauliStringType,CoeffType}` through the circuit `circ` in the Heisenberg picture. 
 The input `psum` will be modified.
 `kwargs` are passed to the truncation function. Supported by default are `max_weight`, `min_abs_coeff`, `max_freq`, and `max_sins`.
 A custom truncation function can be passed as `customtruncatefn` with the signature customtruncatefn(pstr::PauliStringType, coefficient)::Bool.
 """
-function propagate!(circ, psum::Dict{OpType,NodePathProperties}; kwargs...) where {OpType<:PauliStringType}
+function propagate!(circ, psum::Dict{TermType,NodePathProperties}; kwargs...) where {TermType<:PauliStringType}
     thetas = Array{Float64}(undef, countparameters(circ))
 
     param_idx = length(thetas)
 
-    second_d = typeof(psum)()  # pre-allocating somehow doesn't do anything
+    second_psum = typeof(psum)()  # pre-allocating somehow doesn't do anything
 
     ## TODO:
     # - decide where to reverse the circuit
@@ -66,7 +66,7 @@ function propagate!(circ, psum::Dict{OpType,NodePathProperties}; kwargs...) wher
     # - more elegant param_idx incrementation
     for gate in reverse(circ)
         # add param_index as kwarg, which will descend into the apply function eventually
-        psum, second_d, param_idx = mergingapply!(gate, psum, second_d, thetas, param_idx; param_idx=param_idx, kwargs...)
+        psum, second_psum, param_idx = mergingapply!(gate, psum, second_psum, thetas, param_idx; param_idx=param_idx, kwargs...)
     end
     return psum
 end

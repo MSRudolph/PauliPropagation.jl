@@ -6,6 +6,7 @@ include("./PauliAlgebra/PauliAlgebra.jl")
 export
     PauliSum,
     PauliString,
+    term,
     paulis,
     coefficients,
     paulitype,
