@@ -81,7 +81,8 @@ export
     heisenbergtrottercircuit,
     su4ansatz,
     qcnnansatz,
-    appendSU4!
+    appendSU4!,
+    ibmeagletopology
 
 include("truncations.jl")
 export
