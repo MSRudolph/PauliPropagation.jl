@@ -4,9 +4,10 @@ import Base: +
 import Base: -
 
 """
-    PauliString(nqubits::Int, operator::TermType, coeff::CoeffType)
+    PauliString(nqubits::Int, term::TermType, coeff::CoeffType)
 
 `PauliString` is a struct that represents a Pauli string on `nqubits` qubits.
+Commonly `term` is an unsigned Integer. See the other `PauliString` constructors for details. 
 """
 struct PauliString{TermType<:PauliStringType,CoeffType}
     nqubits::Int

@@ -38,17 +38,17 @@ function PauliGate(symbols, qinds, theta)
 end
 
 """
-    FastPauliGate(symbols::Vector{Symbol}, qinds::Vector{Int}, bitoperator::PauliStringType)
+    FastPauliGate(symbols::Vector{Symbol}, qinds::Vector{Int}, term::PauliStringType)
 
 A parametrized Pauli rotation gate acting on the qubits `qinds` with the Pauli string `symbols`.
-The `bitoperator` is the integer representation of the Pauli string with the correct integer type for the total number of qubits.
+The `term` is the integer representation of the Pauli string with the correct integer type for the total number of qubits.
 This allows for faster application of the gate.
 See `tofastgates` for conversion from `PauliGate`, which is the easiest way to construct a `FastPauliGate`.
 """
 struct FastPauliGate{T} <: ParametrizedGate where {T<:PauliStringType}  # TODO rename
     symbols::Vector{Symbol}
     qinds::Vector{Int}
-    bitoperator::T
+    term::T
 end
 
 import Base.show
@@ -56,7 +56,7 @@ import Base.show
 Pretty print for `FastPauliGate`.
 """
 function show(io::IO, fastpauligate::FastPauliGate)
-    print(io, "FastPauliGate{$(typeof(fastpauligate.bitoperator))}($(fastpauligate.symbols), $(fastpauligate.qinds))")
+    print(io, "FastPauliGate{$(typeof(fastpauligate.term))}($(fastpauligate.symbols), $(fastpauligate.qinds))")
 end
 
 """
@@ -155,7 +155,7 @@ end
 Check if a `FastPauliGate` commutes with an integer Pauli string.
 """
 function commutes(gate::FastPauliGate, pstr::PauliStringType)
-    return commutes(gate.bitoperator, pstr)
+    return commutes(gate.term, pstr)
 end
 
 """
@@ -236,9 +236,9 @@ function getnewpaulistring(gate::PauliGate, pstr::PauliStringType)
 
     total_sign = 1  # this coefficient will be imaginary
     for (qind, gate_sym) in zip(gate.qinds, gate.symbols)
-        sign, new_partial_op = pauliprod(gate_sym, getpauli(new_pstr, qind))
+        sign, new_partial_str = pauliprod(gate_sym, getpauli(new_pstr, qind))
         total_sign *= sign
-        new_pstr = setpauli(new_pstr, new_partial_op, qind)
+        new_pstr = setpauli(new_pstr, new_partial_str, qind)
     end
     return new_pstr, real(1im * total_sign)
 end
@@ -251,7 +251,7 @@ as well as the corresponding ±1 coefficient.
 """
 function getnewpaulistring(gate::FastPauliGate, pstr::PauliStringType)
     # TODO: This allocates memory
-    sign, new_pstr = pauliprod(gate.bitoperator, pstr, gate.qinds)
+    sign, new_pstr = pauliprod(gate.term, pstr, gate.qinds)
     return new_pstr, real(1im * sign)
 end
 

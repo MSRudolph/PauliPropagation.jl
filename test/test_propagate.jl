@@ -24,7 +24,7 @@ function hybridPP(nq, nl, W, min_abs_coeff, max_freq)
 
     pstr = PauliString(nq, :Z, round(Int, nq / 2))
 
-    wrapped_op = wrapcoefficients(pstr, NumericPathProperties)
+    wrapped_pstr = wrapcoefficients(pstr, NumericPathProperties)
 
     topo = bricklayertopology(nq; periodic=false)
     circ = hardwareefficientcircuit(nq, nl; topology=topo)
@@ -34,7 +34,7 @@ function hybridPP(nq, nl, W, min_abs_coeff, max_freq)
     Random.seed!(42)
     thetas = randn(m)
 
-    dhyb = propagate(circ, wrapped_op, thetas; max_weight=W, max_freq=max_freq, min_abs_coeff=min_abs_coeff)
+    dhyb = propagate(circ, wrapped_pstr, thetas; max_weight=W, max_freq=max_freq, min_abs_coeff=min_abs_coeff)
 
     return overlapwithzero(dhyb)
 end
@@ -44,7 +44,7 @@ function surrogatePP(nq, nl, W, max_freq)
 
     pstr = PauliString(nq, :Z, round(Int, nq / 2))
 
-    wrapped_op = wrapcoefficients(pstr, NodePathProperties)
+    wrapped_pstr = wrapcoefficients(pstr, NodePathProperties)
 
     topo = bricklayertopology(nq; periodic=false)
     circ = hardwareefficientcircuit(nq, nl; topology=topo)
@@ -54,7 +54,7 @@ function surrogatePP(nq, nl, W, max_freq)
     Random.seed!(42)
     thetas = randn(m)
 
-    dsym = propagate(circ, wrapped_op; max_weight=W, max_freq=max_freq)
+    dsym = propagate(circ, wrapped_pstr; max_weight=W, max_freq=max_freq)
     zerofilter!(dsym)  # Filter the nodes that you find relevant
     evaluate!(dsym, thetas)
 

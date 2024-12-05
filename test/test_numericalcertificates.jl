@@ -21,14 +21,14 @@
     @test estimateaverageerror(circ, pstr, 100, ones(nparams) * 1.23; max_weight=0) >= estimateaverageerror(circ, pstr, 100, ones(nparams) * 1.23; max_weight=nq) == 0.0
 
     # Frequency Truncation
-    wop = wrapcoefficients(PauliString(nq, :Z, rand(1:nq)))
-    @test estimateaverageerror(circ, wop, 100, π; max_freq=0) >= estimateaverageerror(circ, pstr, 100, π; max_freq=nq) == 0.0
-    @test estimateaverageerror(circ, wop, 100, ones(nparams) * 1.23; max_freq=0) >= estimateaverageerror(circ, pstr, 100, ones(nparams) * 1.23; max_freq=nq) == 0.0
+    wrapped_pstr = wrapcoefficients(PauliString(nq, :Z, rand(1:nq)))
+    @test estimateaverageerror(circ, wrapped_pstr, 100, π; max_freq=0) >= estimateaverageerror(circ, pstr, 100, π; max_freq=nq) == 0.0
+    @test estimateaverageerror(circ, wrapped_pstr, 100, ones(nparams) * 1.23; max_freq=0) >= estimateaverageerror(circ, pstr, 100, ones(nparams) * 1.23; max_freq=nq) == 0.0
 
     # Small-angle Truncation
-    wop = wrapcoefficients(PauliString(nq, :Z, rand(1:nq)))
-    @test estimateaverageerror(circ, wop, 100, π; max_sins=0) >= estimateaverageerror(circ, pstr, 100, π; max_sins=nq) == 0.0
-    @test estimateaverageerror(circ, wop, 100, ones(nparams) * 1.23; max_sins=0) >= estimateaverageerror(circ, pstr, 100, ones(nparams) * 1.23; max_sins=nq) == 0.0
+    wrapped_pstr = wrapcoefficients(PauliString(nq, :Z, rand(1:nq)))
+    @test estimateaverageerror(circ, wrapped_pstr, 100, π; max_sins=0) >= estimateaverageerror(circ, pstr, 100, π; max_sins=nq) == 0.0
+    @test estimateaverageerror(circ, wrapped_pstr, 100, ones(nparams) * 1.23; max_sins=0) >= estimateaverageerror(circ, pstr, 100, ones(nparams) * 1.23; max_sins=nq) == 0.0
 
     # Numerical Coefficient
     pstr = PauliString(nq, :X, rand(1:nq))
@@ -39,12 +39,12 @@
     @test typeof(montecarlopropagation(circ, pstr, ones(nparams) * π)) <: Tuple{typeof(pstr),Bool}
 
     # NumericPathProperties Coefficient
-    wop = wrapcoefficients(PauliString(nq, :X, rand(1:nq)))
-    @test typeof(montecarlopropagation(circ, wop)) <: Tuple{typeof(wop),Bool}
-    wop = wrapcoefficients(PauliString(nq, :Y, rand(1:nq)))
-    @test typeof(montecarlopropagation(circ, wop, 0.5)) <: Tuple{typeof(wop),Bool}
-    wop = wrapcoefficients(PauliString(nq, :Z, rand(1:nq)))
-    @test typeof(montecarlopropagation(circ, wop, ones(nparams) * π)) <: Tuple{typeof(wop),Bool}
+    wrapped_pstr = wrapcoefficients(PauliString(nq, :X, rand(1:nq)))
+    @test typeof(montecarlopropagation(circ, wrapped_pstr)) <: Tuple{typeof(wrapped_pstr),Bool}
+    wrapped_pstr = wrapcoefficients(PauliString(nq, :Y, rand(1:nq)))
+    @test typeof(montecarlopropagation(circ, wrapped_pstr, 0.5)) <: Tuple{typeof(wrapped_pstr),Bool}
+    wrapped_pstr = wrapcoefficients(PauliString(nq, :Z, rand(1:nq)))
+    @test typeof(montecarlopropagation(circ, wrapped_pstr, ones(nparams) * π)) <: Tuple{typeof(wrapped_pstr),Bool}
 
     # TODO Tests including noise channel
 end

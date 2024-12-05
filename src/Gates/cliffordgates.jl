@@ -134,7 +134,7 @@ function applywithmap(gate::CliffordGate, pstr::PauliStringType, coefficient, ma
     qinds = gate.qinds
 
     lookup_int = _extractlookupop(pstr, qinds)
-    sign, partial_pstr = map_array[lookup_int+1]  # +1 because Julia is 1-indexed and lookup_op is 0-indexed
+    sign, partial_pstr = map_array[lookup_int+1]  # +1 because Julia is 1-indexed and lookup_int is 0-indexed
     pstr = _insertnewop!(pstr, partial_pstr, qinds)
 
     coefficient = _multiplysign(coefficient, sign)
