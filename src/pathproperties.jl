@@ -113,7 +113,7 @@ A one-argument constructor of the custom `PathProperties` type from a coefficien
 """
 function wrapcoefficients(pstr::PauliString, PathPropertiesType::Type{PP}) where {PP<:PathProperties}
     # the one-argument constructor of your PathProperties type must be defined
-    return PauliString(pstr.nqubits, term(pstr), PathPropertiesType(pstr.coeff))
+    return PauliString(pstr.nqubits, pstr.term, PathPropertiesType(pstr.coeff))
 end
 
 """
@@ -135,5 +135,5 @@ For anything that is not natively supported by the library, you can subtype `Pat
 A one-argument constructor of the custom `PathProperties` type from a coefficient must be defined.
 """
 function wrapcoefficients(psum::PauliSum, PathPropertiesType::Type{PP}) where {PP<:PathProperties}
-    return PauliSum(psum.nqubits, Dict(op => PathPropertiesType(coeff) for (op, coeff) in psum.op_dict))
+    return PauliSum(psum.nqubits, Dict(pstr => PathPropertiesType(coeff) for (pstr, coeff) in psum))
 end

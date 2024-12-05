@@ -76,7 +76,7 @@ inttosymbol(pauli::PauliType) = pauli_symbols[pauli+1]
 Gets the Pauli on index `index` of a `PauliString` in the integer representation.
 """
 function getpauli(pstr::PauliString, index::Integer)
-    return getpauli(term(pstr), index)
+    return getpauli(pstr.term, index)
 end
 
 """
@@ -94,7 +94,7 @@ end
 Sets the Pauli on index `index` of an integer `PauliString` to `target_pauli`. That Pauli can be provided as integer (0, 1, 2, 3) or as a symbol (:I, :X, :Y, :Z).
 """
 function setpauli(pstr::PauliString, target_pauli::T, index::Integer) where {T<:Union{Symbol,PauliType}}
-    return PauliString(pstr.nqubits, setpauli(term(pstr), target_pauli, index), str.coeff)
+    return PauliString(pstr.nqubits, setpauli(pstr.term, target_pauli, index), str.coeff)
 end
 
 """

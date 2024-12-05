@@ -50,7 +50,7 @@ term(pstr::PauliString) = pstr.term
 Get the Pauli integer type of a `PauliString`.
 """
 function paulitype(pstr::PauliString)
-    return typeof(term(pstr))
+    return typeof(pstr.term)
 end
 
 """
@@ -78,7 +78,7 @@ import Base.show
 Pretty print for `PauliString`.
 """
 function show(io::IO, pstr::PauliString)
-    pauli_string = inttostring(term(pstr), pstr.nqubits)
+    pauli_string = inttostring(pstr.term, pstr.nqubits)
     if length(pauli_string) > 20
         pauli_string = pauli_string[1:20] * "..."
     end
@@ -160,7 +160,7 @@ Constructor for a `PauliSum` on `nqubits` qubits from a `PauliString`.
 """
 function PauliSum(nq::Integer, pstr::PauliString{TermType,CoeffType}) where {TermType,CoeffType}
     _checknumberofqubits(nq, pstr)
-    return PauliSum(nq, Dict{TermType,CoeffType}(term(pstr) => pstr.coeff))
+    return PauliSum(nq, Dict{TermType,CoeffType}(pstr.term => pstr.coeff))
 end
 
 """
@@ -273,7 +273,7 @@ Get the coefficient of a `PauliString` in a `PauliSum`. Defaults to 0 if the Pau
 Requires that the integer Pauli string in `pstr` is the same type as the integer Pauli strings in `psum`.
 """
 function getcoeff(psum::PauliSum{TermType,CoeffType1}, pstr::PauliString{TermType,CoeffType2}) where {TermType<:PauliStringType,CoeffType1,CoeffType2}
-    return get(psum.terms, term(pstr), CoeffType1(0))
+    return get(psum.terms, pstr.term, CoeffType1(0))
 end
 
 
@@ -457,7 +457,7 @@ Addition of a `PauliString` to a `PauliSum`. Changes the `PauliSum` in-place.
 """
 function add!(psum::PauliSum, pstr::PauliString)
     _checknumberofqubits(psum, pstr)
-    psum.terms[term(pstr)] = get(psum.terms, term(pstr), keytype(psum.terms)(0.0)) + pstr.coeff
+    psum.terms[pstr.term] = get(psum.terms, pstr.term, keytype(psum.terms)(0.0)) + pstr.coeff
     return psum
 end
 
@@ -552,16 +552,16 @@ Uses a default precision for coefficients under which a coefficient is considere
 """
 function subtract!(psum::PauliSum, pstr::PauliString; precision=_DEFAULT_PRECISION)
     _checknumberofqubits(psum, pstr)
-    if haskey(psum.terms, term(pstr))
-        psum.terms[term(pstr)] -= pstr.coeff
+    if haskey(psum.terms, pstr.term)
+        psum.terms[pstr.term] -= pstr.coeff
 
         # Remove the Pauli string if the resulting coefficient is small
-        if abs(psum.terms[term(pstr)]) < precision
-            delete!(psum.terms, term(pstr))
+        if abs(psum.terms[pstr.term]) < precision
+            delete!(psum.terms, pstr.term)
         end
 
     else
-        psum.terms[term(pstr)] = -pstr.coeff
+        psum.terms[pstr.term] = -pstr.coeff
     end
     return psum
 end

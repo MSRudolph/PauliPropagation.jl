@@ -6,7 +6,7 @@
 Function to count the weight of a `PauliString`.
 """
 function countweight(pstr::PauliString)
-    return countweight(term(pstr))
+    return countweight(pstr.term)
 end
 
 """
@@ -42,7 +42,7 @@ end
 Function to count the number of X and Y Paulis in a `PauliString`.
 """
 function countxy(pstr::PauliString)
-    return countxy(term(pstr))
+    return countxy(pstr.term)
 end
 
 """
@@ -78,7 +78,7 @@ end
 Function to count the number of Y and Z Paulis in a `PauliString`.
 """
 function countyz(pstr::PauliString)
-    return countyz(term(pstr))
+    return countyz(pstr.term)
 end
 
 """
@@ -113,7 +113,7 @@ end
 
 Check if a Pauli string contains an X or Y Pauli.
 """
-containsXorY(pstr::PauliString) = containsXorY(term(pstr))
+containsXorY(pstr::PauliString) = containsXorY(pstr.term)
 
 """
     containsXorY(pstr::PauliStringType)
@@ -127,7 +127,7 @@ containsXorY(pstr::PauliStringType) = countxy(pstr) > 0
 
 Check if a Pauli string contains a Y or Z Pauli.
 """
-containsYorZ(pstr::PauliString) = containsYorZ(term(pstr))
+containsYorZ(pstr::PauliString) = containsYorZ(pstr.term)
 
 """
     containsYorZ(pstr::PauliStringType)
@@ -144,7 +144,7 @@ containsYorZ(pstr::PauliStringType) = countyz(pstr) > 0
 Check if two Pauli strings of type `PauliString` commute.
 """
 function commutes(pstr1::PauliString, pstr2::PauliString)
-    return commutes(term(pstr1), term(pstr2))
+    return commutes(pstr1.term, pstr2.term)
 end
 
 """
@@ -224,7 +224,7 @@ end
 Calculate the commutator of two `PauliString`s.
 """
 function commutator(pstr1::PauliString, pstr2::PauliString)
-    new_coeff, new_pstr = commutator(term(pstr1), term(pstr2))
+    new_coeff, new_pstr = commutator(pstr1.term, pstr2.term)
     return PauliString(pstr1.nqubits, new_pstr, new_coeff)
 end
 
@@ -298,7 +298,7 @@ Calculate the product of two `PauliString`s. For example `X*Y = iZ`.
 """
 function pauliprod(pstr1::PauliString, pstr2::PauliString)
     _checknumberofqubits(pstr1, pstr2)
-    sign, coeff = pauliprod(term(pstr1), term(pstr2))
+    sign, coeff = pauliprod(pstr1.term, pstr2.term)
     return PauliString(pstr1.nqubits, coeff, sign * pstr1.coeff * pstr2.coeff)
 end
 

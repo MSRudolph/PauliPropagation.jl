@@ -101,7 +101,7 @@ end
 Apply a `CliffordGate` to a `PauliString`. Returns a new `PauliString`.
 """
 function apply(gate::CliffordGate, pstr::PauliString, args...; kwargs...)
-    return PauliString(pstr.nqubits, apply(gate, term(pstr), pstr.coeff)...)
+    return PauliString(pstr.nqubits, apply(gate, pstr.term, pstr.coeff)...)
 end
 
 """

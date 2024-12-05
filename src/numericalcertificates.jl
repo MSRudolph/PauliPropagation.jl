@@ -116,7 +116,7 @@ function montecarlopropagation(circ, pstr::PauliString, thetas, split_probabilit
 
     is_truncated = false
 
-    pauli = term(pstr)
+    pauli = pstr.term
     coeff = copy(pstr.coeff)
     for gate in circ
 

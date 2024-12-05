@@ -37,7 +37,7 @@ function addtopaulisum(nq)
     pstr_temp = pstr + pstr
     @test isa(pstr_temp, PauliSum)
     add!(psum, pstr)
-    @test getcoeff(psum, term(pstr)) == pstr.coeff
+    @test getcoeff(psum, pstr.term) == pstr.coeff
 
     symbol = rand([:I, :X, :Y, :Z])
     qind = rand(1:nq)

@@ -88,8 +88,8 @@ getnumcoeff(node::NodePathProperties) = node.coeff.cummulative_value
 Wrap the coefficient of a `PauliString` into `NodePathProperties`.
 """
 function wrapcoefficients(pstr::PauliString, ::Type{NodePathProperties})
-    node = NodePathProperties(EvalEndNode(term(pstr), pstr.coeff, 0.0, false))
-    return PauliString(pstr.nqubits, term(pstr), node)
+    node = NodePathProperties(EvalEndNode(pstr.term, pstr.coeff, 0.0, false))
+    return PauliString(pstr.nqubits, pstr.term, node)
 end
 
 """

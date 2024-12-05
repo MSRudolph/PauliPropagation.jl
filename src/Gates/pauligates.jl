@@ -95,7 +95,7 @@ function apply(gate::PauliGateUnion, pstr::PauliString, theta)
     if commutes(gate, pstr)
         return pstr
     else
-        pstr1, c1, pstr2, c2 = applynoncummuting(gate, term(pstr), theta, pstr.coeff)
+        pstr1, c1, pstr2, c2 = applynoncummuting(gate, pstr.term, theta, pstr.coeff)
         return PauliString(pstr.nqubits, pstr1, c1), PauliString(pstr.nqubits, pstr2, c2)
     end
 end
@@ -137,7 +137,7 @@ end
 Check if a `(Fast)PauliGate` commutes with a `PauliString`.
 """
 function commutes(gate::PauliGateUnion, pstr::PauliString)
-    return commutes(gate, term(pstr))
+    return commutes(gate, pstr.term)
 end
 
 """
