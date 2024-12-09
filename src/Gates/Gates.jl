@@ -15,7 +15,7 @@ abstract type StaticGate <: Gate end
 
 include("fastgates.jl")
 include("frozengates.jl")
-include("pauligates.jl")
+include("paulirotations.jl")
 include("cliffordgates.jl")
 include("noisechannels.jl")
 include("miscgates.jl")

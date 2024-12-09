@@ -2,12 +2,12 @@
 
 ### PAULI GATES
 """
-    applygatetoall!(gate::PauliGateUnion, thetas, psum, second_psum, args...; kwargs...)
+    applygatetoall!(gate::PauliRotationUnion, thetas, psum, second_psum, args...; kwargs...)
 
-Overload of `applygatetoall!` for `PauliGate` and `FastPauliGate` gates.
+Overload of `applygatetoall!` for `PauliRotation` and `FastPauliRotation` gates.
 Both `psum` and `second_psum` contain Pauli strings which will be merged later.
 """
-function applygatetoall!(gate::PauliGateUnion, theta, psum, second_psum, args...; kwargs...)
+function applygatetoall!(gate::PauliRotationUnion, theta, psum, second_psum, args...; kwargs...)
     # TODO: there is a lot of code duplication. Can we write a more general function?
 
     for (pstr, coeff) in psum
@@ -18,12 +18,12 @@ function applygatetoall!(gate::PauliGateUnion, theta, psum, second_psum, args...
 end
 
 """
-    applygatetoone!(gate::PauliGateUnion, pstr, coefficient, theta, psum, second_psum, args...; kwargs...)
+    applygatetoone!(gate::PauliRotationUnion, pstr, coefficient, theta, psum, second_psum, args...; kwargs...)
 
-Overload of `applygatetoone!` for `PauliGate` and `FastPauliGate` gates. 
+Overload of `applygatetoone!` for `PauliRotation` and `FastPauliRotation` gates. 
 Checks for commutation of `gate` and `pstr`, and applies the gate to the Pauli string if they don't.
 """
-@inline function applygatetoone!(gate::PauliGateUnion, pstr, coefficient, theta, psum, second_psum, args...; kwargs...)
+@inline function applygatetoone!(gate::PauliRotationUnion, pstr, coefficient, theta, psum, second_psum, args...; kwargs...)
 
     if commutes(gate, pstr)
         return

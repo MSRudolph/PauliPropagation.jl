@@ -46,8 +46,8 @@ export
     Gate,
     ParametrizedGate,
     StaticGate,
-    PauliGate,
-    FastPauliGate,
+    PauliRotation,
+    FastPauliRotation,
     tofastgates,
     apply,
     applynoncummuting,
@@ -125,7 +125,7 @@ include("Surrogate/Surrogate.jl")
 export
     NodePathProperties,
     EvalEndNode,
-    PauliGateNode,
+    PauliRotationNode,
     evaluate!,
     reset!
 
