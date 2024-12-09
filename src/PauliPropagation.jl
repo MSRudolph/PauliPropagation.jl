@@ -78,6 +78,7 @@ export
     efficientsu2circuit,
     tfitrottercircuit,
     heisenbergtrottercircuit,
+    trottercircuitandparams,
     su4ansatz,
     qcnnansatz,
     appendSU4!

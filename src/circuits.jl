@@ -280,6 +280,73 @@ function heisenbergtrottercircuit(nqubits::Integer, nlayers::Integer; topology=n
     return circuit
 end
 
+import Random: shuffle
+"""
+    trottercircuitandparams(hamil::PauliSum, order::Integer, nreps::Integer)
+
+Create a circuit, and an accompanying list of gate parameters, which trotterises the unitary evolution operator (at time=1) of the given Hamiltonian.
+These are given by the higher-order (as per `order`) symmetrized Suzuki-Trotter decomposition, using Childs-randomisation of each repetition (as per `nreps`).
+The specified `order` must be 1, or an even integer.
+This function returns tuple (circuit, params), where every gate in vector `circuit` is a FastPauliGate with corresponding angle given in `params`.
+Because time appears as a simple prefactor of every PauliGate angle, simulating non-unity time involves merely scaling all `params` by the desired time.
+For example, `propagate(circuit, pstr, 0.5 * params)` would simulate real-time evolution to time=`0.5`. 
+"""
+function trottercircuitandparams(hamil::PauliSum, order::Integer, nreps::Integer)
+
+    # TODO
+    # update this function as per PauliGate -> PauliRotation rename
+
+    # validate inputs, just because it is easy to pass erroneous odd-order
+    if (order < 1 || (order != 1 && order % 2 != 0))
+        throw(ArgumentError("Argument 'order' must be a positive even integer, or one."))
+    elseif (nreps < 1)
+        throw(ArgumentError("Argument 'nreps' must be a positive integer."))
+    end
+
+    # build two lists; gates and their corresponding params
+    terms = collect(hamil)
+    circuit::Vector{Gate} = []
+    params::Vector{Number} = []
+    
+    # TODO:
+    # below is not type-stable because this is merely circuit-preparation
+    # code and not invoked in hot simulation loops. However, it is foreseeable
+    # that users might repeatedly call this function to re-randomise their
+    # Trotter circuits, warranting a performance improvement. So, ye who
+    # understand typing - pls fix dis c:
+
+    # inner-function to Suzuki-symmetrize a Hamiltonian into (str,coeff) pairs,
+    # as per Hatano et al arXiv:math-ph/0506007
+    function symmetrize(terms, phase, order)
+        if (order == 1)
+            return [(str,coeff*phase) for (str,coeff) in terms]
+        elseif (order == 2)
+            terms = symmetrize(terms, phase/2, 1)
+            return [terms; reverse(terms)]
+        end
+        factor = 1/(4 - 4^(1/(order-1)))
+        outer = symmetrize(terms, factor * phase, order-2)
+        inner = symmetrize(terms, (1 - 4*factor) * phase, order-2)
+        return [outer; outer; inner; outer; outer]
+    end
+
+    # produce trotter circuit by repeatedly symmetrizing a random hamil order,
+    # as per Childs et al, Quantum 3, 182 (2019)
+    for _ in 1:nreps
+        pairs = symmetrize(shuffle(terms), 1/nreps, order)
+        for (str, coeff) in pairs
+            paulis, inds = getpaulisandinds(str)
+            gate = PauliGate(paulis, inds)
+            push!(circuit, gate)
+            push!(params, coeff)
+        end
+    end
+
+    # cast all PauliGate to FastPauliGate
+    tofastgates!(circuit)
+    return (circuit, params)
+end
+
 """
     su4ansatz(nqubits::Integer, nlayers::Integer; topology=nothing)
 
