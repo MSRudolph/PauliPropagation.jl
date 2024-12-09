@@ -101,6 +101,7 @@ export
     overlapbyorthogonality,
     overlapwithzero,
     overlapwithplus,
+    overlapwithones,
     orthogonaltozero,
     orthogonaltoplus,
     overlapwithpaulisum,

@@ -85,6 +85,40 @@ orthogonaltoplus(pstr) = containsYorZ(pstr)
 
 # eval against |±i> not implemented
 
+"""
+    overlapwithones(psum::PauliSum, indices)
+
+Calculates the overlap of a Pauli sum with the computational basis state which has one-bits at all specified `indices` and zero-bits elsewhere.
+For example, `overlapwithones(psum, [1,2,4])` returns the overlap with `|1101000...>`
+"""
+function overlapwithones(psum::PauliSum, indices)
+    val = numcoefftype(psum)(0)
+    for (pstr, coeff) in psum
+        val += getnumcoeff(coeff) * factorwithones(pstr, indices)
+    end
+    return val
+end
+
+"""
+    overlapwithones(pstr::PauliString, indices)
+
+Calculates the overlap of a Pauli string with the computational basis state which has one-bits at all specified `indices` and zero-bits elsewhere.
+For example, `overlapwithones(pstr, [1,2,4])` returns the overlap with `|1101000...>` and will be either zero or plus/minus `pstr.coeff`.
+"""
+function overlapwithones(pstr::PauliString, indices)
+    return factorwithones(pstr.term, indices) * getnumcoeff(pstr.coeff)
+end
+
+function factorwithones(pstr::PauliStringType, indices)
+
+    # factor is zero unless pstr is entirely I and Z
+    if containsXorY(pstr)
+        return 0
+    end
+
+    # factor is +-1 per the parity of pstr's Z=3 values at the bit=1 indices
+    return (-1) ^ count(i -> getpauli(pstr,i) == 3, indices) 
+end
 
 """
     overlapwithmaxmixed(psum::PauliSum)
