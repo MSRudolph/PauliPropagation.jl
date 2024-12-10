@@ -80,7 +80,7 @@ function mergingapply!(gate, psum, second_psum, thetas, param_idx, args...; kwar
     theta = thetas[param_idx]
     psum, second_psum = applygatetoall!(gate, theta, psum, second_psum; kwargs...)
 
-    mergeandclear!(psum, second_psum)
+    psum, second_psum = mergeandclear!(psum, second_psum)
 
     checktruncationonall!(psum; kwargs...)
 
@@ -103,9 +103,7 @@ function applygatetoall!(gate, theta, psum, second_psum, args...; kwargs...)
         applygatetoone!(gate, pstr, coeff, theta, psum, second_psum; kwargs...)
     end
 
-    # empty!(psum)  # empty old dict because next generation of Pauli strings should by default stored in second_psum (unless this is overwritten by a custom function)
-
-    return second_psum, psum  # swap dicts around
+    return psum, second_psum
 end
 
 """
@@ -118,14 +116,17 @@ E.g., a Pauli gate returns 1 or 2 (pstr, coefficient) outputs.
 """
 @inline function applygatetoone!(gate, pstr, coefficient, theta, psum, second_psum, args...; kwargs...)
 
+    # get the (potentially new) pauli strings and their coefficients like (pstr1, coeff1, pstr2, coeff2, ...)
     pstrs_and_coeffs = apply(gate, pstr, theta, coefficient; kwargs...)
 
     for ii in 1:2:length(pstrs_and_coeffs)
+        # itererate over the pairs of pstr and coeff
         new_pstr, new_coeff = pstrs_and_coeffs[ii], pstrs_and_coeffs[ii+1]
+        # store the new_pstr and coeff in the second_psum, add to existing coeff if new_pstr already exists there
         second_psum[new_pstr] = get(second_psum, new_pstr, 0.0) + new_coeff
     end
 
-    # psum[pstr] = 0.0
+    # delete the pstr in the psum that it is coming from
     delete!(psum, pstr)
 
     return
@@ -140,6 +141,10 @@ Merge `second_psum` into `psum` using the `merge` function. `merge` can be overl
 Then clear `second_psum` for the next iteration.
 """
 function mergeandclear!(psum, second_psum)
+    # merge the smaller dict into the larger one
+    if length(psum) < length(second_psum)
+        psum, second_psum = second_psum, psum
+    end
     # TODO: custom merging function beyond mergewith!
     # TODO: Potentially check for truncations at this step.
     mergewith!(merge, psum, second_psum)

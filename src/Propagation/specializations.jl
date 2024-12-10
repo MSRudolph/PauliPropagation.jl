@@ -2,22 +2,6 @@
 
 ### PAULI GATES
 """
-    applygatetoall!(gate::PauliGateUnion, thetas, psum, second_psum, args...; kwargs...)
-
-Overload of `applygatetoall!` for `PauliGate` and `FastPauliGate` gates.
-Both `psum` and `second_psum` contain Pauli strings which will be merged later.
-"""
-function applygatetoall!(gate::PauliGateUnion, theta, psum, second_psum, args...; kwargs...)
-    # TODO: there is a lot of code duplication. Can we write a more general function?
-
-    for (pstr, coeff) in psum
-        applygatetoone!(gate, pstr, coeff, theta, psum, second_psum; kwargs...)
-    end
-
-    return psum, second_psum  # don't swap psums around
-end
-
-"""
     applygatetoone!(gate::PauliGateUnion, pstr, coefficient, theta, psum, second_psum, args...; kwargs...)
 
 Overload of `applygatetoone!` for `PauliGate` and `FastPauliGate` gates. 
@@ -39,37 +23,40 @@ end
 
 ### Clifford gates
 
-# """
-#     applygatetoone!(gate::CliffordGate, pstr, coefficient, theta, psum, second_psum, args...; kwargs...)
-
-# Overload of `applygatetoone!` for `CliffordGate` gates.
-# Simplified logic for readability.
-# """
-# @inline function applygatetoone!(gate::CliffordGate, pstr, coefficient, theta, psum, second_psum, args...; kwargs...)
-
-#     new_pstr, coeff = apply(gate, pstr, theta, coefficient; kwargs...)
-#     second_psum[new_pstr] = coeff
-
-#     return
-# end
-
-### Amplitude Damping Noise
 """
-    applygatetoall!(gate::AmplitudeDampingNoise, thetas, psum, second_psum, args...; kwargs...)
+    applygatetoall!(gate::CliffordGate, theta, psum, second_psum, args...; kwargs...)
 
-Overload of `applygatetoall!` for `AmplitudeDampingNoise` gates.
-Both `psum` and `second_psum` contain Pauli strings which will be merged later.
+Overload of `applygatetoall!` for `CliffordGate` gates.
+
+
 """
-function applygatetoall!(gate::AmplitudeDampingNoise, theta, psum, second_psum, args...; kwargs...)
-    # TODO: there is a lot of code duplication. Can we write a more general function? 
+function applygatetoall!(gate::CliffordGate, theta, psum, second_psum, args...; kwargs...)
 
     for (pstr, coeff) in psum
         applygatetoone!(gate, pstr, coeff, theta, psum, second_psum; kwargs...)
     end
 
+    # Empty psum because everything was moved into second_psum. They will later be merged.
+    empty!(psum)
+
     return psum, second_psum
 end
 
+"""
+    applygatetoone!(gate::CliffordGate, pstr, coefficient, theta, psum, second_psum, args...; kwargs...)
+
+Overload of `applygatetoone!` for `CliffordGate` gates.
+Does not delete from `psum`, here and instead empties it in  `applygatetoall!`
+"""
+@inline function applygatetoone!(gate::CliffordGate, pstr, coefficient, theta, psum, second_psum, args...; kwargs...)
+
+    new_pstr, coeff = apply(gate, pstr, theta, coefficient; kwargs...)
+    second_psum[new_pstr] = coeff
+
+    return
+end
+
+### Amplitude Damping Noise
 """
     applygatetoone!(gate::AmplitudeDampingNoise, pstr, coefficient, theta, psum, second_psum, args...; kwargs...)
 
