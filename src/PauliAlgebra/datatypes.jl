@@ -501,7 +501,7 @@ function add!(psum1::PauliSum, psum2::PauliSum, precision=_DEFAULT_PRECISION)
             end
 
         else
-            psum1.terms[pstr] = -coeff
+            psum1.terms[pstr] = coeff
         end
     end
 
