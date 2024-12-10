@@ -55,32 +55,32 @@ function propagate!(circ, psum::Dict, thetas; kwargs...)
     # TODO: Should we have a version of this that doesn't require thetas and uses surrogate code?
     param_idx = length(thetas)
 
-    second_psum = typeof(psum)()  # pre-allocating somehow doesn't do anything
+    aux_psum = typeof(psum)()  # pre-allocating somehow doesn't do anything
 
     ## TODO:
     # - decide where to reverse the circuit
     # - verbose option  
     # - more elegant param_idx incrementation
     for gate in reverse(circ)
-        psum, second_psum, param_idx = mergingapply!(gate, psum, second_psum, thetas, param_idx; kwargs...)
+        psum, aux_psum, param_idx = applymergetruncate!(gate, psum, aux_psum, thetas, param_idx; kwargs...)
     end
     return psum
 end
 
 """
-    mergingapply!(gate, psum, second_psum, thetas, param_idx, args...; kwargs...)
+    applymergetruncate!(gate, psum, aux_psum, thetas, param_idx, args...; kwargs...)
 
-1st-level function below `propagate!` that applies one gate to all Pauli strings in `psum`, potentially using `second_psum` in the process,
+1st-level function below `propagate!` that applies one gate to all Pauli strings in `psum`, potentially using `aux_psum` in the process,
 and merges everything back into `psum`. Truncations are checked here after merging.
 This function can be overwritten for a custom gate if the lower-level functions `applygatetoall!`, `applygatetoone!`, and `apply` are not sufficient.
 A custom truncation function can be passed as `customtruncatefn` with the signature customtruncatefn(pstr::PauliStringType, coefficient)::Bool.
 """
-function mergingapply!(gate, psum, second_psum, thetas, param_idx, args...; kwargs...)
+function applymergetruncate!(gate, psum, aux_psum, thetas, param_idx, args...; kwargs...)
 
     theta = thetas[param_idx]
-    psum, second_psum = applygatetoall!(gate, theta, psum, second_psum; kwargs...)
+    psum, aux_psum = applygatetoall!(gate, theta, psum, aux_psum; kwargs...)
 
-    psum, second_psum = mergeandclear!(psum, second_psum)
+    psum, aux_psum = mergeandclear!(psum, aux_psum)
 
     checktruncationonall!(psum; kwargs...)
 
@@ -88,33 +88,33 @@ function mergingapply!(gate, psum, second_psum, thetas, param_idx, args...; kwar
         param_idx -= 1
     end
 
-    return psum, second_psum, param_idx
+    return psum, aux_psum, param_idx
 end
 
 """
-    applygatetoall!(gate, theta psum, second_psum, args...; kwargs...)
+    applygatetoall!(gate, theta psum, aux_psum, args...; kwargs...)
 
-2nd-level function below `mergingapply!` that applies one gate to all Pauli strings in `psum`, potentially using `second_psum` in the process.
+2nd-level function below `applymergetruncate!` that applies one gate to all Pauli strings in `psum`, potentially using `aux_psum` in the process.
 This function can be overwritten for a custom gate if the lower-level functions `applygatetoone!` and `apply` are not sufficient.
 """
-function applygatetoall!(gate, theta, psum, second_psum, args...; kwargs...)
+function applygatetoall!(gate, theta, psum, aux_psum, args...; kwargs...)
 
     for (pstr, coeff) in psum
-        applygatetoone!(gate, pstr, coeff, theta, psum, second_psum; kwargs...)
+        applygatetoone!(gate, pstr, coeff, theta, psum, aux_psum; kwargs...)
     end
 
-    return psum, second_psum
+    return psum, aux_psum
 end
 
 """
-    applygatetoone!(gate, pstr, coefficient, theta, psum, second_psum, args...; kwargs...)
+    applygatetoone!(gate, pstr, coefficient, theta, psum, aux_psum, args...; kwargs...)
 
-3nd-level function below `mergingapply!` that applies one gate to one Pauli string in `psum`, potentially using `second_psum` in the process.
+3nd-level function below `applymergetruncate!` that applies one gate to one Pauli string in `psum`, potentially using `aux_psum` in the process.
 This function can be overwritten for a custom gate if the lower-level function `apply` is not sufficient. 
 This is likely the the case if `apply` is not type-stable because it does not return a unique number of outputs. 
 E.g., a Pauli gate returns 1 or 2 (pstr, coefficient) outputs.
 """
-@inline function applygatetoone!(gate, pstr, coefficient, theta, psum, second_psum, args...; kwargs...)
+@inline function applygatetoone!(gate, pstr, coefficient, theta, psum, aux_psum, args...; kwargs...)
 
     # get the (potentially new) pauli strings and their coefficients like (pstr1, coeff1, pstr2, coeff2, ...)
     pstrs_and_coeffs = apply(gate, pstr, theta, coefficient; kwargs...)
@@ -122,8 +122,8 @@ E.g., a Pauli gate returns 1 or 2 (pstr, coefficient) outputs.
     for ii in 1:2:length(pstrs_and_coeffs)
         # itererate over the pairs of pstr and coeff
         new_pstr, new_coeff = pstrs_and_coeffs[ii], pstrs_and_coeffs[ii+1]
-        # store the new_pstr and coeff in the second_psum, add to existing coeff if new_pstr already exists there
-        second_psum[new_pstr] = get(second_psum, new_pstr, 0.0) + new_coeff
+        # store the new_pstr and coeff in the aux_psum, add to existing coeff if new_pstr already exists there
+        aux_psum[new_pstr] = get(aux_psum, new_pstr, 0.0) + new_coeff
     end
 
     # delete the pstr in the psum that it is coming from
@@ -135,21 +135,21 @@ end
 
 ### MERGE
 """
-    mergeandclear!(psum, second_psum)
+    mergeandclear!(psum, aux_psum)
 
-Merge `second_psum` into `psum` using the `merge` function. `merge` can be overloaded for different coefficient types.
-Then clear `second_psum` for the next iteration.
+Merge `aux_psum` into `psum` using the `merge` function. `merge` can be overloaded for different coefficient types.
+Then clear `aux_psum` for the next iteration.
 """
-function mergeandclear!(psum, second_psum)
+function mergeandclear!(psum, aux_psum)
     # merge the smaller dict into the larger one
-    if length(psum) < length(second_psum)
-        psum, second_psum = second_psum, psum
+    if length(psum) < length(aux_psum)
+        psum, aux_psum = aux_psum, psum
     end
     # TODO: custom merging function beyond mergewith!
     # TODO: Potentially check for truncations at this step.
-    mergewith!(merge, psum, second_psum)
-    empty!(second_psum)
-    return psum, second_psum
+    mergewith!(merge, psum, aux_psum)
+    empty!(aux_psum)
+    return psum, aux_psum
 end
 
 """

@@ -66,7 +66,7 @@ function propagate!(circ, psum::Dict{TermType,NodePathProperties}; kwargs...) wh
     # - more elegant param_idx incrementation
     for gate in reverse(circ)
         # add param_index as kwarg, which will descend into the apply function eventually
-        psum, second_psum, param_idx = mergingapply!(gate, psum, second_psum, thetas, param_idx; param_idx=param_idx, kwargs...)
+        psum, second_psum, param_idx = applymergetruncate!(gate, psum, second_psum, thetas, param_idx; param_idx=param_idx, kwargs...)
     end
     return psum
 end

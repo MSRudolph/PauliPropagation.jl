@@ -90,7 +90,7 @@ include("Propagation/Propagation.jl")
 export
     propagate,
     propagate!,
-    mergingapply!,
+    applymergetruncate!,
     applygatetoall!,
     applygatetoone!,
     mergeandclear!,
