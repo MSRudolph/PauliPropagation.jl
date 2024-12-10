@@ -77,14 +77,21 @@ A custom truncation function can be passed as `customtruncatefn` with the signat
 """
 function applymergetruncate!(gate, psum, aux_psum, thetas, param_idx, args...; kwargs...)
 
+    # Pick out the theta of the next parametrized gate. Will not be used by static gates, even though it is passed.
     theta = thetas[param_idx]
+
+    # Apply the gate to all Pauli strings in psum, potentially writing into auxillary aux_psum in the process.
     psum, aux_psum = applygatetoall!(gate, theta, psum, aux_psum; kwargs...)
 
+    # Any contents of psum and aux_psum are merged into psum, and aux_psum is cleared.
     psum, aux_psum = mergeandclear!(psum, aux_psum)
 
-    checktruncationonall!(psum; kwargs...)
+    # Check truncation conditions on all Pauli strings in psum and remove them if they are truncated.
+    psum = checktruncationonall!(psum; kwargs...)
 
-    if isa(gate, ParametrizedGate) && param_idx > 1  # decrement parameter index by one if it is not the last parameter
+    # If the gate was parametrized and used the theta, decrement theta index by one.
+    # Don't go below index 1 because a theta will still be picked out for all remaining static gates.
+    if isa(gate, ParametrizedGate) && param_idx > 1
         param_idx -= 1
     end
 
@@ -99,6 +106,7 @@ This function can be overwritten for a custom gate if the lower-level functions 
 """
 function applygatetoall!(gate, theta, psum, aux_psum, args...; kwargs...)
 
+    # Loop over all Pauli strings in psum and apply the gate to them.
     for (pstr, coeff) in psum
         applygatetoone!(gate, pstr, coeff, theta, psum, aux_psum; kwargs...)
     end
@@ -116,17 +124,17 @@ E.g., a Pauli gate returns 1 or 2 (pstr, coefficient) outputs.
 """
 @inline function applygatetoone!(gate, pstr, coefficient, theta, psum, aux_psum, args...; kwargs...)
 
-    # get the (potentially new) pauli strings and their coefficients like (pstr1, coeff1, pstr2, coeff2, ...)
+    # Get the (potentially new) pauli strings and their coefficients like (pstr1, coeff1, pstr2, coeff2, ...)
     pstrs_and_coeffs = apply(gate, pstr, theta, coefficient; kwargs...)
 
     for ii in 1:2:length(pstrs_and_coeffs)
-        # itererate over the pairs of pstr and coeff
+        # Itererate over the pairs of pstr and coeff
         new_pstr, new_coeff = pstrs_and_coeffs[ii], pstrs_and_coeffs[ii+1]
-        # store the new_pstr and coeff in the aux_psum, add to existing coeff if new_pstr already exists there
+        # Store the new_pstr and coeff in the aux_psum, add to existing coeff if new_pstr already exists there
         aux_psum[new_pstr] = get(aux_psum, new_pstr, 0.0) + new_coeff
     end
 
-    # delete the pstr in the psum that it is coming from
+    # Delete the pstr in the psum that it is coming from
     delete!(psum, pstr)
 
     return
@@ -185,7 +193,7 @@ function checktruncationonall!(
             kwargs...
         )
     end
-    return
+    return psum
 end
 
 """
