@@ -39,19 +39,19 @@ end
 
 ### Clifford gates
 
-"""
-    applygatetoone!(gate::CliffordGate, pstr, coefficient, theta, psum, second_psum, args...; kwargs...)
+# """
+#     applygatetoone!(gate::CliffordGate, pstr, coefficient, theta, psum, second_psum, args...; kwargs...)
 
-Overload of `applygatetoone!` for `CliffordGate` gates.
-Simplified logic for readability.
-"""
-@inline function applygatetoone!(gate::CliffordGate, pstr, coefficient, theta, psum, second_psum, args...; kwargs...)
+# Overload of `applygatetoone!` for `CliffordGate` gates.
+# Simplified logic for readability.
+# """
+# @inline function applygatetoone!(gate::CliffordGate, pstr, coefficient, theta, psum, second_psum, args...; kwargs...)
 
-    new_pstr, coeff = apply(gate, pstr, theta, coefficient; kwargs...)
-    second_psum[new_pstr] = coeff
+#     new_pstr, coeff = apply(gate, pstr, theta, coefficient; kwargs...)
+#     second_psum[new_pstr] = coeff
 
-    return
-end
+#     return
+# end
 
 ### Amplitude Damping Noise
 """

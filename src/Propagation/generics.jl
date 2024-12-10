@@ -103,7 +103,7 @@ function applygatetoall!(gate, theta, psum, second_psum, args...; kwargs...)
         applygatetoone!(gate, pstr, coeff, theta, psum, second_psum; kwargs...)
     end
 
-    empty!(psum)  # empty old dict because next generation of Pauli strings should by default stored in second_psum (unless this is overwritten by a custom function)
+    # empty!(psum)  # empty old dict because next generation of Pauli strings should by default stored in second_psum (unless this is overwritten by a custom function)
 
     return second_psum, psum  # swap dicts around
 end
@@ -121,9 +121,12 @@ E.g., a Pauli gate returns 1 or 2 (pstr, coefficient) outputs.
     pstrs_and_coeffs = apply(gate, pstr, theta, coefficient; kwargs...)
 
     for ii in 1:2:length(pstrs_and_coeffs)
-        pstr, coeff = pstrs_and_coeffs[ii], pstrs_and_coeffs[ii+1]
-        second_psum[pstrs_and_coeffs[ii]] = get(second_psum, pstr, 0.0) + coeff
+        new_pstr, new_coeff = pstrs_and_coeffs[ii], pstrs_and_coeffs[ii+1]
+        second_psum[new_pstr] = get(second_psum, new_pstr, 0.0) + new_coeff
     end
+
+    # psum[pstr] = 0.0
+    delete!(psum, pstr)
 
     return
 end
