@@ -4,12 +4,12 @@ using Statistics
     estimateaverageerror(circ, pstr::PauliString, n_mcsamples::Integer, thetas=π; stateoverlapfunc=overlapwithzero, circuit_reversed=false, kwargs...)
 
 Function to estimate the average error of a truncated circuit simulation using Monte Carlo sampling.
-Returns the mean squared error of the truncated Pauli propagation simulation averaged over the `thetas`∈ [theta, theta] of the angle `theta` of each `PauliGate`.
+Returns the mean squared error of the truncated Pauli propagation simulation averaged over the `thetas`∈ [theta, theta] of the angle `theta` of each `PauliRotation`.
 
 The length the `thetas` vector should be equal to the number of parametrized gates in the circuit. 
 Alternatively, `thetas` can be a single real number applicable for all parametrized gates.
-The default `thetas=π` or any other non-array values assume that the circuit consists only of `(Fast)PauliGates` -`CliffordGates`.
-For `PauliGates`, the value should be the integration range of the parameters around zero.
+The default `thetas=π` or any other non-array values assume that the circuit consists only of `(Fast)PauliRotation` -`CliffordGate`.
+For `PauliRotation`, the value should be the integration range of the parameters around zero.
 For other currently supported parametrized gates, potential splitting probabilities can be derived from the parameters (e.g., for `AmplitudeDampingNoise`). 
 We currently support no non-parametrized splitting gates. This may change in the future.
 
@@ -20,7 +20,7 @@ Note that `min_abs_coeff` is not supported here, as we consider errors integrate
 function estimateaverageerror(circ, pstr::PauliString, n_mcsamples::Integer, thetas=π; stateoverlapfunc=overlapwithzero, circuit_reversed=false, kwargs...)
     # this function is only valid for ParametrizedGates and non-splitting non-parametrized gates (here only CliffordGates).
     # this will not not error for non-parametrized splitting gates, e.g. T-gates. 
-    if !all(g -> isa(g, PauliGateUnion) || isa(g, CliffordGate), circ)
+    if !all(g -> isa(g, PauliRotationUnion) || isa(g, CliffordGate), circ)
         throw("`circ` must contain only `ParameterizedGate`s and `CliffordGate`s.")
     end
 
@@ -81,13 +81,13 @@ end
 Perform a single Monte Carlo propagation of a Pauli string through a circuit. Returns the final Pauli string and a boolean indicating whether the path was truncated.
 
 The length the `thetas` vector should be equal to the number of parametrized gates in the circuit. Alternatively, `thetas` can be a single real number applicable for all parametrized gates.
-The default `thetas=π` or any other non-array values assume that the circuit consists only of `(Fast)PauliGates` -`CliffordGates`.
-For `PauliGates`, `thetas` should be the integration range of the parameters around zero.
+The default `thetas=π` or any other non-array values assume that the circuit consists only of `(Fast)PauliRotation` -`CliffordGate`.
+For `PauliRotation`, `thetas` should be the integration range of the parameters around zero.
 For other currently supported parametrized gates, potential splitting probabilities can be derived from the parameters (e.g., for `AmplitudeDampingNoise`). 
 We currently support no non-parametrized splitting gates. This may change in the future.
 """
 function montecarlopropagation(circ, pstr::PauliString, thetas=π; circuit_reversed=false, max_weight=Inf, max_freq=Inf, max_sins=Inf, kwargs...)
-    if !all(g -> isa(g, PauliGateUnion) || isa(g, CliffordGate), circ)
+    if !all(g -> isa(g, PauliRotationUnion) || isa(g, CliffordGate), circ)
         throw("`circ` must contain only `ParametrizedGate`s and CliffordGates.")
     end
 
@@ -154,12 +154,12 @@ Default `mcapply` function for numerical certificates. Assumes that the `apply` 
 mcapply(gate, pauli, coeff, theta, split_probability; kwargs...) = apply(gate, pauli, theta, coeff; kwargs...) # TODO: have more sensible default functions once the numerical certificate is figured out.
 
 """
-    mcapply(gate::PauliGateUnion, pauli, coeff, theta, split_prob=0.5; kwargs...) 
+    mcapply(gate::PauliRotationUnion, pauli, coeff, theta, split_prob=0.5; kwargs...) 
 
 MC apply function for Pauli gates. If the gate commutes with the pauli string, the pauli string is left unchanged. 
 Else the pauli string is split off with a probability 1 - `split_prob`.
 """
-function mcapply(gate::PauliGateUnion, pauli, coeff, theta, split_prob=0.5; kwargs...)
+function mcapply(gate::PauliRotationUnion, pauli, coeff, theta, split_prob=0.5; kwargs...)
 
     if !commutes(gate, pauli)
         # if the gate does not commute with the pauli string, remain with probability `split_prob` and split off with probability 1 - `split_prob`.
@@ -210,13 +210,13 @@ end
 
 """
 Function that automatically calculates the splitting probability of the gates in the circuit based on a one number theta.
-This assumes that the circuit consists only of `(Fast)PauliGates` -`CliffordGates`.
+This assumes that the circuit consists only of `(Fast)PauliRotation` -`CliffordGate`.
 """
 function _calculatesplitprobabilities(circ::AbstractArray, r::Number)
     return 0.5 * (1 + sin(2 * r) / (2 * r))
 end
 
-_calculatesplitprobabilities(gate::PauliGateUnion, theta::Number) = 0.5 * (1 + sin(2theta) / (2theta))
+_calculatesplitprobabilities(gate::PauliRotationUnion, theta::Number) = 0.5 * (1 + sin(2theta) / (2theta))
 
 _calculatesplitprobabilities(gate::AmplitudeDampingNoise, theta::Number) = theta
 

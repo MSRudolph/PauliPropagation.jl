@@ -6,7 +6,7 @@ using Test
   nq = 1
   th = randn()
   # single qubit X gate
-  gate = PauliGate([:X], [1])
+  gate = PauliRotation([:X], [1])
   # apply to Z
   pstr = PauliString(nq, :Z, 1)
   @test all(apply(gate, pstr.term, th) .≈ (0x03, cos(th), 0x02, sin(th)))
@@ -19,7 +19,7 @@ using Test
   @test all(apply(gate, pstr.term, th) .≈ (0x01, 1.0))
 
   # two-qubit Y gate
-  gate = PauliGate([:Y, :Y], [1, 2])
+  gate = PauliRotation([:Y, :Y], [1, 2])
   # apply to Z
   pstr = PauliString(nq, :Z, 2)
   @test all(apply(gate, pstr.term, th) .≈ (0x0c, cos(th), 0x06, -sin(th)))
@@ -32,7 +32,7 @@ using Test
 
   # single qubit Z gate on two qubits
   nq = 2
-  gate = PauliGate([:Z], [1])
+  gate = PauliRotation([:Z], [1])
   # apply to Z
   pstr = PauliString(nq, :Z, 1)
   @test all(apply(gate, pstr.term, th) .≈ (0x03, 1.0))
@@ -47,7 +47,7 @@ end
 @testset "Test fastgate" begin
   nq = 2
   th = randn()
-  gate = PauliGate([:X, :Z], [1, 2])
+  gate = PauliRotation([:X, :Z], [1, 2])
   fastgate = tofastgates(gate, nq)
   pstr = PauliString(nq, :Z, 2)
   @test apply(gate, pstr.term, th) == apply(fastgate, pstr.term, th)

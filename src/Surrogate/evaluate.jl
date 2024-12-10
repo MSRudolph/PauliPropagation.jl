@@ -55,14 +55,14 @@ end
 
 ## Evaluation functions
 """
-    _traceevalorder(node::PauliGateNode, thetas; eval_list=nothing)
+    _traceevalorder(node::PauliRotationNode, thetas; eval_list=nothing)
 
 Evaluate the coefficient of `node` on the Surrogate by recursively evaluating all parents.
 `thetas` are the parameters of the circuit.
 NOTE: This requires calling `resetnodes` in-between evaluations with different `thetas`.
 `eval_list` does not need to be passed when manually using this function.
 """
-function _traceevalorder(node::PauliGateNode, thetas; eval_list=nothing)
+function _traceevalorder(node::PauliRotationNode, thetas; eval_list=nothing)
     val = typeof(node.cummulative_value)(0)
 
     if isevaluated(node)
@@ -124,7 +124,7 @@ end
 
 _evaltrig(node::CircuitNode, thetas, ii) = _evaltrig(node.trig_inds[ii], node.signs[ii], thetas, node.param_idx)
 
-function _evalnode(node::PauliGateNode, thetas)
+function _evalnode(node::PauliRotationNode, thetas)
 
     val = sum(_evaltrig(node, thetas, ii) * getnodeval(node.parents[ii]) for ii in eachindex(node.parents))
     # val = sum(evaltrig(node.trig_inds[ii], node.signs[ii], numeric_thetas, node.param_idx) * getnodeval(node.parents[ii]) for ii in eachindex(node.parents))
@@ -163,7 +163,7 @@ Return a vector of `CircuitNode`s in the order they should be evaluated to get t
 `thetas` numerically plays no role here but it needs to be the correct length given the number of parametrized gates.
 """
 function gettraceevalorder(node::CircuitNode, thetas)
-    eval_list = Union{PauliGateNode,EvalEndNode}[]
+    eval_list = Union{PauliRotationNode,EvalEndNode}[]
     _traceevalorder(node, thetas; eval_list)
     return eval_list
 end
