@@ -280,13 +280,13 @@ function tiltedtfitrottercircuit(n_qubits, n_layers; topology=nothing)
     end
 
     zzlayer(circuit) = append!(
-        circuit, (PauliGate([:Z, :Z], collect(pair)) for pair in topology)
+        circuit, (PauliRotation([:Z, :Z], pair) for pair in topology)
     )
     zlayer(circuit) = append!(
-        circuit, (PauliGate([:Z], [ii]) for ii in 1:n_qubits)
+        circuit, (PauliRotation([:Z], [ii]) for ii in 1:n_qubits)
     )
     xlayer(circuit) = append!(
-        circuit, (PauliGate([:X], [ii]) for ii in 1:n_qubits)
+        circuit, (PauliRotation([:X], [ii]) for ii in 1:n_qubits)
     )
 
     for _ in 1:n_layers
