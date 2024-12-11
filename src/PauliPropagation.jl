@@ -18,6 +18,7 @@ export
     add!,
     subtract,
     subtract!,
+    set!,
     inttosymbol,
     symboltoint,
     inttostring,
