@@ -2,28 +2,12 @@
 
 ### PAULI GATES
 """
-    applygatetoall!(gate::PauliRotationUnion, thetas, psum, second_psum, args...; kwargs...)
-
-Overload of `applygatetoall!` for `PauliRotation` and `FastPauliRotation` gates.
-Both `psum` and `second_psum` contain Pauli strings which will be merged later.
-"""
-function applygatetoall!(gate::PauliRotationUnion, theta, psum, second_psum, args...; kwargs...)
-    # TODO: there is a lot of code duplication. Can we write a more general function?
-
-    for (pstr, coeff) in psum
-        applygatetoone!(gate, pstr, coeff, theta, psum, second_psum; kwargs...)
-    end
-
-    return psum, second_psum  # don't swap psums around
-end
-
-"""
-    applygatetoone!(gate::PauliRotationUnion, pstr, coefficient, theta, psum, second_psum, args...; kwargs...)
+    applygatetoone!(gate::PauliRotationUnion, pstr, coefficient, theta, psum, aux_psum, args...; kwargs...)
 
 Overload of `applygatetoone!` for `PauliRotation` and `FastPauliRotation` gates. 
 Checks for commutation of `gate` and `pstr`, and applies the gate to the Pauli string if they don't.
 """
-@inline function applygatetoone!(gate::PauliRotationUnion, pstr, coefficient, theta, psum, second_psum, args...; kwargs...)
+@inline function applygatetoone!(gate::PauliRotationUnion, pstr, coefficient, theta, psum, aux_psum, args...; kwargs...)
 
     if commutes(gate, pstr)
         return
@@ -32,7 +16,7 @@ Checks for commutation of `gate` and `pstr`, and applies the gate to the Pauli s
     pstr, coeff1, new_pstr, coeff2 = applynoncummuting(gate, pstr, theta, coefficient; kwargs...)
 
     psum[pstr] = coeff1
-    second_psum[new_pstr] = coeff2
+    aux_psum[new_pstr] = coeff2
 
     return
 end
@@ -40,43 +24,46 @@ end
 ### Clifford gates
 
 """
-    applygatetoone!(gate::CliffordGate, pstr, coefficient, theta, psum, second_psum, args...; kwargs...)
+    applygatetoall!(gate::CliffordGate, theta, psum, aux_psum, args...; kwargs...)
+
+Overload of `applygatetoall!` for `CliffordGate` gates.
+
+
+"""
+function applygatetoall!(gate::CliffordGate, theta, psum, aux_psum, args...; kwargs...)
+
+    for (pstr, coeff) in psum
+        applygatetoone!(gate, pstr, coeff, theta, psum, aux_psum; kwargs...)
+    end
+
+    # Empty psum because everything was moved into aux_psum. They will later be merged.
+    empty!(psum)
+
+    return psum, aux_psum
+end
+
+"""
+    applygatetoone!(gate::CliffordGate, pstr, coefficient, theta, psum, aux_psum, args...; kwargs...)
 
 Overload of `applygatetoone!` for `CliffordGate` gates.
-Simplified logic for readability.
+Does not delete from `psum`, here and instead empties it in  `applygatetoall!`
 """
-@inline function applygatetoone!(gate::CliffordGate, pstr, coefficient, theta, psum, second_psum, args...; kwargs...)
+@inline function applygatetoone!(gate::CliffordGate, pstr, coefficient, theta, psum, aux_psum, args...; kwargs...)
 
     new_pstr, coeff = apply(gate, pstr, theta, coefficient; kwargs...)
-    second_psum[new_pstr] = coeff
+    aux_psum[new_pstr] = coeff
 
     return
 end
 
 ### Amplitude Damping Noise
 """
-    applygatetoall!(gate::AmplitudeDampingNoise, thetas, psum, second_psum, args...; kwargs...)
-
-Overload of `applygatetoall!` for `AmplitudeDampingNoise` gates.
-Both `psum` and `second_psum` contain Pauli strings which will be merged later.
-"""
-function applygatetoall!(gate::AmplitudeDampingNoise, theta, psum, second_psum, args...; kwargs...)
-    # TODO: there is a lot of code duplication. Can we write a more general function? 
-
-    for (pstr, coeff) in psum
-        applygatetoone!(gate, pstr, coeff, theta, psum, second_psum; kwargs...)
-    end
-
-    return psum, second_psum
-end
-
-"""
-    applygatetoone!(gate::AmplitudeDampingNoise, pstr, coefficient, theta, psum, second_psum, args...; kwargs...)
+    applygatetoone!(gate::AmplitudeDampingNoise, pstr, coefficient, theta, psum, aux_psum, args...; kwargs...)
 
 Overload of `applygatetoone!` for `AmplitudeDampingNoise` gates.
 Checks for whether `gate` will cause splitting and has tailored logic.
 """
-@inline function applygatetoone!(gate::AmplitudeDampingNoise, pstr, coefficient, theta, psum, second_psum, args...; kwargs...)
+@inline function applygatetoone!(gate::AmplitudeDampingNoise, pstr, coefficient, theta, psum, aux_psum, args...; kwargs...)
 
     if actsdiagonally(gate, pstr)
         pstr, coeff = diagonalapply(gate, pstr, theta, coefficient; kwargs...)
@@ -87,17 +74,17 @@ Checks for whether `gate` will cause splitting and has tailored logic.
     pstr, coeff1, new_pstr, coeff2 = splitapply(gate, pstr, theta, coefficient; kwargs...)
 
     psum[pstr] = coeff1
-    second_psum[new_pstr] = coeff2
+    aux_psum[new_pstr] = coeff2
 
     return
 end
 
 ### Frozen Gates
 """
-    applygatetoall!(gate::FrozenGate, thetas, psum, second_psum, args...; kwargs...)
+    applygatetoall!(gate::FrozenGate, thetas, psum, aux_psum, args...; kwargs...)
 
 Overload of `applygatetoall!` for `FrozenGate`s. Re-directs to `applygatetoall!` for the wrapped `FrozenGate.gate`.
 """
-function applygatetoall!(gate::FrozenGate, theta, psum, second_psum, args...; kwargs...)
-    return applygatetoall!(gate.gate, gate.parameter, psum, second_psum, args...; kwargs...)
+function applygatetoall!(gate::FrozenGate, theta, psum, aux_psum, args...; kwargs...)
+    return applygatetoall!(gate.gate, gate.parameter, psum, aux_psum, args...; kwargs...)
 end

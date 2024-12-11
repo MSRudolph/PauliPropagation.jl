@@ -55,14 +55,14 @@ function propagate!(circ, psum::Dict, thetas; kwargs...)
     # TODO: Should we have a version of this that doesn't require thetas and uses surrogate code?
     param_idx = length(thetas)
 
-    second_psum = typeof(psum)()  # pre-allocating somehow doesn't do anything
+    aux_psum = typeof(psum)()  # pre-allocating somehow doesn't do anything
 
     ## TODO:
     # - decide where to reverse the circuit
     # - verbose option  
     # - more elegant param_idx incrementation
     for gate in reverse(circ)
-        psum, second_psum, param_idx = mergingapply!(gate, psum, second_psum, thetas, param_idx; kwargs...)
+        psum, aux_psum, param_idx = applymergetruncate!(gate, psum, aux_psum, thetas, param_idx; kwargs...)
     end
     return psum
 end
@@ -70,63 +70,76 @@ end
 # TODO: somehow propagate is not type stable
 
 """
-    mergingapply!(gate, psum, second_psum, thetas, param_idx, args...; kwargs...)
+    applymergetruncate!(gate, psum, aux_psum, thetas, param_idx, args...; kwargs...)
 
-1st-level function below `propagate!` that applies one gate to all Pauli strings in `psum`, potentially using `second_psum` in the process,
+1st-level function below `propagate!` that applies one gate to all Pauli strings in `psum`, potentially using `aux_psum` in the process,
 and merges everything back into `psum`. Truncations are checked here after merging.
 This function can be overwritten for a custom gate if the lower-level functions `applygatetoall!`, `applygatetoone!`, and `apply` are not sufficient.
 A custom truncation function can be passed as `customtruncatefn` with the signature customtruncatefn(pstr::PauliStringType, coefficient)::Bool.
 """
-function mergingapply!(gate, psum, second_psum, thetas, param_idx, args...; kwargs...)
+function applymergetruncate!(gate, psum, aux_psum, thetas, param_idx, args...; kwargs...)
 
+    # Pick out the theta of the next parametrized gate. Will not be used by static gates, even though it is passed.
     theta = thetas[param_idx]
-    psum, second_psum = applygatetoall!(gate, theta, psum, second_psum; kwargs...)
 
-    mergeandclear!(psum, second_psum)
+    # Apply the gate to all Pauli strings in psum, potentially writing into auxillary aux_psum in the process.
+    psum, aux_psum = applygatetoall!(gate, theta, psum, aux_psum; kwargs...)
 
-    checktruncationonall!(psum; kwargs...)
+    # Any contents of psum and aux_psum are merged into the larger of the two, which is returned as psum.
+    # The other is cleared and returned as aux_psum.
+    psum, aux_psum = mergeandclear!(psum, aux_psum)
 
-    if isa(gate, ParametrizedGate) && param_idx > 1  # decrement parameter index by one if it is not the last parameter
+    # Check truncation conditions on all Pauli strings in psum and remove them if they are truncated.
+    psum = checktruncationonall!(psum; kwargs...)
+
+    # If the gate was parametrized and used the theta, decrement theta index by one.
+    # Don't go below index 1 because a theta will still be picked out for all remaining static gates.
+    if isa(gate, ParametrizedGate) && param_idx > 1
         param_idx -= 1
     end
 
-    return psum, second_psum, param_idx
+    return psum, aux_psum, param_idx
 end
 
 """
-    applygatetoall!(gate, theta psum, second_psum, args...; kwargs...)
+    applygatetoall!(gate, theta psum, aux_psum, args...; kwargs...)
 
-2nd-level function below `mergingapply!` that applies one gate to all Pauli strings in `psum`, potentially using `second_psum` in the process.
+2nd-level function below `applymergetruncate!` that applies one gate to all Pauli strings in `psum`, potentially using `aux_psum` in the process.
 This function can be overwritten for a custom gate if the lower-level functions `applygatetoone!` and `apply` are not sufficient.
 """
-function applygatetoall!(gate, theta, psum, second_psum, args...; kwargs...)
+function applygatetoall!(gate, theta, psum, aux_psum, args...; kwargs...)
 
+    # Loop over all Pauli strings in psum and apply the gate to them.
     for (pstr, coeff) in psum
-        applygatetoone!(gate, pstr, coeff, theta, psum, second_psum; kwargs...)
+        applygatetoone!(gate, pstr, coeff, theta, psum, aux_psum; kwargs...)
     end
-    # TODO: This should not be the default behavior. Absorb more logic into `mergeandclear!`, perhaps.
-    empty!(psum)  # empty old dict because next generation of operators should by default stored in second_psum (unless this is overwritten by a custom function)
 
-    return second_psum, psum  # swap dicts around
+    return psum, aux_psum
 end
 
 """
-    applygatetoone!(gate, pstr, coefficient, theta, psum, second_psum, args...; kwargs...)
+    applygatetoone!(gate, pstr, coefficient, theta, psum, aux_psum, args...; kwargs...)
 
-3nd-level function below `mergingapply!` that applies one gate to one Pauli string in `psum`, potentially using `second_psum` in the process.
+3nd-level function below `applymergetruncate!` that applies one gate to one Pauli string in `psum`, potentially using `aux_psum` in the process.
 This function can be overwritten for a custom gate if the lower-level function `apply` is not sufficient. 
 This is likely the the case if `apply` is not type-stable because it does not return a unique number of outputs. 
 E.g., a Pauli gate returns 1 or 2 (pstr, coefficient) outputs.
 """
-@inline function applygatetoone!(gate, pstr, coefficient, theta, psum, second_psum, args...; kwargs...)
+@inline function applygatetoone!(gate, pstr, coefficient, theta, psum, aux_psum, args...; kwargs...)
 
+    # Get the (potentially new) pauli strings and their coefficients like (pstr1, coeff1, pstr2, coeff2, ...)
     pstrs_and_coeffs = apply(gate, pstr, theta, coefficient; kwargs...)
 
     for ii in 1:2:length(pstrs_and_coeffs)
-        pstr, coeff = pstrs_and_coeffs[ii], pstrs_and_coeffs[ii+1]
+        # Itererate over the pairs of pstr and coeff
+        new_pstr, new_coeff = pstrs_and_coeffs[ii], pstrs_and_coeffs[ii+1]
+        # Store the new_pstr and coeff in the aux_psum, add to existing coeff if new_pstr already exists there
         # TODO the zero should be of the same type as the coefficient
-        second_psum[pstrs_and_coeffs[ii]] = get(second_psum, pstr, 0.0) + coeff
+        aux_psum[new_pstr] = get(aux_psum, new_pstr, 0.0) + new_coeff
     end
+
+    # Delete the pstr in the psum that it is coming from
+    delete!(psum, pstr)
 
     return
 end
@@ -134,17 +147,21 @@ end
 
 ### MERGE
 """
-    mergeandclear!(psum, second_psum)
+    mergeandclear!(psum, aux_psum)
 
-Merge `second_psum` into `psum` using the `merge` function. `merge` can be overloaded for different coefficient types.
-Then clear `second_psum` for the next iteration.
+Merge `aux_psum` into `psum` using the `merge` function. `merge` can be overloaded for different coefficient types.
+Then clear `aux_psum` for the next iteration.
 """
-function mergeandclear!(psum, second_psum)
+function mergeandclear!(psum, aux_psum)
+    # merge the smaller dict into the larger one
+    if length(psum) < length(aux_psum)
+        psum, aux_psum = aux_psum, psum
+    end
     # TODO: custom merging function beyond mergewith!
     # TODO: Potentially check for truncations at this step.
-    mergewith!(merge, psum, second_psum)
-    empty!(second_psum)
-    return psum, second_psum
+    mergewith!(merge, psum, aux_psum)
+    empty!(aux_psum)
+    return psum, aux_psum
 end
 
 """
@@ -180,7 +197,7 @@ function checktruncationonall!(
             kwargs...
         )
     end
-    return
+    return psum
 end
 
 """
