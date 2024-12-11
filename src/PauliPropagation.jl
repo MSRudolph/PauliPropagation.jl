@@ -46,9 +46,10 @@ export
     Gate,
     ParametrizedGate,
     StaticGate,
-    PauliGate,
-    FastPauliGate,
+    PauliRotation,
+    FastPauliRotation,
     tofastgates,
+    tofastgates!,
     apply,
     applynoncummuting,
     CliffordGate,
@@ -77,10 +78,12 @@ export
     hardwareefficientcircuit,
     efficientsu2circuit,
     tfitrottercircuit,
+    tiltedtfitrottercircuit,
     heisenbergtrottercircuit,
     su4ansatz,
     qcnnansatz,
-    appendSU4!
+    appendSU4!,
+    ibmeagletopology
 
 include("truncations.jl")
 export
@@ -125,7 +128,7 @@ include("Surrogate/Surrogate.jl")
 export
     NodePathProperties,
     EvalEndNode,
-    PauliGateNode,
+    PauliRotationNode,
     evaluate!,
     reset!
 

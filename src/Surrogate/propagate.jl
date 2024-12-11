@@ -37,7 +37,7 @@ A custom truncation function can be passed as `customtruncatefn` with the signat
 """
 function propagate!(circ, psum::PauliSum; kwargs...)
     # check that circ only constists of Pauli gates and Clifford gates
-    if !all(isa(gate, CliffordGate) || isa(gate, PauliGateUnion) for gate in circ)
+    if !all(isa(gate, CliffordGate) || isa(gate, PauliRotationUnion) for gate in circ)
         throw(ArgumentError("The surrogate currently only accepts Clifford gates and (Fast)Pauli gates."))
     end
 
@@ -89,11 +89,11 @@ end
 ## For Pauli Gates
 
 function applycos(node::CircuitNode, theta; sign=1, param_idx=0, kwargs...)
-    return PauliGateNode(parents=[node], trig_inds=[1], signs=[sign], param_idx=param_idx)
+    return PauliRotationNode(parents=[node], trig_inds=[1], signs=[sign], param_idx=param_idx)
 end
 
 function applysin(node::CircuitNode, theta; sign=1, param_idx=0, kwargs...)
-    return PauliGateNode(parents=[node], trig_inds=[-1], signs=[sign], param_idx=param_idx)
+    return PauliRotationNode(parents=[node], trig_inds=[-1], signs=[sign], param_idx=param_idx)
 end
 
 function merge(pth1::NodePathProperties, pth2::NodePathProperties)
@@ -118,7 +118,7 @@ function _multiplysign(pth::NodePathProperties, sign; kwargs...)
     return NodePathProperties(_multiplysign(pth.coeff, sign), pth.nsins, pth.ncos, pth.freq)
 end
 
-function _multiplysign(pauli_node::PauliGateNode, sign; kwargs...)
+function _multiplysign(pauli_node::PauliRotationNode, sign; kwargs...)
     for ii in eachindex(pauli_node.signs)
         pauli_node.signs[ii] *= sign
     end

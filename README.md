@@ -13,7 +13,7 @@ You can install the package using `Pkg` from the following link: `https://github
 For example, if you are working with a Jupyter notebook, run
 ```julia
 using Pkg
-Pkg.add("https://github.com/MSRudolph/PauliPropagation.jl.git")
+Pkg.add(url="https://github.com/MSRudolph/PauliPropagation.jl.git")
 ```
 where you can use the keyword `rev="branchname"` to install the version on a particular branch if you want to contribute to the package.
 

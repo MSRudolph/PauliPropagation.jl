@@ -245,7 +245,7 @@ Get the type of the numerical coefficient of a pauli sum dict.
 Will get the type of the `coeff` field of a potential PathProperties type.
 """
 function numcoefftype(psum::Dict)
-    return numcoefftype(first(values(psum)))
+    return numcoefftype(valtype(psum))
 end
 
 """
@@ -258,12 +258,25 @@ function numcoefftype(::T) where {T<:Number}
 end
 
 """
+    numcoefftype(::Type{Number})
+
+Return the input type if it is a Number type.
+"""
+function numcoefftype(::Type{T}) where {T<:Number}
+    return T
+end
+
+"""
     getcoeff(psum::PauliSum{PauliStringType,CoeffType}, pstr::PauliStringType)
 
 Get the coefficient of an integer Pauli string in a `PauliSum`. Defaults to 0 if the Pauli string is not in the `PauliSum`.
 Requires that the integer Pauli string `pstr` is the same type as the integer Pauli strings in `psum`.
 """
-function getcoeff(psum::PauliSum{TermType,CoeffType}, pstr::TermType) where {TermType<:PauliStringType,CoeffType}
+function getcoeff(psum::PauliSum{TermType,CoeffType}, pstr::TermType) where {TermType,CoeffType}
+    # TODO: This is not yet compatible with `PathProperties`
+    if CoeffType <: PathProperties
+        throw(ArgumentError("This function is not yet compatible with PathProperties."))
+    end
     return get(psum.terms, pstr, CoeffType(0))
 end
 
@@ -273,8 +286,12 @@ end
 Get the coefficient of a `PauliString` in a `PauliSum`. Defaults to 0 if the Pauli string is not in the `PauliSum`.
 Requires that the integer Pauli string in `pstr` is the same type as the integer Pauli strings in `psum`.
 """
-function getcoeff(psum::PauliSum{TermType,CoeffType1}, pstr::PauliString{TermType,CoeffType2}) where {TermType<:PauliStringType,CoeffType1,CoeffType2}
-    return get(psum.terms, pstr.term, CoeffType1(0))
+function getcoeff(psum::PauliSum{TermType,CoeffType1}, pstr::PauliString{TermType,CoeffType2}) where {TermType,CoeffType1,CoeffType2}
+    # TODO: This is not yet compatible with `PathProperties`
+    if CoeffType <: PathProperties
+        throw(ArgumentError("This function is not yet compatible with PathProperties."))
+    end
+    return get(psum.terms, pstr.term, CoeffType(0))
 end
 
 
@@ -307,9 +324,13 @@ Get the coefficient of a Pauli string in a `PauliSum` by providing the Pauli str
 This is consistent with how Pauli strings can be added to a `PauliSum` via `add!()`. 
 Defaults to 0 if the Pauli string is not in the `PauliSum`.
 """
-function getcoeff(psum::PauliSum, pstr)
+function getcoeff(psum::PauliSum, pstr::Vector{Symbol})
     return getcoeff(psum, symboltoint(pstr))
 end
+
+
+# TODO getnumcoeff() for PauliSum and PauliString
+
 
 """
     getnumcoeff(val::Number)
@@ -320,7 +341,7 @@ function getnumcoeff(val::Number)
     return val
 end
 
-# TODO: Add functions for extracting paulis and coefficients from the PauliSum (as iterable)
+# TODO: implement norm for PauliSum
 
 """
     topaulistrings(psum::PauliSum)

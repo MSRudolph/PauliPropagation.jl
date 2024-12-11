@@ -9,7 +9,7 @@
     tofastgates(gate::Gate, nqubits::Integer)
 
 Transforms a gate to a potentially faster but more involved gate type. 
-This is currently only for `PauliGate` to `FastPauliGate`.
+This is currently only for `PauliRotation` to `FastPauliRotation`.
 """
 tofastgates(gate::Gate, nqubits::Integer) = gate
 

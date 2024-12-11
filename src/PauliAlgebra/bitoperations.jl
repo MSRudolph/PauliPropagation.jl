@@ -20,17 +20,46 @@ function getinttype(nqubits::Integer)
         inttype = UInt64
     elseif nbits <= 128
         inttype = UInt128
-    elseif nbits <= 256    # These are super slow to hash # TODO: custom hash functions
+    elseif nbits <= 256    # we have a custom hash function for these
         inttype = UInt256
-        # elseif nbits <= 512
-        #     inttype = UInt512
-        # elseif nbits <= 1024
-        #     inttype = UInt1024
-    else
+    elseif nbits <= 1024
         inttype = BigInt  # TODO: get larger Integer types that aren't BigInt
+    else
+        throw("The maximum number of qubits supported is currently 1024.")
     end
 
     return inttype
+end
+
+import Base: hash, hash_uint
+"""
+Re-defining the hash of `BitIntegers.UInt256` via type piracy.
+"""
+Base.hash(x::UInt256) = hash_uint(x)
+
+"""
+    hash_uint(x::UInt256)
+
+Custom hash-function for `BitIntegers.UInt256`. 
+It appears faster in practice than the default hash for this type, but it is not fully tested.
+It certainly allocates no memory. 
+"""
+function hash_uint(x::UInt256)
+    mask::UInt64 = 0xFFFFFFFFFFFFFFFF
+    # hash each 64-bit segment using Julia's inbuilt hashes
+    a::UInt64 = hash_uint(UInt64((x >> 0) & mask))
+    b::UInt64 = hash_uint(UInt64((x >> 64) & mask))
+    c::UInt64 = hash_uint(UInt64((x >> 128) & mask))
+    d::UInt64 = hash_uint(UInt64((x >> 192) & mask))
+    # mess it up a little using this ChatGPT hallucination
+    h::UInt64 = 0
+    h = a ⊻ ((b << 21) | (b >> (64 - 21)))
+    h = h ⊻ ((c << 42) | (c >> (64 - 42)))
+    h = h ⊻ ((d << 63) | (d >> (64 - 63)))
+    h = (h * 0x9e3779b185ebca87) ⊻ (h >> 32)
+    h = (h * 0xc2b2ae3d27d4eb4f) ⊻ (h >> 29)
+    h = (h * 0x165667b19e3779f9) ⊻ (h >> 32)
+    return h
 end
 
 """

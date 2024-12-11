@@ -2,12 +2,12 @@
 
 ### PAULI GATES
 """
-    applygatetoone!(gate::PauliGateUnion, pstr, coefficient, theta, psum, aux_psum, args...; kwargs...)
+    applygatetoone!(gate::PauliRotationUnion, pstr, coefficient, theta, psum, aux_psum, args...; kwargs...)
 
-Overload of `applygatetoone!` for `PauliGate` and `FastPauliGate` gates. 
+Overload of `applygatetoone!` for `PauliRotation` and `FastPauliRotation` gates. 
 Checks for commutation of `gate` and `pstr`, and applies the gate to the Pauli string if they don't.
 """
-@inline function applygatetoone!(gate::PauliGateUnion, pstr, coefficient, theta, psum, aux_psum, args...; kwargs...)
+@inline function applygatetoone!(gate::PauliRotationUnion, pstr, coefficient, theta, psum, aux_psum, args...; kwargs...)
 
     if commutes(gate, pstr)
         return

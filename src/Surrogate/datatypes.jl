@@ -23,12 +23,12 @@ Constructor for `EvalEndNode` with a default coefficient of 1.0.
 EvalEndNode(pstr::Integer) = EvalEndNode(pstr, 1.0)
 
 """
-    PauliGateNode(parents::Vector{Union{EvalEndNode,PauliGateNode}}, trig_inds::Vector{Int}, signs::Vector{Int}, param_idx::Int)
+    PauliRotationNode(parents::Vector{Union{EvalEndNode,PauliRotationNode}}, trig_inds::Vector{Int}, signs::Vector{Int}, param_idx::Int)
 
-Surrogate graph node for a Pauli gate.
+Surrogate graph node for a Pauli rotation gate.
 """
-@kwdef mutable struct PauliGateNode <: CircuitNode
-    parents::Vector{Union{EvalEndNode,PauliGateNode}}
+@kwdef mutable struct PauliRotationNode <: CircuitNode
+    parents::Vector{Union{EvalEndNode,PauliRotationNode}}
     trig_inds::Vector{Int}
     signs::Vector{Int}
     param_idx::Int
@@ -52,7 +52,7 @@ Base.show(io::IO, node::EvalEndNode) = print(io, "$(typeof(node))(Pauli string=$
 Surrogate `PathProperties` type. Carries `CircuitNode`s instead of numerical coefficients.
 """
 struct NodePathProperties <: PathProperties
-    coeff::Union{EvalEndNode,PauliGateNode}
+    coeff::Union{EvalEndNode,PauliRotationNode}
     nsins::Int
     ncos::Int
     freq::Int
@@ -72,6 +72,15 @@ Get the type of the numerical coefficient of a `NodePathProperties` object.
 Returns the type of the `cummulative_value` field of the stored `CircuitNode`.
 """
 numcoefftype(node::NodePathProperties) = typeof(getnumcoeff(node))
+
+"""
+    numcoefftype(::Type{NodePathProperties})
+
+Currently returns `Float64` as the type of the `cummulative_value` in `CircuitNode`s.
+"""
+numcoefftype(::Type{NodePathProperties}) = Float64
+
+
 
 """
     getnumcoeff(val::NodePathProperties)

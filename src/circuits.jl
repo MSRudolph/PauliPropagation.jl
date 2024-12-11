@@ -1,3 +1,9 @@
+#=
+Functions for defining circuits for unitary evolution.
+=#
+
+#TODO: refactor this to add building blocks for circuit layers.
+
 """
     countparameters(circuit)
 
@@ -159,18 +165,18 @@ function hardwareefficientcircuit(nqubits::Integer, nlayers::Integer; topology=n
     for _ in 1:nlayers
         for ii in 1:nqubits
             # RX
-            push!(circuit, PauliGate(:X, ii))
+            push!(circuit, PauliRotation(:X, ii))
 
             # RZ
-            push!(circuit, PauliGate(:Z, ii))
+            push!(circuit, PauliRotation(:Z, ii))
 
             # RX
-            push!(circuit, PauliGate(:X, ii))
+            push!(circuit, PauliRotation(:X, ii))
         end
 
         for pair in topology
             # CNOT or YY gate here
-            push!(circuit, PauliGate([:Y, :Y], pair))
+            push!(circuit, PauliRotation([:Y, :Y], pair))
         end
     end
 
@@ -195,10 +201,10 @@ function efficientsu2circuit(nqubits::Integer, nlayers::Integer; topology=nothin
     for jj in 1:nlayers
         for ii in 1:nqubits
             # RY
-            push!(circuit, PauliGate(:Y, ii))
+            push!(circuit, PauliRotation(:Y, ii))
 
             # RZ
-            push!(circuit, PauliGate(:Z, ii))
+            push!(circuit, PauliRotation(:Z, ii))
 
         end
 
@@ -226,8 +232,8 @@ function tfitrottercircuit(nqubits::Integer, nlayers::Integer; topology=nothing,
         topology = bricklayertopology(nqubits)
     end
 
-    zzlayer(circuit) = append!(circuit, (PauliGate([:Z, :Z], pair) for pair in topology))
-    xlayer(circuit) = append!(circuit, (PauliGate(:X, ii) for ii in 1:nqubits))
+    zzlayer(circuit) = append!(circuit, (PauliRotation([:Z, :Z], pair) for pair in topology))
+    xlayer(circuit) = append!(circuit, (PauliRotation(:X, ii) for ii in 1:nqubits))
 
     if start_with_ZZ
         zzlayer(circuit)
@@ -249,6 +255,52 @@ function tfitrottercircuit(nqubits::Integer, nlayers::Integer; topology=nothing,
 end
 
 """
+    tiltedtfitrottercircuit(n_qubits, n_layers; topology=nothing)
+
+Returns a Trottterized circuit for the tilted transverse field Ising model.
+H = Sum_{(i, i+1) in topology} Z_i Z_{i+1} 
+  + Sum_{i=1}^{n_qubits} Z_i + Sum_{i=1}^{n_qubits} X_i
+
+# Arguments
+- `n_qubits::Integer`: The number of qubits in the circuit.
+- `n_layers::Integer`: The number of Trotter steps to perform.
+- `topology=nothing`: The topology of the qubits in the circuit. 
+    Default (nothing): A linear chain.
+
+# Returns
+The Trottterized circuit as a vector of Gate.
+"""
+function tiltedtfitrottercircuit(n_qubits, n_layers; topology=nothing)
+    # TODO(YT): the ordering of the Trotter circuit layer will be important
+    # for shallow circuits to minimize the Trotter error.
+    circuit::Vector{Gate} = []
+
+    if isnothing(topology)
+        topology = [(ii, ii + 1) for ii in 1:n_qubits-1]
+    end
+
+    zzlayer(circuit) = append!(
+        circuit, (PauliRotation([:Z, :Z], pair) for pair in topology)
+    )
+    zlayer(circuit) = append!(
+        circuit, (PauliRotation([:Z], [ii]) for ii in 1:n_qubits)
+    )
+    xlayer(circuit) = append!(
+        circuit, (PauliRotation([:X], [ii]) for ii in 1:n_qubits)
+    )
+
+    for _ in 1:n_layers
+        zzlayer(circuit)
+        zlayer(circuit)
+        xlayer(circuit)
+    end
+
+    tofastgates!(circuit)
+
+    return circuit
+end
+
+"""
     heisenbergtrottercircuit(nqubits::Integer, nlayers::Integer; topology=nothing)
 
 Create a circuit that corresponds to a Trotterization of the Heisenberg Hamiltonian.
@@ -266,13 +318,13 @@ function heisenbergtrottercircuit(nqubits::Integer, nlayers::Integer; topology=n
 
         for pair in topology
             # XX
-            push!(circuit, PauliGate([:X, :X], pair))
+            push!(circuit, PauliRotation([:X, :X], pair))
 
             # YY
-            push!(circuit, PauliGate([:Y, :Y], pair))
+            push!(circuit, PauliRotation([:Y, :Y], pair))
 
             # ZZ
-            push!(circuit, PauliGate([:Z, :Z], pair))
+            push!(circuit, PauliRotation([:Z, :Z], pair))
         end
     end
 
@@ -338,27 +390,46 @@ The SU(4) gate is decomposed via the KAK Decomposition into single-qubit Z-X-Z g
 """
 function appendSU4!(circuit, pair)
     # arbitrary on q1
-    push!(circuit, PauliGate(:Z, pair[1]))
-    push!(circuit, PauliGate(:X, pair[1]))
-    push!(circuit, PauliGate(:Z, pair[1]))
+    push!(circuit, PauliRotation(:Z, pair[1]))
+    push!(circuit, PauliRotation(:X, pair[1]))
+    push!(circuit, PauliRotation(:Z, pair[1]))
 
     # arbitrary on q2
-    push!(circuit, PauliGate(:Z, pair[2]))
-    push!(circuit, PauliGate(:X, pair[2]))
-    push!(circuit, PauliGate(:Z, pair[2]))
+    push!(circuit, PauliRotation(:Z, pair[2]))
+    push!(circuit, PauliRotation(:X, pair[2]))
+    push!(circuit, PauliRotation(:Z, pair[2]))
 
     # entanglers
-    push!(circuit, PauliGate([:X, :X], pair))
-    push!(circuit, PauliGate([:Y, :Y], pair))
-    push!(circuit, PauliGate([:Z, :Z], pair))
+    push!(circuit, PauliRotation([:X, :X], pair))
+    push!(circuit, PauliRotation([:Y, :Y], pair))
+    push!(circuit, PauliRotation([:Z, :Z], pair))
 
     # arbitrary on q1
-    push!(circuit, PauliGate(:Z, pair[1]))
-    push!(circuit, PauliGate(:X, pair[1]))
-    push!(circuit, PauliGate(:Z, pair[1]))
+    push!(circuit, PauliRotation(:Z, pair[1]))
+    push!(circuit, PauliRotation(:X, pair[1]))
+    push!(circuit, PauliRotation(:Z, pair[1]))
 
     # arbitrary on q2
-    push!(circuit, PauliGate(:Z, pair[2]))
-    push!(circuit, PauliGate(:X, pair[2]))
-    push!(circuit, PauliGate(:Z, pair[2]))
+    push!(circuit, PauliRotation(:Z, pair[2]))
+    push!(circuit, PauliRotation(:X, pair[2]))
+    push!(circuit, PauliRotation(:Z, pair[2]))
 end
+
+
+const ibmeagletopology = [
+    (1, 2), (1, 15), (2, 3), (3, 4), (4, 5), (5, 6), (5, 16), (6, 7), (7, 8), (8, 9), (9, 10), (9, 17),
+    (10, 11), (11, 12), (12, 13), (13, 14), (13, 18), (15, 19), (16, 23), (17, 27), (18, 31), (19, 20),
+    (20, 21), (21, 22), (21, 34), (22, 23), (23, 24), (24, 25), (25, 26), (25, 35), (26, 27), (27, 28),
+    (28, 29), (29, 30), (29, 36), (30, 31), (31, 32), (32, 33), (33, 37), (34, 40), (35, 44), (36, 48),
+    (37, 52), (38, 39), (38, 53), (39, 40), (40, 41), (41, 42), (42, 43), (42, 54), (43, 44), (44, 45),
+    (45, 46), (46, 47), (46, 55), (47, 48), (48, 49), (49, 50), (50, 51), (50, 56), (51, 52), (53, 57),
+    (54, 61), (55, 65), (56, 69), (57, 58), (58, 59), (59, 60), (59, 72), (60, 61), (61, 62), (62, 63),
+    (63, 64), (63, 73), (64, 65), (65, 66), (66, 67), (67, 68), (67, 74), (68, 69), (69, 70), (70, 71),
+    (71, 75), (72, 78), (73, 82), (74, 86), (75, 90), (76, 77), (76, 91), (77, 78), (78, 79), (79, 80),
+    (80, 81), (80, 92), (81, 82), (82, 83), (83, 84), (84, 85), (84, 93), (85, 86), (86, 87), (87, 88),
+    (88, 89), (88, 94), (89, 90), (91, 95), (92, 99), (93, 103), (94, 107), (95, 96), (96, 97), (97, 98),
+    (97, 110), (98, 99), (99, 100), (100, 101), (101, 102), (101, 111), (102, 103), (103, 104), (104, 105),
+    (105, 106), (105, 112), (106, 107), (107, 108), (108, 109), (109, 113), (110, 115), (111, 119), (112, 123),
+    (113, 127), (114, 115), (115, 116), (116, 117), (117, 118), (118, 119), (119, 120), (120, 121), (121, 122),
+    (122, 123), (123, 124), (124, 125), (125, 126), (126, 127)
+]
