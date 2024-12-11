@@ -134,8 +134,7 @@ E.g., a Pauli gate returns 1 or 2 (pstr, coefficient) outputs.
         # Itererate over the pairs of pstr and coeff
         new_pstr, new_coeff = pstrs_and_coeffs[ii], pstrs_and_coeffs[ii+1]
         # Store the new_pstr and coeff in the aux_psum, add to existing coeff if new_pstr already exists there
-        # TODO the zero should be of the same type as the coefficient
-        aux_psum[new_pstr] = get(aux_psum, new_pstr, 0.0) + new_coeff
+        add!(aux_psum, new_pstr, new_coeff; precision=0)
     end
 
     # Delete the pstr in the psum that it is coming from
