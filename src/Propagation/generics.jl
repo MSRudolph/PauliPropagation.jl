@@ -83,7 +83,8 @@ function applymergetruncate!(gate, psum, aux_psum, thetas, param_idx, args...; k
     # Apply the gate to all Pauli strings in psum, potentially writing into auxillary aux_psum in the process.
     psum, aux_psum = applygatetoall!(gate, theta, psum, aux_psum; kwargs...)
 
-    # Any contents of psum and aux_psum are merged into psum, and aux_psum is cleared.
+    # Any contents of psum and aux_psum are merged into the larger of the two, which is returned as psum.
+    # The other is cleared and returned as aux_psum.
     psum, aux_psum = mergeandclear!(psum, aux_psum)
 
     # Check truncation conditions on all Pauli strings in psum and remove them if they are truncated.
