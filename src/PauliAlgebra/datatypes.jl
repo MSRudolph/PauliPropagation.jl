@@ -638,12 +638,30 @@ end
 """
     set!(psum::Dict{TermType, CoeffType}, pstr::TermType, coeff::CoeffType)
 
-In-place setting the coefficient of a Pauli string in a Pauli sum dictionary by providing the Pauli string `pstr` as a vector of Symbols acting on qubits `qinds`.
+In-place setting the coefficient of a Pauli string in a Pauli sum dictionary.
+The type of the Pauli string needs to be the keytype of the dictionary, and the coefficient `coeff` needs to be the keytype.
+If the coefficient is 0, the Pauli string is removed from the dictionary.
 """
 function set!(psum::Dict{TermType,CoeffType}, pstr::TermType, coeff::CoeffType) where {TermType,CoeffType}
-    psum[pstr] = coeff
+
+    if getnumcoeff(coeff) == 0
+        delete!(psum, pstr)
+    else
+        psum[pstr] = coeff
+    end
     return psum
 end
+
+"""
+    set!(psum::Dict{TermType, CoeffType}, pstr::TermType, coeff::Nothing)
+
+Catching the case where a coefficient in a Pauli sum dictionary is set to .
+Throws an error. 
+"""
+function set!(psum::Dict{TermType,CoeffType}, pstr::TermType, coeff::Nothing) where {TermType,CoeffType}
+    throw(ArgumentError("Cannot set the coefficient of a Pauli string to nothing. A likely cause is that the return value of a custom gate apply function is not set correctly."))
+end
+
 
 ## Helper functions
 """
