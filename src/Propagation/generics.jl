@@ -104,28 +104,38 @@ end
 """
     applygatetoall!(gate, theta psum, aux_psum, args...; kwargs...)
 
-2nd-level function below `applymergetruncate!` that applies one gate to all Pauli strings in `psum`, potentially using `aux_psum` in the process.
+2nd-level function below `applymergetruncate!` that applies one gate to all Pauli strings in `psum`, moving results into `aux_psum` in the process.
 This function can be overwritten for a custom gate if the lower-level functions `applygatetoone!` and `apply` are not sufficient.
 """
 function applygatetoall!(gate, theta, psum, aux_psum, args...; kwargs...)
 
     # Loop over all Pauli strings in psum and apply the gate to them.
     for (pstr, coeff) in psum
-        applygatetoone!(gate, pstr, coeff, theta, psum, aux_psum; kwargs...)
+        # apply gate to one Pauli string, move new Pauli strings to aux_psum
+        # return updated coefficient of pstr in psum, defaults to 0.0 but can be over-written for performance
+        updated_coeff = applygatetoone!(gate, pstr, coeff, theta, aux_psum; kwargs...)
+
+        # set the updated coefficient in the psum. 
+        # if if the updated coefficient is the same as the original, nothing is done.
+        # if the updated coefficient is 0.0, the Pauli string is removed from the psum. 
+        if updated_coeff != coeff
+            set!(psum, pstr, updated_coeff)
+        end
     end
 
     return psum, aux_psum
 end
 
 """
-    applygatetoone!(gate, pstr, coefficient, theta, psum, aux_psum, args...; kwargs...)
+    applygatetoone!(gate, pstr, coefficient, theta, aux_psum, args...; kwargs...)
 
-3nd-level function below `applymergetruncate!` that applies one gate to one Pauli string in `psum`, potentially using `aux_psum` in the process.
+3nd-level function below `applymergetruncate!` that applies one gate to one Pauli string in `psum`, moving results into `aux_psum` in the process.
+If the coefficient of the original `pstr` changes, the new coefficient can be returned, else return 0.0.
 This function can be overwritten for a custom gate if the lower-level function `apply` is not sufficient. 
 This is likely the the case if `apply` is not type-stable because it does not return a unique number of outputs. 
 E.g., a Pauli gate returns 1 or 2 (pstr, coefficient) outputs.
 """
-@inline function applygatetoone!(gate, pstr, coefficient, theta, psum, aux_psum, args...; kwargs...)
+@inline function applygatetoone!(gate, pstr, coefficient, theta, aux_psum, args...; kwargs...)
 
     # Get the (potentially new) pauli strings and their coefficients like (pstr1, coeff1, pstr2, coeff2, ...)
     pstrs_and_coeffs = apply(gate, pstr, theta, coefficient; kwargs...)
@@ -137,10 +147,7 @@ E.g., a Pauli gate returns 1 or 2 (pstr, coefficient) outputs.
         add!(aux_psum, new_pstr, new_coeff; precision=0)
     end
 
-    # Delete the pstr in the psum that it is coming from
-    delete!(psum, pstr)
-
-    return
+    return typeof(coefficient)(0)
 end
 
 
