@@ -114,11 +114,11 @@ function numcoefftype(::Type{PProp}) where {PProp<:PathProperties}
 end
 
 """
-    getnumcoeff(val::PathProperties)
+    tonumber(val::PathProperties)
 
 Get the numerical coefficient of a `PathProperties` wrapper.
 """
-function getnumcoeff(val::PathProperties)
+function tonumber(val::PathProperties)
     return val.coeff
 end
 

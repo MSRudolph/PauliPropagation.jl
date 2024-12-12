@@ -117,7 +117,7 @@ export
     plusfilter,
     plusfilter!,
     evaluateagainstdict,
-    getnumcoeff
+    tonumber
 
 include("numericalcertificates.jl")
 export

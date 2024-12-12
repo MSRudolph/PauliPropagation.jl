@@ -21,7 +21,7 @@ If not orthogonal, then the overlap is the coefficient of the `PauliString`.
 This is particularly useful for overlaps with stabilizer states.
 """
 function overlapbyorthogonality(pstr::PauliString, orthogonalfunc::Function)
-    return !orthogonalfunc(pstr) * getnumcoeff(pstr.coeff)
+    return !orthogonalfunc(pstr) * tonumber(pstr.coeff)
 end
 
 """
@@ -36,7 +36,7 @@ function overlapbyorthogonality(psum::Dict, orthogonalfunc::Function)
     val = numcoefftype(psum)(0)
     for (pstr, coeff) in psum
         if overlapbyorthogonality(pstr, orthogonalfunc)
-            val += getnumcoeff(coeff)
+            val += tonumber(coeff)
         end
     end
     return val
@@ -134,7 +134,7 @@ function overlapwithpaulisum(psum1::Dict{TermType,CoeffType}, psum2::Dict{TermTy
 
     # looping over d2 (default initstate_dict) because we know that this one is sparser
     for pstr in keys(shorter_psum)
-        val += getnumcoeff(get(longer_psum, pstr, NumberType(0.0))) * getnumcoeff(get(shorter_psum, pstr, NumberType(0.0)))
+        val += tonumber(get(longer_psum, pstr, NumberType(0.0))) * tonumber(get(shorter_psum, pstr, NumberType(0.0)))
     end
     return val
 end

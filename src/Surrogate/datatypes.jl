@@ -71,7 +71,7 @@ NodePathProperties(coeff::CircuitNode) = NodePathProperties(coeff, 0, 0, 0)
 Get the type of the numerical coefficient of a `NodePathProperties` object.
 Returns the type of the `cummulative_value` field of the stored `CircuitNode`.
 """
-numcoefftype(node::NodePathProperties) = typeof(getnumcoeff(node))
+numcoefftype(node::NodePathProperties) = typeof(tonumber(node))
 
 """
     numcoefftype(::Type{NodePathProperties})
@@ -83,12 +83,12 @@ numcoefftype(::Type{NodePathProperties}) = Float64
 
 
 """
-    getnumcoeff(val::NodePathProperties)
+    tonumber(val::NodePathProperties)
 
 Get the cummulative coefficient of a `NodePathProperties` node.
 This assumes that the surrogate has already been evaluated.
 """
-getnumcoeff(node::NodePathProperties) = node.coeff.cummulative_value
+tonumber(node::NodePathProperties) = node.coeff.cummulative_value
 
 
 """

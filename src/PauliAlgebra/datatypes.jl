@@ -329,15 +329,15 @@ function getcoeff(psum::PauliSum, pstr::Vector{Symbol})
 end
 
 
-# TODO getnumcoeff() for PauliSum and PauliString
+# TODO tonumber() for PauliSum and PauliString
 
 
 """
-    getnumcoeff(val::Number)
+    tonumber(val::Number)
 
 Trivial function returning a numerical value of a number.
 """
-function getnumcoeff(val::Number)
+function tonumber(val::Number)
     return val
 end
 
@@ -526,13 +526,13 @@ In-place addition of a Pauli string `pstr` with coefficient `coeff` to a Pauli s
 """
 function add!(psum::Dict{TermType,CoeffType}, pstr::TermType, coeff::CoeffType) where {TermType,CoeffType}
     # don't add if the coefficient is 0
-    if getnumcoeff(coeff) == 0
+    if tonumber(coeff) == 0
         return psum
     end
 
     if haskey(psum, pstr)
         new_coeff = psum[pstr] + coeff
-        if getnumcoeff(new_coeff) == 0
+        if tonumber(new_coeff) == 0
             delete!(psum, pstr)
         else
             psum[pstr] = new_coeff
@@ -642,14 +642,14 @@ In-place subtraction of a Pauli string `pstr` with coefficient `coeff` to a Paul
 """
 function subtract!(psum::Dict{TermType,CoeffType}, pstr::TermType, coeff::CoeffType) where {TermType,CoeffType}
     # don't add if the coefficient is 0
-    if getnumcoeff(coeff) == 0
+    if tonumber(coeff) == 0
         return psum
     end
 
     if haskey(psum, pstr)
         # if the new coefficient is exactly 0, delete the key
         new_coeff = psum[pstr] - coeff
-        if getnumcoeff(new_coeff) == 0
+        if tonumber(new_coeff) == 0
             delete!(psum, pstr)
         else
             psum[pstr] = new_coeff
@@ -683,7 +683,7 @@ The type of the Pauli string needs to be the keytype of the dictionary, and the 
 """
 function set!(psum::Dict{TermType,CoeffType}, pstr::TermType, coeff::CoeffType) where {TermType,CoeffType}
     # delete if the coefficient would be set to 0
-    if getnumcoeff(coeff) == 0
+    if tonumber(coeff) == 0
         delete!(psum, pstr)
 
     else
