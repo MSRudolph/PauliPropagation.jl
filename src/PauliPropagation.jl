@@ -95,8 +95,8 @@ export
     propagate,
     propagate!,
     applymergetruncate!,
-    applygatetoall!,
-    applygatetoone!,
+    applytoall!,
+    applyandadd!,
     mergeandclear!,
     merge
 
