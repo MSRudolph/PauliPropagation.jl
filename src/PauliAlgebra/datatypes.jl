@@ -693,6 +693,18 @@ function set!(psum::Dict{TermType,CoeffType}, pstr::TermType, coeff::CoeffType) 
 end
 
 """
+    delete!(psum::PauliSum{TermType, CoeffType}, pstr::TermType)
+
+Delete a Pauli string from a `PauliSum`.
+The type of the Pauli string needs to be the keytype of the dictionary, and the coefficient `coeff` needs to be the keytype.
+"""
+function Base.delete!(psum::PauliSum{TermType,CoeffType}, pstr::TermType) where {TermType,CoeffType}
+    # delete if the coefficient would be set to 0
+    delete!(psum.terms, pstr)
+    return psum
+end
+
+"""
     empty!(psum::PauliSum)
 
 Empty the `PauliSum` by emtpying the dictionary on the `terms` fields. 

@@ -77,7 +77,7 @@ function applymergetruncate!(gate, psum, aux_psum, thetas, param_idx, args...; k
     applytoall!(gate, theta, psum, aux_psum; kwargs...)
 
     # Any contents of psum and aux_psum are merged into the larger of the two, which is returned as psum.
-    # The other is cleared and returned as aux_psum.
+    # The other is emptied and returned as aux_psum.
     psum, aux_psum = mergeandempty!(psum, aux_psum)
 
     # Check truncation conditions on all Pauli strings in psum and remove them if they are truncated.
@@ -143,7 +143,7 @@ end
     mergeandempty!(psum, aux_psum)
 
 Merge `aux_psum` into `psum` using the `merge` function. `merge` can be overloaded for different coefficient types.
-Then clear `aux_psum` for the next iteration.
+Then empty `aux_psum` for the next iteration.
 """
 function mergeandempty!(psum, aux_psum)
     # merge the smaller dict into the larger one
@@ -232,7 +232,7 @@ A custom truncation function can be passed as `customtruncatefn` with the signat
         is_truncated = true
     end
     if is_truncated
-        set!(psum, pstr, coefftype(psum)(0.0))
+        delete!(psum, pstr)
     end
     return
 end
