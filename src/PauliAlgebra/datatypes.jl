@@ -99,7 +99,7 @@ end
 
 
 """
-    PauliSum(nqubits::Int, op_dict::Dict)
+    PauliSum(nqubits::Int, terms::Dict)
 
 `PauliSum`` is a struct that represents a sum of Pauli strings acting on `nqubits` qubits.
 It is a wrapper around a dictionary Dict(Pauli string => coefficient}, where the Pauli strings are typically unsigned Integers for efficiency reasons.
@@ -351,12 +351,12 @@ Returns the Pauli strings in a `PauliSum` and their coefficients as a list of `P
 topaulistrings(psum::PauliSum) = [PauliString(psum.nqubits, pauli, coeff) for (pauli, coeff) in psum.terms]
 
 """
-Copy a `PauliSum` by copying its `op_dict`.
+Copy a `PauliSum` by copying its `terms` field.
 """
 Base.copy(psum::PauliSum) = PauliSum(psum.nqubits, copy(psum.terms))
 
 """
-Iterator for `PauliSum` returns the iterator over its `op_dict`.
+Iterator for `PauliSum` returns the iterator over its `terms`.
 """
 Base.iterate(psum::PauliSum, state=1) = iterate(psum.terms, state)
 
@@ -685,11 +685,19 @@ function set!(psum::Dict{TermType,CoeffType}, pstr::TermType, coeff::CoeffType) 
     # delete if the coefficient would be set to 0
     if getnumcoeff(coeff) == 0
         delete!(psum, pstr)
-    end
 
-    psum[pstr] = coeff
+    else
+        psum[pstr] = coeff
+    end
     return psum
 end
+
+"""
+    empty!(psum::PauliSum)
+
+Empty the `PauliSum` by emtpying the dictionary on the `terms` fields. 
+"""
+Base.empty!(psum::PauliSum) = empty!(psum.terms)
 
 ## Helper functions
 function similar(psum::PauliSum{TermType,CoeffType}) where {TermType,CoeffType}

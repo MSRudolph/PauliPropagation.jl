@@ -19,6 +19,7 @@ export
     subtract,
     subtract!,
     set!,
+    empty!,
     inttosymbol,
     symboltoint,
     inttostring,
@@ -97,7 +98,7 @@ export
     applymergetruncate!,
     applytoall!,
     applyandadd!,
-    mergeandclear!,
+    mergeandempty!,
     merge
 
 include("stateoverlap.jl")

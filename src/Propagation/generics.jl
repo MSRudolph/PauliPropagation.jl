@@ -18,23 +18,23 @@ function propagate(circ, pstr::PauliString, thetas; kwargs...)
 end
 
 """
-    propagate(circ, psum::PauliSum, thetas; kwargs...)
+    propagate(circ, psum, thetas; kwargs...)
 
 Propagate a `PauliSum` through the circuit `circ` in the Heisenberg picture. 
 Parameters for the parametrized gates in `circ` are given by `thetas`.
 `kwargs` are passed to the truncation function. Supported by default are `max_weight`, `min_abs_coeff`, `max_freq`, and `max_sins`.
 A custom truncation function can be passed as `customtruncatefn` with the signature customtruncatefn(pstr::PauliStringType, coefficient)::Bool.
 """
-function propagate(circ, psum::PauliSum, thetas; kwargs...)
-    pauli_dict = propagate!(circ, deepcopy(psum.terms), thetas; kwargs...)
-    return PauliSum(psum.nqubits, pauli_dict)
+function propagate(circ, psum, thetas; kwargs...)
+    psum = propagate!(circ, deepcopy(psum), thetas; kwargs...)
+    return psum
 end
 
 
 """
     propagate!(circ, psum, thetas; kwargs...)
 
-Propagate a Pauli sum of type `Dict{PauliStringType,CoeffType}` through the circuit `circ` in the Heisenberg picture. 
+Propagate a Pauli sum  through the circuit `circ` in the Heisenberg picture. 
 The input `psum` will be modified.
 Parameters for the parametrized gates in `circ` are given by `thetas`.
 `kwargs` are passed to the truncation function. Supported by default are `max_weight`, `min_abs_coeff`, `max_freq`, and `max_sins`.
@@ -78,7 +78,7 @@ function applymergetruncate!(gate, psum, aux_psum, thetas, param_idx, args...; k
 
     # Any contents of psum and aux_psum are merged into the larger of the two, which is returned as psum.
     # The other is cleared and returned as aux_psum.
-    psum, aux_psum = mergeandclear!(psum, aux_psum)
+    psum, aux_psum = mergeandempty!(psum, aux_psum)
 
     # Check truncation conditions on all Pauli strings in psum and remove them if they are truncated.
     psum = checktruncationonall!(psum; kwargs...)
@@ -93,19 +93,19 @@ function applymergetruncate!(gate, psum, aux_psum, thetas, param_idx, args...; k
 end
 
 """
-    applytoall!(gate, theta psum, aux_psum, args...; kwargs...)
+    applytoall!(gate, theta psum, output_psum, args...; kwargs...)
 
 2nd-level function below `applymergetruncate!` that applies one gate to all Pauli strings in `psum`, moving results into `aux_psum` in the process.
 This function can be overwritten for a custom gate if the lower-level functions `applygatetoone!` and `apply` are not sufficient.
-In particular, this function can be used to manipulate both `psum` and `aux_psum` at the same time to reduce memory movement.
+In particular, this function can be used to manipulate both `psum` and `output_psum` at the same time to reduce memory movement.
 Note that manipulating `psum` on anything other than the current Pauli string will likely lead to errors.
 """
-function applytoall!(gate, theta, psum, aux_psum, args...; kwargs...)
+function applytoall!(gate, theta, psum, output_psum, args...; kwargs...)
 
     # Loop over all Pauli strings in psum and apply the gate to them.
     for (pstr, coeff) in psum
         # apply gate to one Pauli string, move new Pauli strings to aux_psum
-        applyandadd!(gate, pstr, coeff, theta, aux_psum; kwargs...)
+        applyandadd!(gate, pstr, coeff, theta, output_psum; kwargs...)
     end
     # Empty psum because everything was moved into aux_psum. They will later be swapped.
     # If we want to reduce unnecessary Pauli string movement, we can overload applygatetoall!()
@@ -115,14 +115,14 @@ function applytoall!(gate, theta, psum, aux_psum, args...; kwargs...)
 end
 
 """
-    applyandadd!(gate, pstr, coefficient, theta, aux_psum, args...; kwargs...)
+    applyandadd!(gate, pstr, coefficient, theta, output_psum, args...; kwargs...)
 
-3nd-level function below `applymergetruncate!` that applies one gate to one Pauli string in `psum`, moving results into `aux_psum` in the process.
+3nd-level function below `applymergetruncate!` that applies one gate to one Pauli string in `psum`, moving results into `output_psum` in the process.
 This function can be overwritten for a custom gate if the lower-level function `apply` is not sufficient. 
 This is likely the the case if `apply` is not type-stable because it does not return a unique number of outputs. 
 E.g., a Pauli gate returns 1 or 2 (pstr, coefficient) outputs.
 """
-@inline function applyandadd!(gate, pstr, coefficient, theta, aux_psum, args...; kwargs...)
+@inline function applyandadd!(gate, pstr, coefficient, theta, output_psum, args...; kwargs...)
 
     # Get the (potentially new) pauli strings and their coefficients like (pstr1, coeff1, pstr2, coeff2, ...)
     pstrs_and_coeffs = apply(gate, pstr, theta, coefficient; kwargs...)
@@ -131,7 +131,7 @@ E.g., a Pauli gate returns 1 or 2 (pstr, coefficient) outputs.
         # Itererate over the pairs of pstr and coeff
         new_pstr, new_coeff = pstrs_and_coeffs[ii], pstrs_and_coeffs[ii+1]
         # Store the new_pstr and coeff in the aux_psum, add to existing coeff if new_pstr already exists there
-        add!(aux_psum, new_pstr, new_coeff; precision=0)
+        add!(output_psum, new_pstr, new_coeff)
     end
 
     return
@@ -140,12 +140,12 @@ end
 
 ### MERGE
 """
-    mergeandclear!(psum, aux_psum)
+    mergeandempty!(psum, aux_psum)
 
 Merge `aux_psum` into `psum` using the `merge` function. `merge` can be overloaded for different coefficient types.
 Then clear `aux_psum` for the next iteration.
 """
-function mergeandclear!(psum, aux_psum)
+function mergeandempty!(psum, aux_psum)
     # merge the smaller dict into the larger one
     if length(psum) < length(aux_psum)
         psum, aux_psum = aux_psum, psum
@@ -156,6 +156,13 @@ function mergeandclear!(psum, aux_psum)
     empty!(aux_psum)
     return psum, aux_psum
 end
+
+"""
+    mergewith!(merge, psum::PauliSum, aux_psum::PauliSum)
+
+Merge two `PauliSum`s using the `merge` function on the coefficients. `merge` can be overloaded for different coefficient types.
+"""
+Base.mergewith!(merge, psum::PauliSum{TermType,CoeffType}, aux_psum::PauliSum{TermType,CoeffType}) where {TermType,CoeffType} = mergewith!(merge, psum.terms, aux_psum.terms)
 
 """
     merge(val1, val2)
@@ -225,7 +232,7 @@ A custom truncation function can be passed as `customtruncatefn` with the signat
         is_truncated = true
     end
     if is_truncated
-        delete!(psum, pstr)
+        set!(psum, pstr, coefftype(psum)(0.0))
     end
     return
 end
