@@ -32,21 +32,7 @@ end
 
 
 """
-    propagate!(circ, psum::PauliSum, thetas; kwargs...)
-
-Propagate a `PauliSum` through the circuit `circ` in the Heisenberg picture. 
-The input `psum` will be modified.
-Parameters for the parametrized gates in `circ` are given by `thetas`.
-`kwargs` are passed to the truncation function. Supported by default are `max_weight`, `min_abs_coeff`, `max_freq`, and `max_sins`.
-A custom truncation function can be passed as `customtruncatefn` with the signature customtruncatefn(pstr::PauliStringType, coefficient)::Bool.
-"""
-function propagate!(circ, psum::PauliSum, thetas; kwargs...)
-    propagate!(circ, psum.terms, thetas; kwargs...)
-    return psum
-end
-
-"""
-    propagate!(circ, psum::Dict, thetas; kwargs...)
+    propagate!(circ, psum, thetas; kwargs...)
 
 Propagate a Pauli sum of type `Dict{PauliStringType,CoeffType}` through the circuit `circ` in the Heisenberg picture. 
 The input `psum` will be modified.
@@ -54,11 +40,12 @@ Parameters for the parametrized gates in `circ` are given by `thetas`.
 `kwargs` are passed to the truncation function. Supported by default are `max_weight`, `min_abs_coeff`, `max_freq`, and `max_sins`.
 A custom truncation function can be passed as `customtruncatefn` with the signature customtruncatefn(pstr::PauliStringType, coefficient)::Bool.
 """
-function propagate!(circ, psum::Dict, thetas; kwargs...)
-    # TODO: Should we have a version of this that doesn't require thetas and uses surrogate code?
+function propagate!(circ, psum, thetas; kwargs...)
+
+    # start from the last parameter
     param_idx = length(thetas)
 
-    aux_psum = typeof(psum)()  # pre-allocating somehow doesn't do anything
+    aux_psum = similar(psum)
 
     ## TODO:
     # - decide where to reverse the circuit

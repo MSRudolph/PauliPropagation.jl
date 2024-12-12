@@ -692,6 +692,16 @@ function set!(psum::Dict{TermType,CoeffType}, pstr::TermType, coeff::CoeffType) 
 end
 
 ## Helper functions
+function similar(psum::PauliSum{TermType,CoeffType}) where {TermType,CoeffType}
+    return PauliSum(psum.nqubits, similar(psum.terms))
+end
+
+function similar(psum::Dict{TermType,CoeffType}) where {TermType,CoeffType}
+    new_psum = Dict{TermType,CoeffType}()
+    sizehint!(new_psum, length(psum))
+    return new_psum
+end
+
 """
 Converts coefficient to a float-type it it is an integer-type because the Pauli dictionaries need to be strictly typed and will likely become floats during propagation through a circuit.
 """
