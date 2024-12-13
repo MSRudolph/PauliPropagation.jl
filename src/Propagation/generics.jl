@@ -8,7 +8,8 @@
     propagate(circ, pstr::PauliString, thetas; kwargs...)
 
 Propagate a `PauliString` through the circuit `circ` in the Heisenberg picture. 
-Parameters for the parametrized gates in `circ` are given by `thetas`.
+This means that the circuit is applied to the Pauli string in reverse order, and the action of each gate is its conjugate action.
+Parameters for the parametrized gates in `circ` are given by `thetas`, and need to be passed as if the circuit was applied as written in the Schrödinger picture.
 `kwargs` are passed to the truncation function. Supported by default are `max_weight`, `min_abs_coeff`, `max_freq`, and `max_sins`.
 A custom truncation function can be passed as `customtruncatefn` with the signature customtruncatefn(pstr::PauliStringType, coefficient)::Bool.
 """
@@ -21,7 +22,8 @@ end
     propagate(circ, psum, thetas; kwargs...)
 
 Propagate a `PauliSum` through the circuit `circ` in the Heisenberg picture. 
-Parameters for the parametrized gates in `circ` are given by `thetas`.
+This means that the circuit is applied to the Pauli sum in reverse order, and the action of each gate is its conjugate action.
+Parameters for the parametrized gates in `circ` are given by `thetas`, and need to be passed as if the circuit was applied as written in the Schrödinger picture.
 `kwargs` are passed to the truncation function. Supported by default are `max_weight`, `min_abs_coeff`, `max_freq`, and `max_sins`.
 A custom truncation function can be passed as `customtruncatefn` with the signature customtruncatefn(pstr::PauliStringType, coefficient)::Bool.
 """
@@ -35,8 +37,9 @@ end
     propagate!(circ, psum, thetas; kwargs...)
 
 Propagate a Pauli sum  through the circuit `circ` in the Heisenberg picture. 
+This means that the circuit is applied to the Pauli sum in reverse order, and the action of each gate is its conjugate action.
 The input `psum` will be modified.
-Parameters for the parametrized gates in `circ` are given by `thetas`.
+Parameters for the parametrized gates in `circ` are given by `thetas`, and need to be passed as if the circuit was applied as written in the Schrödinger picture.
 `kwargs` are passed to the truncation function. Supported by default are `max_weight`, `min_abs_coeff`, `max_freq`, and `max_sins`.
 A custom truncation function can be passed as `customtruncatefn` with the signature customtruncatefn(pstr::PauliStringType, coefficient)::Bool.
 """
@@ -64,7 +67,7 @@ end
 
 1st-level function below `propagate!` that applies one gate to all Pauli strings in `psum`, potentially using `aux_psum` in the process,
 and merges everything back into `psum`. Truncations are checked here after merging.
-This function can be overwritten for a custom gate if the lower-level functions `applygatetoall!`, `applygatetoone!`, and `apply` are not sufficient.
+This function can be overwritten for a custom gate if the lower-level functions `applytoall!`, `applyandadd!`, and `apply` are not sufficient.
 A custom truncation function can be passed as `customtruncatefn` with the signature customtruncatefn(pstr::PauliStringType, coefficient)::Bool.
 """
 function applymergetruncate!(gate, psum, aux_psum, thetas, param_idx, args...; kwargs...)
@@ -95,8 +98,9 @@ end
 """
     applytoall!(gate, theta psum, output_psum, args...; kwargs...)
 
-2nd-level function below `applymergetruncate!` that applies one gate to all Pauli strings in `psum`, moving results into `aux_psum` in the process.
-This function can be overwritten for a custom gate if the lower-level functions `applygatetoone!` and `apply` are not sufficient.
+2nd-level function below `applymergetruncate!` that applies one gate to all Pauli strings in `psum`, moving results into `output_psum` by default.
+After this functions, Pauli strings in remaining in `psum` and `output_psum` are merged.
+This function can be overwritten for a custom gate if the lower-level functions `applyandadd!` and `apply` are not sufficient.
 In particular, this function can be used to manipulate both `psum` and `output_psum` at the same time to reduce memory movement.
 Note that manipulating `psum` on anything other than the current Pauli string will likely lead to errors.
 """
@@ -117,7 +121,7 @@ end
 """
     applyandadd!(gate, pstr, coefficient, theta, output_psum, args...; kwargs...)
 
-3nd-level function below `applymergetruncate!` that applies one gate to one Pauli string in `psum`, moving results into `output_psum` in the process.
+3rd-level function below `applymergetruncate!` that applies one gate to one Pauli string in `psum`, moving results into `output_psum` by default.
 This function can be overwritten for a custom gate if the lower-level function `apply` is not sufficient. 
 This is likely the the case if `apply` is not type-stable because it does not return a unique number of outputs. 
 E.g., a Pauli gate returns 1 or 2 (pstr, coefficient) outputs.

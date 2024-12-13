@@ -699,7 +699,6 @@ Delete a Pauli string from a `PauliSum`.
 The type of the Pauli string needs to be the keytype=`TermType` of the dictionary, and the coefficient `coeff` needs to be the valuetype=`CoeffType`.
 """
 function Base.delete!(psum::PauliSum{TT,CT}, pstr::TT) where {TT,CT}
-    # delete if the coefficient would be set to 0
     delete!(psum.terms, pstr)
     return psum
 end
@@ -707,7 +706,7 @@ end
 """
     empty!(psum::PauliSum)
 
-Empty the `PauliSum` by emtpying the dictionary on the `terms` fields. 
+Empty the `PauliSum` by emptying the dictionary on the `terms` fields. 
 """
 Base.empty!(psum::PauliSum) = empty!(psum.terms)
 

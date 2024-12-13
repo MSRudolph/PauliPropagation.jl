@@ -43,17 +43,17 @@ end
 
 ### Clifford gates
 """
-    applyandadd!(gate::CliffordGate, pstr, coeff, theta, aux_psum, args...; kwargs...)
+    applyandadd!(gate::CliffordGate, pstr, coeff, theta, output_psum, args...; kwargs...)
 
 Overload of `applyandadd!` for `CliffordGate` gates.
 Use `set!()` instead of `add!()` because Clifford gates create non-overlapping Pauli strings.
 `applytoall!` does not need to be adapted.
 """
-@inline function applyandadd!(gate::CliffordGate, pstr, coeff, theta, aux_psum, args...; kwargs...)
+@inline function applyandadd!(gate::CliffordGate, pstr, coeff, theta, output_psum, args...; kwargs...)
 
     new_pstr, new_coeff = apply(gate, pstr, theta, coeff; kwargs...)
     # we can set the coefficient because Cliffords create non-overlapping Pauli strings
-    set!(aux_psum, new_pstr, new_coeff)
+    set!(output_psum, new_pstr, new_coeff)
 
     return
 end

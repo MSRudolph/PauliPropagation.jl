@@ -4,6 +4,7 @@
     propagate(circ, pstr::PauliString; kwargs...)
 
 Propagate a `PauliString` through the circuit `circ` in the Heisenberg picture. 
+This means that the circuit is applied to the Pauli sum in reverse order, and the action of each gate is its conjugate action.
 `kwargs` are passed to the truncation function. Supported by default are `max_weight`, `min_abs_coeff`, `max_freq`, and `max_sins`.
 A custom truncation function can be passed as `customtruncatefn` with the signature customtruncatefn(pstr::PauliStringType, coefficient)::Bool.
 """
@@ -17,6 +18,7 @@ end
     propagate(circ, psum::PauliSum; kwargs...)
 
 Propagate a `PauliSum` through the circuit `circ` in the Heisenberg picture. 
+This means that the circuit is applied to the Pauli sum in reverse order, and the action of each gate is its conjugate action.
 `kwargs` are passed to the truncation function. Supported by default are `max_weight`, `min_abs_coeff`, `max_freq`, and `max_sins`.
 A custom truncation function can be passed as `customtruncatefn` with the signature customtruncatefn(pstr::PauliStringType, coefficient)::Bool.
 """
@@ -31,6 +33,7 @@ end
     propagate!(circ, psum::PauliSum; kwargs...)
 
 Propagate a `PauliSum` through the circuit `circ` in the Heisenberg picture. 
+This means that the circuit is applied to the Pauli sum in reverse order, and the action of each gate is its conjugate action.
 The input `psum` will be modified.
 `kwargs` are passed to the truncation function. Supported by default are `max_weight`, `min_abs_coeff`, `max_freq`, and `max_sins`.
 A custom truncation function can be passed as `customtruncatefn` with the signature customtruncatefn(pstr::PauliStringType, coefficient)::Bool.
@@ -49,6 +52,7 @@ end
     propagate!(circ, d::Dict{TermType,NodePathProperties}; kwargs...)
 
 Propagate a `Dict{PauliStringType,CoeffType}` through the circuit `circ` in the Heisenberg picture. 
+This means that the circuit is applied to the Pauli sum in reverse order, and the action of each gate is its conjugate action.
 The input `psum` will be modified.
 `kwargs` are passed to the truncation function. Supported by default are `max_weight`, `min_abs_coeff`, `max_freq`, and `max_sins`.
 A custom truncation function can be passed as `customtruncatefn` with the signature customtruncatefn(pstr::PauliStringType, coefficient)::Bool.
