@@ -23,11 +23,7 @@ Maps a vector of symbols `pstr` acting on the indices `qinds` to an integer Paul
 """
 function symboltoint(nqubits::Integer, pstr, qinds)
     inttype = getinttype(nqubits)
-    converted_pstr = inttype(0)
-    for (qind, pauli) in zip(qinds, pstr)
-        converted_pstr = setpauli(converted_pstr, pauli, qind)
-    end
-    return converted_pstr
+    return symboltoint(inttype, pstr, qinds)
 end
 
 """
@@ -36,10 +32,35 @@ end
 Maps a single symbol `pauli` acting on the index `qind` to an integer Pauli string. Other sites are set to the identity.
 """
 function symboltoint(nqubits::Integer, pauli::Symbol, qind::Integer)
-    inttype = getinttype(nqubits)
-    converted_pauli = inttype(0)
+    TT = getinttype(nqubits)
+    return symboltoint(TT, pauli, qind)
+end
+
+"""
+    symboltoint(::TermType, pauli::Symbol, qind::Integer)
+
+Maps a single symbol `pauli` acting on the index `qind` to an integer Pauli string with type `TermType`.
+Other sites are set to the identity.
+"""
+function symboltoint(::Type{TT}, pauli::Symbol, qind::Integer) where {TT<:PauliStringType}
+    converted_pauli = zero(TT)
     converted_pauli = setpauli(converted_pauli, pauli, qind)
     return converted_pauli
+end
+
+"""
+    symboltoint(::TermType, pstr, qinds)
+
+Maps a vector of symbols `pstr` acting on the indices `qinds` to an integer Pauli string with type `TermType`.
+Other sites are set to the identity.
+`qinds` can be any iterable.
+"""
+function symboltoint(::Type{TT}, pstr, qinds) where {TT<:PauliStringType}
+    converted_pstr = zero(TT)
+    for (qind, pauli) in zip(qinds, pstr)
+        converted_pstr = setpauli(converted_pstr, pauli, qind)
+    end
+    return converted_pstr
 end
 
 """
@@ -47,7 +68,7 @@ end
 
 Maps an integer Pauli string to a vector of symbols.
 """
-function inttosymbol(pstr::PauliStringType, nqubits::Integer)  # TODO: does the argument order need to change?
+function inttosymbol(pstr::PauliStringType, nqubits::Integer)
     converted_pstr = [:I for _ in 1:nqubits]
     for ii in 1:nqubits
         converted_pstr[ii] = inttosymbol(getpauli(pstr, ii))

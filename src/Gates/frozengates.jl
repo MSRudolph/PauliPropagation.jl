@@ -46,16 +46,6 @@ function freeze(gates, parameters)
 end
 
 """
-    tofastgates(frozen_gate::PauliRotation, nqubits::Integer)
-
-Transforms a `PauliRotation` to a `FastPauliRotation` which carries the integer representation of the gate generator.
-This allows for significantly faster computation with the gate.
-"""
-function tofastgates(frozen_gate::FrozenGate, nqubits::Integer)
-    return FrozenGate(tofastgates(frozen_gate.gate, nqubits), frozen_gate.parameter)
-end
-
-"""
 Get the maximum qubit index that the frozen gate acts on.
 """
 _getmaxqubits(frozen_gate::FrozenGate) = _getmaxqubits(frozen_gate.gate)

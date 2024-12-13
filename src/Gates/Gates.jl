@@ -13,7 +13,6 @@ Abstract type for static gates are not parametrized.
 """
 abstract type StaticGate <: Gate end
 
-include("fastgates.jl")
 include("frozengates.jl")
 include("paulirotations.jl")
 include("cliffordgates.jl")

@@ -17,6 +17,9 @@ It fixes the type-instability of the `apply()` function and reduces moving Pauli
 `psum` and `aux_psum` are merged later.
 """
 function applytoall!(gate::PauliRotationUnion, theta, psum, aux_psum, args...; kwargs...)
+    # turn the (potentially) PauliRotation gate into a FastPauliRotation gate
+    # this allows for faster operations
+    gate = tofastpaulirotation(gate, paulitype(psum))
 
     # loop over all Pauli strings and their coefficients in the Pauli sum
     for (pstr, coeff) in psum

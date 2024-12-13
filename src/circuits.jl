@@ -180,7 +180,6 @@ function hardwareefficientcircuit(nqubits::Integer, nlayers::Integer; topology=n
         end
     end
 
-    tofastgates!(circuit)
     return circuit
 end
 
@@ -214,7 +213,6 @@ function efficientsu2circuit(nqubits::Integer, nlayers::Integer; topology=nothin
         end
     end
 
-    tofastgates!(circuit)
     return circuit
 end
 
@@ -250,7 +248,6 @@ function tfitrottercircuit(nqubits::Integer, nlayers::Integer; topology=nothing,
         zzlayer(circuit)
     end
 
-    tofastgates!(circuit)
     return circuit
 end
 
@@ -295,8 +292,6 @@ function tiltedtfitrottercircuit(n_qubits, n_layers; topology=nothing)
         xlayer(circuit)
     end
 
-    tofastgates!(circuit)
-
     return circuit
 end
 
@@ -328,7 +323,6 @@ function heisenbergtrottercircuit(nqubits::Integer, nlayers::Integer; topology=n
         end
     end
 
-    tofastgates!(circuit)
     return circuit
 end
 
@@ -352,7 +346,6 @@ function su4ansatz(nqubits::Integer, nlayers::Integer; topology=nothing)
         end
     end
 
-    tofastgates!(circuit)
     return circuit
 end
 
@@ -377,7 +370,6 @@ function qcnnansatz(nqubits::Integer; periodic=false)
         appendSU4!(circuit, pair)
     end
 
-    tofastgates!(circuit)
     return circuit
 end
 

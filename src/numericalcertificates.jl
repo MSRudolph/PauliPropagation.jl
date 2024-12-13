@@ -60,6 +60,9 @@ function estimateaverageerror!(circ, pstr::PauliString, error_array::AbstractVec
         circ = reverse(circ)
     end
 
+    # turn the PauliRotation gates into FastPauliRotation gates
+    circ = tofastpaulirotation(circ, pstr.nqubits)
+
     n_mcsamples = length(error_array)
     @threads for ii in 1:n_mcsamples
         final_pstr, is_truncated = montecarlopropagation(circ, pstr, thetas, split_probabilities; circuit_reversed=true, kwargs...)

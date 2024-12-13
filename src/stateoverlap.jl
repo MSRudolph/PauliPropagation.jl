@@ -94,7 +94,7 @@ For example, `overlapwithcomputational(psum, [1,2,4])` returns the overlap with 
 function overlapwithcomputational(psum::PauliSum, onebitinds)
     val = numcoefftype(psum)(0)
     for (pstr, coeff) in psum
-        val += getnumcoeff(coeff) * _calcsignwithones(pstr, onebitinds)
+        val += tonumber(coeff) * _calcsignwithones(pstr, onebitinds)
     end
     return val
 end
@@ -106,7 +106,7 @@ Calculates the overlap of a Pauli string with the computational basis state whic
 For example, `overlapwithcomputational(pstr, [1,2,4])` returns the overlap with `|1101000...>` and will be either zero or plus/minus `pstr.coeff`.
 """
 function overlapwithcomputational(pstr::PauliString, onebitinds)
-    return _calcsignwithones(pstr.term, onebitinds) * getnumcoeff(pstr.coeff)
+    return _calcsignwithones(pstr.term, onebitinds) * tonumber(pstr.coeff)
 end
 
 function _calcsignwithones(pstr::PauliStringType, onebitinds)
@@ -117,7 +117,7 @@ function _calcsignwithones(pstr::PauliStringType, onebitinds)
     end
 
     # factor is +-1 per the parity of pstr's Z=3 values at the bit=1 indices
-    return (-1) ^ count(i -> getpauli(pstr,i) == 3, onebitinds)
+    return (-1)^count(i -> getpauli(pstr, i) == 3, onebitinds)
 end
 
 """

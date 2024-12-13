@@ -44,11 +44,11 @@ using Test
   @test all(apply(gate, pstr.term, th) .≈ (0x01, cos(th), 0x02, -sin(th)))
 end
 
-@testset "Test fastgate" begin
+@testset "Test FastPauliRotation" begin
   nq = 2
   th = randn()
   gate = PauliRotation([:X, :Z], [1, 2])
-  fastgate = tofastgates(gate, nq)
+  fastgate = tofastpaulirotation(gate, nq)
   pstr = PauliString(nq, :Z, 2)
   @test apply(gate, pstr.term, th) == apply(fastgate, pstr.term, th)
 end

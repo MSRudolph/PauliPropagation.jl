@@ -43,7 +43,7 @@ end
 A parametrized Pauli rotation gate acting on the qubits `qinds` with the Pauli string `symbols`.
 The `term` is the integer representation of the Pauli string with the correct integer type for the total number of qubits.
 This allows for faster application of the gate.
-See `tofastgates` for conversion from `PauliRotation`, which is the easiest way to construct a `FastPauliRotation`.
+See `tofastpaulirotation` for conversion from `PauliRotation`, which is the easiest way to construct a `FastPauliRotation`.
 """
 struct FastPauliRotation{T} <: ParametrizedGate where {T<:PauliStringType}  # TODO rename
     symbols::Vector{Symbol}
@@ -66,18 +66,63 @@ Union type for `PauliRotation` and `FastPauliRotation`, useful for functions whi
 """
 PauliRotationUnion = Union{PauliRotation,FastPauliRotation}
 
+
 """
-    tofastgates(pauli_gate::PauliRotation, nqubits::Integer)
+    tofastpaulirotation(circ::Vector{Gate})
+
+Returns a circuit where `PauliRotation` gates are transformed to `FastPauliRotation` gates.
+This allows for significantly faster computation with the gate.
+"""
+function tofastpaulirotation(circ::Vector{G}, nqubits::Integer) where {G<:Gate}
+    TT = getinttype(nqubits)
+    return tofastpaulirotation(circ, TT)
+end
+
+"""
+    tofastpaulirotation(circ::Vector{Gate})
+
+Returns a circuit where `PauliRotation` gates are transformed to `FastPauliRotation` gates.
+This allows for significantly faster computation with the gate.
+"""
+function tofastpaulirotation(circ::Vector{G}, ::Type{TT}) where {G<:Gate,TT<:PauliStringType}
+    fast_circ = copy(circ)
+    for (ii, gate) in enumerate(fast_circ)
+        if isa(gate, PauliRotation)
+            fast_circ[ii] = tofastpaulirotation(gate, TT)
+        end
+    end
+    return fast_circ
+end
+
+"""
+    tofastpaulirotation(pauli_gate::PauliRotation, nqubits::Integer)
 
 Transforms a `PauliRotation` to a `FastPauliRotation` which carries the integer representation of the gate generator.
 This allows for significantly faster computation with the gate.
 """
-function tofastgates(pauli_gate::PauliRotation, nqubits::Integer)
-    base_pstr = getinttype(nqubits)(0)
-    for (qind, pauli) in zip(pauli_gate.qinds, pauli_gate.symbols)
-        base_pstr = setpauli(base_pstr, pauli, qind)
-    end
-    return FastPauliRotation(pauli_gate.symbols, pauli_gate.qinds, base_pstr)
+function tofastpaulirotation(pauli_gate::PauliRotation, nqubits::Integer)
+    pstr_term = symboltoint(nqubits, pauli_gate.symbols, pauli_gate.qinds)
+    return FastPauliRotation(pauli_gate.symbols, pauli_gate.qinds, pstr_term)
+end
+
+"""
+    tofastpaulirotation(fast_pauli_gate::PauliRotation, args...)
+
+Return the `FastPauliRotation` gate as is.
+"""
+function tofastpaulirotation(fast_pauli_gate::FastPauliRotation, args...)
+    return fast_pauli_gate
+end
+
+"""
+    tofastpaulirotation(pauli_gate::PauliRotation, ::TermType)
+
+Transforms a `PauliRotation` to a `FastPauliRotation` which carries the integer representation of the gate generator.
+This allows for significantly faster computation with the gate.
+"""
+function tofastpaulirotation(pauli_gate::PauliRotation, ::Type{TT}) where {TT<:PauliStringType}
+    pstr_term = symboltoint(TT, pauli_gate.symbols, pauli_gate.qinds)
+    return FastPauliRotation(pauli_gate.symbols, pauli_gate.qinds, pstr_term)
 end
 
 
