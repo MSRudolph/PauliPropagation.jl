@@ -667,7 +667,7 @@ end
     set!(psum::PauliSum{TermType, CoeffType}, pstr::TermType, coeff::CoeffType)
 
 In-place setting the coefficient of a Pauli string in a `PauliSum` dictionary.
-The type of the Pauli string needs to be the keytype of the dictionary, and the coefficient `coeff` needs to be the keytype.
+The type of the Pauli string needs to be the keytype=`TermType` of the dictionary, and the coefficient `coeff` needs to be the valuetype=`CoeffType`.
 """
 function set!(psum::PauliSum{TT,CT}, pstr::TT, coeff::CT) where {TT,CT}
     # TODO:Allow for truncation at this level
@@ -679,7 +679,7 @@ end
     set!(psum::Dict{TermType, CoeffType}, pstr::TermType, coeff::CoeffType)
 
 In-place setting the coefficient of a Pauli string in a Pauli sum dictionary.
-The type of the Pauli string needs to be the keytype of the dictionary, and the coefficient `coeff` needs to be the keytype.
+The type of the Pauli string needs to be the keytype=`TermType` of the dictionary, and the coefficient `coeff` needs to be the valuetype=`CoeffType`.
 """
 function set!(psum::Dict{TT,CT}, pstr::TT, coeff::CT) where {TT,CT}
     # delete if the coefficient would be set to 0
@@ -696,7 +696,7 @@ end
     delete!(psum::PauliSum{TermType, CoeffType}, pstr::TermType)
 
 Delete a Pauli string from a `PauliSum`.
-The type of the Pauli string needs to be the keytype of the dictionary, and the coefficient `coeff` needs to be the keytype.
+The type of the Pauli string needs to be the keytype=`TermType` of the dictionary, and the coefficient `coeff` needs to be the valuetype=`CoeffType`.
 """
 function Base.delete!(psum::PauliSum{TT,CT}, pstr::TT) where {TT,CT}
     # delete if the coefficient would be set to 0
