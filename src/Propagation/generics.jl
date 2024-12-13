@@ -84,7 +84,7 @@ function applymergetruncate!(gate, psum, aux_psum, thetas, param_idx, args...; k
     psum, aux_psum = mergeandempty!(psum, aux_psum)
 
     # Check truncation conditions on all Pauli strings in psum and remove them if they are truncated.
-    psum = checktruncationonall!(psum; kwargs...)
+    checktruncationonall!(psum; kwargs...)
 
     # If the gate was parametrized and used the theta, decrement theta index by one.
     # Don't go below index 1 because a theta will still be picked out for all remaining static gates.
@@ -201,7 +201,7 @@ function checktruncationonall!(
             kwargs...
         )
     end
-    return psum
+    return
 end
 
 """
