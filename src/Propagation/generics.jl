@@ -158,11 +158,11 @@ function mergeandempty!(psum, aux_psum)
 end
 
 """
-    mergewith!(merge, psum::PauliSum, aux_psum::PauliSum)
+    mergewith!(merge, psum::PauliSum{TermType, CoeffType}, aux_psum::PauliSum{TermType, CoeffType})
 
 Merge two `PauliSum`s using the `merge` function on the coefficients. `merge` can be overloaded for different coefficient types.
 """
-Base.mergewith!(merge, psum::PauliSum{TermType,CoeffType}, aux_psum::PauliSum{TermType,CoeffType}) where {TermType,CoeffType} = mergewith!(merge, psum.terms, aux_psum.terms)
+Base.mergewith!(merge, psum::PauliSum{TT,CT}, aux_psum::PauliSum{TT,CT}) where {TT,CT} = mergewith!(merge, psum.terms, aux_psum.terms)
 
 """
     merge(val1, val2)

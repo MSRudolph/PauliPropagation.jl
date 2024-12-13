@@ -171,7 +171,7 @@ end
 
 Check if two Pauli sums of type `PauliSum` commute.
 """
-function commutes(psum1::Dict{TermType,CoeffType1}, psum2::Dict{TermType,CoeffType2}) where {TermType<:PauliStringType,CoeffType1,CoeffType2}
+function commutes(psum1::Dict{TT,CT1}, psum2::Dict{TT,CT2}) where {TT,CT1,CT2}
     comm = commutator(psum1, psum2)
     return isempty(comm)
 end
@@ -263,14 +263,14 @@ end
 
 
 """
-    commutator(psum1::Dict{TermType,CoeffType1}, psum2::Dict{TermType,CoeffType2}) where {TermType<:PauliStringType,CoeffType1,CoeffType2}
+    commutator(psum1::Dict{TermType,CoeffType1}, psum2::Dict{TermType,CoeffType2})
 
 Calculate the commutator of two Pauli sums in the form of a `Dict`.
 """
-function commutator(psum1::Dict{TermType,CoeffType1}, psum2::Dict{TermType,CoeffType2}) where {TermType<:PauliStringType,CoeffType1,CoeffType2}
+function commutator(psum1::Dict{TT,CT1}, psum2::Dict{TT,CT2}) where {TT,CT1,CT2}
     # different types of coefficients are allowed but not different types of Pauli strings
 
-    new_pauli_dict = Dict{TermType,ComplexF64}()
+    new_pauli_dict = Dict{TT,ComplexF64}()
 
     for (pauli1, coeff1) in psum1, (pauli2, coeff2) in psum2
         if !commutes(pauli1, pauli2)

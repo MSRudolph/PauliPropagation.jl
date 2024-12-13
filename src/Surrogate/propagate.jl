@@ -53,7 +53,7 @@ The input `psum` will be modified.
 `kwargs` are passed to the truncation function. Supported by default are `max_weight`, `min_abs_coeff`, `max_freq`, and `max_sins`.
 A custom truncation function can be passed as `customtruncatefn` with the signature customtruncatefn(pstr::PauliStringType, coefficient)::Bool.
 """
-function propagate!(circ, psum::Dict{TermType,NodePathProperties}; kwargs...) where {TermType<:PauliStringType}
+function propagate!(circ, psum::Dict{TT,NodePathProperties}; kwargs...) where {TT}
     thetas = Array{Float64}(undef, countparameters(circ))
 
     param_idx = length(thetas)

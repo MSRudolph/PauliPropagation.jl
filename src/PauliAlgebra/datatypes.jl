@@ -9,18 +9,18 @@ import Base: -
 `PauliString` is a struct that represents a Pauli string on `nqubits` qubits.
 Commonly `term` is an unsigned Integer. See the other `PauliString` constructors for details. 
 """
-struct PauliString{TermType<:PauliStringType,CoeffType}
+struct PauliString{TT<:PauliStringType,CoeffType}
     nqubits::Int
-    term::TermType
+    term::TT
     coeff::CoeffType
 end
 
 """
-    PauliString(nqubits::Integer, pauli::Symbol, qind::Integer, coeff=1.0)
+    PauliString(nqubits::Int, pauli::Symbol, qind::Integer, coeff=1.0)
 
 Constructor for a `PauliString` on `nqubits` qubits from a Symbol (:X, :Y, :Z) representing a single non-identity Pauli on qubit `qind` with coefficient `coeff`.
 """
-function PauliString(nqubits::Integer, pauli::Symbol, qind::Integer, coeff=1.0)
+function PauliString(nqubits::Int, pauli::Symbol, qind::Integer, coeff=1.0)
     pauli = symboltoint(nqubits, pauli, qind)
     coeff = _convertcoefficients(coeff)
     return PauliString(nqubits, pauli, coeff)
@@ -31,7 +31,7 @@ end
 
 Constructor for a `PauliString` on `nqubits` qubits from a list of Symbols representing non-identity Paulis on qubits `qinds` with coefficient `coeff`.
 """
-function PauliString(nqubits, pstr, qinds, coeff=1.0)
+function PauliString(nqubits::Int, pstr::Vector{Symbol}, qinds, coeff=1.0)
     pauli = symboltoint(nqubits, pstr, qinds)
     coeff = _convertcoefficients(coeff)
     return PauliString(nqubits, pauli, coeff)
@@ -104,9 +104,9 @@ end
 `PauliSum`` is a struct that represents a sum of Pauli strings acting on `nqubits` qubits.
 It is a wrapper around a dictionary Dict(Pauli string => coefficient}, where the Pauli strings are typically unsigned Integers for efficiency reasons.
 """
-struct PauliSum{TermType<:Integer,CoeffType}
+struct PauliSum{TT,CT}
     nqubits::Int
-    terms::Dict{TermType,CoeffType}
+    terms::Dict{TT,CT}
 end
 
 """
@@ -114,16 +114,16 @@ end
 
 Contructor for an empty `PauliSum` on `nqubits` qubits. Element type defaults for Float64.
 """
-PauliSum(nqubits::Integer) = PauliSum(nqubits, Float64)
+PauliSum(nqubits::Int) = PauliSum(nqubits, Float64)
 
 """
-    PauliSum(nq::Int, ELTYPE::T) where {T<:DataType}
+    PauliSum(nq::Int, COEFFTYPE::T) where {T<:DataType}
 
 Contructor for an empty `PauliSum` on `nqubits` qubits. Element type can be provided.
 """
-function PauliSum(nq::Int, ELTYPE::T) where {T<:DataType}
-    TermType = getinttype(nq)
-    return PauliSum(nq, Dict{TermType,ELTYPE}())
+function PauliSum(nq::Int, COEFFTYPE::Type{CT}) where {CT}
+    TT = getinttype(nq)
+    return PauliSum(nq, Dict{TT,CT}())
 end
 
 """
@@ -131,7 +131,7 @@ end
 
 Constructor for a `PauliSum` on `nqubits` qubits from a dictionary of {Vector{Symbols} => coefficients}.
 """
-function PauliSum(nqubits::Integer, psum::Dict{Vector{Symbol},CoeffType}) where {CoeffType}
+function PauliSum(nqubits::Int, psum::Dict{Vector{Symbol},CoeffType}) where {CoeffType}
 
     _checknumberofqubits.(nqubits, keys(psum))
 
@@ -159,9 +159,9 @@ PauliSum(pstr::PauliString) = PauliSum(pstr.nqubits, pstr)
 
 Constructor for a `PauliSum` on `nqubits` qubits from a `PauliString`.
 """
-function PauliSum(nq::Integer, pstr::PauliString{TermType,CoeffType}) where {TermType,CoeffType}
+function PauliSum(nq::Integer, pstr::PauliString{TT,CT}) where {TT,CT}
     _checknumberofqubits(nq, pstr)
-    return PauliSum(nq, Dict{TermType,CoeffType}(pstr.term => pstr.coeff))
+    return PauliSum(nq, Dict{TT,CT}(pstr.term => pstr.coeff))
 end
 
 """
@@ -272,12 +272,12 @@ end
 Get the coefficient of an integer Pauli string in a `PauliSum`. Defaults to 0 if the Pauli string is not in the `PauliSum`.
 Requires that the integer Pauli string `pstr` is the same type as the integer Pauli strings in `psum`.
 """
-function getcoeff(psum::PauliSum{TermType,CoeffType}, pstr::TermType) where {TermType,CoeffType}
+function getcoeff(psum::PauliSum{TT,CT}, pstr::TT) where {TT,CT}
     # TODO: This is not yet compatible with `PathProperties`
-    if CoeffType <: PathProperties
+    if CT <: PathProperties
         throw(ArgumentError("This function is not yet compatible with PathProperties."))
     end
-    return get(psum.terms, pstr, CoeffType(0))
+    return get(psum.terms, pstr, CT(0))
 end
 
 """
@@ -286,7 +286,7 @@ end
 Get the coefficient of a `PauliString` in a `PauliSum`. Defaults to 0 if the Pauli string is not in the `PauliSum`.
 Requires that the integer Pauli string in `pstr` is the same type as the integer Pauli strings in `psum`.
 """
-function getcoeff(psum::PauliSum{TermType,CoeffType1}, pstr::PauliString{TermType,CoeffType2}) where {TermType,CoeffType1,CoeffType2}
+function getcoeff(psum::PauliSum{TT,CT1}, pstr::PauliString{TT,CT2}) where {TT,CT1,CT2}
     # TODO: This is not yet compatible with `PathProperties`
     if CoeffType <: PathProperties
         throw(ArgumentError("This function is not yet compatible with PathProperties."))
@@ -445,7 +445,7 @@ end
 
 Addition of two `PauliString`s. Returns a PauliSum.
 """
-function +(pstr1::PauliString{TermType,CoeffType}, pstr2::PauliString{TermType,CoeffType}) where {TermType,CoeffType}
+function +(pstr1::PauliString{TT,CT}, pstr2::PauliString{TT,CT}) where {TT,CT}
     _checknumberofqubits(pstr1, pstr2)
     psum = PauliSum(pstr1)
     add!(psum, pstr2)
@@ -457,7 +457,7 @@ end
 
 Addition of a `PauliString` to a `PauliSum`. Returns a `PauliSum`.
 """
-function +(psum::PauliSum{TermType,CoeffType}, pstr::PauliString{TermType,CoeffType}) where {TermType,CoeffType}
+function +(psum::PauliSum{TT,CT}, pstr::PauliString{TT,CT}) where {TT,CT}
     _checknumberofqubits(psum, pstr)
     psum = deepcopy(psum)
     add!(psum, pstr)
@@ -468,7 +468,7 @@ end
     +(psum1::PauliSum{TermType,CoeffType}, psum2::PauliSum{TermType,CoeffType})
 Addition of two `PauliSum`s. Returns a `PauliSum`.
 """
-function +(psum1::PauliSum{TermType,CoeffType}, psum2::PauliSum{TermType,CoeffType}) where {TermType,CoeffType}
+function +(psum1::PauliSum{TT,CT}, psum2::PauliSum{TT,CT}) where {TT,CT}
     _checknumberofqubits(psum1, psum2)
     psum1 = deepcopy(psum1)
     add!(psum1, psum2)
@@ -480,7 +480,7 @@ end
 
 Addition of a `PauliString` to a `PauliSum`. Changes the `PauliSum` in-place.
 """
-function add!(psum::PauliSum{TermType,CoeffType}, pstr::PauliString{TermType,CoeffType}) where {TermType,CoeffType}
+function add!(psum::PauliSum{TT,CT}, pstr::PauliString{TT,CT}) where {TT,CT}
     _checknumberofqubits(psum, pstr)
     add!(psum.terms, pstr.term, pstr.coeff)
     return psum
@@ -491,7 +491,7 @@ end
 
 Addition of two `PauliSum`s. Changes the first `PauliSum` in-place.
 """
-function add!(psum1::PauliSum{TermType,CoeffType}, psum2::PauliSum{TermType,CoeffType}) where {TermType,CoeffType}
+function add!(psum1::PauliSum{TT,CT}, psum2::PauliSum{TT,CT}) where {TT,CT}
     _checknumberofqubits(psum1, psum2)
     add!(psum1.terms, psum2.terms)
     return psum1
@@ -502,7 +502,7 @@ end
 
 Addition of two Pauli sum dicts. Changes the first pauli sum in-place.
 """
-function add!(psum1::Dict{TermType,CoeffType}, psum2::Dict{TermType,CoeffType}) where {TermType,CoeffType}
+function add!(psum1::Dict{TT,CT}, psum2::Dict{TT,CT}) where {TT,CT}
     for (pstr, coeff) in psum2
         add!(psum1, pstr, coeff)
     end
@@ -514,7 +514,7 @@ end
 
 In-place addition of a Pauli string `pstr` with coefficient `coeff` to a `PauliSum`.
 """
-function add!(psum::PauliSum{TermType,CoeffType}, pstr::TermType, coeff::CoeffType) where {TermType,CoeffType}
+function add!(psum::PauliSum{TT,CT}, pstr::TT, coeff::CT) where {TT,CT}
     add!(psum.terms, pstr, coeff)
     return psum
 end
@@ -524,7 +524,7 @@ end
 
 In-place addition of a Pauli string `pstr` with coefficient `coeff` to a Pauli sum dictionary.
 """
-function add!(psum::Dict{TermType,CoeffType}, pstr::TermType, coeff::CoeffType) where {TermType,CoeffType}
+function add!(psum::Dict{TT,CT}, pstr::TT, coeff::CT) where {TT,CT}
     # don't add if the coefficient is 0
     if tonumber(coeff) == 0
         return psum
@@ -560,7 +560,7 @@ end
 
 Subtraction of two `PauliString`s. Returns a PauliSum.
 """
-function -(pstr1::PauliString{TermType,CoeffType}, pstr2::PauliString{TermType,CoeffType}) where {TermType,CoeffType}
+function -(pstr1::PauliString{TT,CT}, pstr2::PauliString{TT,CT}) where {TT,CT}
     _checknumberofqubits(pstr1, pstr2)
     psum = PauliSum(pstr1)
     subtract!(psum, pstr2)
@@ -572,7 +572,7 @@ end
 
 Subtraction of a `PauliString` to a `PauliSum`. Returns a `PauliSum`.
 """
-function -(psum::PauliSum{TermType,CoeffType}, pstr::PauliString{TermType,CoeffType}) where {TermType,CoeffType}
+function -(psum::PauliSum{TT,CT}, pstr::PauliString{TT,CT}) where {TT,CT}
     _checknumberofqubits(psum, pstr)
     psum = deepcopy(psum)
     subtract!(psum, pstr)
@@ -584,7 +584,7 @@ end
 
 Subtract of two `PauliSum`s. Returns a `PauliSum`.
 """
-function -(psum1::PauliSum{TermType,CoeffType}, psum2::PauliSum{TermType,CoeffType}) where {TermType,CoeffType}
+function -(psum1::PauliSum{TT,CT}, psum2::PauliSum{TT,CT}) where {TT,CT}
     _checknumberofqubits(psum1, psum2)
     psum1 = deepcopy(psum1)
     subtract!(psum1, psum2)
@@ -596,7 +596,7 @@ end
 
 In-place subtraction a `PauliString` from a `PauliSum`. 
 """
-function subtract!(psum::PauliSum{TermType,CoeffType}, pstr::PauliString{TermType,CoeffType}) where {TermType,CoeffType}
+function subtract!(psum::PauliSum{TT,CT}, pstr::PauliString{TT,CT}) where {TT,CT}
     _checknumberofqubits(psum, pstr)
     add!(psum.terms, pstr.term, -pstr.coeff)
     return psum
@@ -607,7 +607,7 @@ end
 
 In-place subtraction a `PauliSum` from a `PauliSum`.
 """
-function subtract!(psum1::PauliSum{TermType,CoeffType}, psum2::PauliSum{TermType,CoeffType}) where {TermType,CoeffType}
+function subtract!(psum1::PauliSum{TT,CT}, psum2::PauliSum{TT,CT}) where {TT,CT}
     _checknumberofqubits(psum1, psum2)
     subtract!(psum1.terms, psum2.terms)
     return psum1
@@ -618,7 +618,7 @@ end
 
 In-place subtraction a Pauli sum dict a Pauli sum dict.
 """
-function subtract!(psum1::Dict{TermType,CoeffType}, psum2::Dict{TermType,CoeffType}) where {TermType,CoeffType}
+function subtract!(psum1::Dict{TT,CT}, psum2::Dict{TT,CT}) where {TT,CT}
     for (pstr, coeff) in psum2
         add!(psum1, pstr, -coeff)
     end
@@ -630,7 +630,7 @@ end
 
 In-place subtraction of a Pauli string `pstr` with coefficient `coeff` to a `PauliSum`.
 """
-function subtract!(psum::PauliSum{TermType,CoeffType}, pstr::TermType, coeff::CoeffType) where {TermType,CoeffType}
+function subtract!(psum::PauliSum{TT,CT}, pstr::TT, coeff::CT) where {TT,CT}
     subtract!(psum.terms, pstr, coeff)
     return psum
 end
@@ -640,7 +640,7 @@ end
 
 In-place subtraction of a Pauli string `pstr` with coefficient `coeff` to a Pauli sum dictionary.
 """
-function subtract!(psum::Dict{TermType,CoeffType}, pstr::TermType, coeff::CoeffType) where {TermType,CoeffType}
+function subtract!(psum::Dict{TT,CT}, pstr::TT, coeff::CT) where {TT,CT}
     # don't add if the coefficient is 0
     if tonumber(coeff) == 0
         return psum
@@ -669,7 +669,7 @@ end
 In-place setting the coefficient of a Pauli string in a `PauliSum` dictionary.
 The type of the Pauli string needs to be the keytype of the dictionary, and the coefficient `coeff` needs to be the keytype.
 """
-function set!(psum::PauliSum{TermType,CoeffType}, pstr::TermType, coeff::CoeffType) where {TermType,CoeffType}
+function set!(psum::PauliSum{TT,CT}, pstr::TT, coeff::CT) where {TT,CT}
     # TODO:Allow for truncation at this level
     set!(psum.terms, pstr, coeff)
     return psum
@@ -681,7 +681,7 @@ end
 In-place setting the coefficient of a Pauli string in a Pauli sum dictionary.
 The type of the Pauli string needs to be the keytype of the dictionary, and the coefficient `coeff` needs to be the keytype.
 """
-function set!(psum::Dict{TermType,CoeffType}, pstr::TermType, coeff::CoeffType) where {TermType,CoeffType}
+function set!(psum::Dict{TT,CT}, pstr::TT, coeff::CT) where {TT,CT}
     # delete if the coefficient would be set to 0
     if tonumber(coeff) == 0
         delete!(psum, pstr)
@@ -698,7 +698,7 @@ end
 Delete a Pauli string from a `PauliSum`.
 The type of the Pauli string needs to be the keytype of the dictionary, and the coefficient `coeff` needs to be the keytype.
 """
-function Base.delete!(psum::PauliSum{TermType,CoeffType}, pstr::TermType) where {TermType,CoeffType}
+function Base.delete!(psum::PauliSum{TT,CT}, pstr::TT) where {TT,CT}
     # delete if the coefficient would be set to 0
     delete!(psum.terms, pstr)
     return psum
@@ -712,12 +712,12 @@ Empty the `PauliSum` by emtpying the dictionary on the `terms` fields.
 Base.empty!(psum::PauliSum) = empty!(psum.terms)
 
 ## Helper functions
-function similar(psum::PauliSum{TermType,CoeffType}) where {TermType,CoeffType}
+function similar(psum::PauliSum{TT,CT}) where {TT,CT}
     return PauliSum(psum.nqubits, similar(psum.terms))
 end
 
-function similar(psum::Dict{TermType,CoeffType}) where {TermType,CoeffType}
-    new_psum = Dict{TermType,CoeffType}()
+function similar(psum::Dict{TT,CT}) where {TT,CT}
+    new_psum = Dict{TT,CT}()
     sizehint!(new_psum, length(psum))
     return new_psum
 end

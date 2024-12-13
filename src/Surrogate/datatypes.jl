@@ -133,7 +133,7 @@ In-place setting the coefficient of a Pauli string in a Pauli sum dictionary.
 The type of the Pauli string needs to be the keytype of the dictionary, and the coefficient `coeff` needs to be the keytype.
 If the coefficient is 0, the Pauli string is removed from the dictionary.
 """
-function set!(psum::Dict{TermType,NodePathProperties}, pstr::TermType, coeff::NodePathProperties) where {TermType}
+function set!(psum::Dict{TT,NodePathProperties}, pstr::TT, coeff::NodePathProperties) where {TT}
     psum[pstr] = coeff
     return psum
 end
