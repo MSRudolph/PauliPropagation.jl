@@ -171,9 +171,9 @@ function apply(gate::PauliRotation, pstr::PauliStringType, theta, coefficient=1.
 end
 
 """
-    applynoncummuting(gate::PauliRotationUnion, pstr::PauliStringType, theta, coefficient=1.0; kwargs...)
+    applynoncummuting(gate::PauliRotation, pstr::PauliStringType, theta, coefficient=1.0; kwargs...)
 
-Apply a `(Masked)PauliRotation` with an angle `theta` and a coefficient `coefficient` to an integer Pauli string,
+Apply a `PauliRotation` with an angle `theta` and a coefficient `coefficient` to an integer Pauli string,
 assuming that the gate does not commute with the Pauli string.
 Returns two pairs of (pstr, coefficient) as one tuple.
 Currently `kwargs` are passed to `applycos` and `applysin` for the Surrogate.
