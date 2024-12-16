@@ -22,6 +22,6 @@ end
 """
 Pretty print for `TGate` implemented as frozen Z-Pauli gate.
 """
-function Base.show(io::IO, frozengate::FrozenGate{PG,Float64}) where {PG<:Union{PauliRotation,MaskedPauliRotation}}
+function Base.show(io::IO, frozengate::FrozenGate{PR,Float64}) where {PR<:PauliRotationUnion}
     print(io, "TGate" * "($(frozengate.gate.qinds[1]))")
 end
