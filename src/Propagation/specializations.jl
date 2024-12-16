@@ -12,14 +12,14 @@
 """
     applytoall!(gate::PauliRotationUnion, theta, psum, aux_psum, args...; kwargs...)
 
-Overload of `applytoall!` for `PauliRotation` and `FastPauliRotation` gates. 
+Overload of `applytoall!` for `PauliRotation` and `MaskedPauliRotation` gates. 
 It fixes the type-instability of the `apply()` function and reduces moving Pauli strings between `psum` and `aux_psum`.
 `psum` and `aux_psum` are merged later.
 """
 function applytoall!(gate::PauliRotationUnion, theta, psum, aux_psum, args...; kwargs...)
-    # turn the (potentially) PauliRotation gate into a FastPauliRotation gate
+    # turn the (potentially) PauliRotation gate into a MaskedPauliRotation gate
     # this allows for faster operations
-    gate = tofastpaulirotation(gate, paulitype(psum))
+    gate = _tomaskedpaulirotation(gate, paulitype(psum))
 
     # loop over all Pauli strings and their coefficients in the Pauli sum
     for (pstr, coeff) in psum

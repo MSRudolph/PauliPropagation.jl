@@ -8,7 +8,7 @@ Returns the mean squared error of the truncated Pauli propagation simulation ave
 
 The length the `thetas` vector should be equal to the number of parametrized gates in the circuit. 
 Alternatively, `thetas` can be a single real number applicable for all parametrized gates.
-The default `thetas=π` or any other non-array values assume that the circuit consists only of `(Fast)PauliRotation` -`CliffordGate`.
+The default `thetas=π` or any other non-array values assume that the circuit consists only of `PauliRotation` -`CliffordGate`.
 For `PauliRotation`, the value should be the integration range of the parameters around zero.
 For other currently supported parametrized gates, potential splitting probabilities can be derived from the parameters (e.g., for `AmplitudeDampingNoise`). 
 We currently support no non-parametrized splitting gates. This may change in the future.
@@ -20,8 +20,8 @@ Note that `min_abs_coeff` is not supported here, as we consider errors integrate
 function estimateaverageerror(circ, pstr::PauliString, n_mcsamples::Integer, thetas=π; stateoverlapfunc=overlapwithzero, circuit_reversed=false, kwargs...)
     # this function is only valid for ParametrizedGates and non-splitting non-parametrized gates (here only CliffordGates).
     # this will not not error for non-parametrized splitting gates, e.g. T-gates. 
-    if !all(g -> isa(g, PauliRotationUnion) || isa(g, CliffordGate), circ)
-        throw("`circ` must contain only `ParameterizedGate`s and `CliffordGate`s.")
+    if !all(g -> isa(g, ParametrizedGate) || isa(g, CliffordGate), circ)
+        throw("`circ` must contain only `ParametrizedGate`s and `CliffordGate`s.")
     end
 
     split_probabilities = _calculatesplitprobabilities(circ, thetas)
@@ -60,8 +60,8 @@ function estimateaverageerror!(circ, pstr::PauliString, error_array::AbstractVec
         circ = reverse(circ)
     end
 
-    # turn the PauliRotation gates into FastPauliRotation gates
-    circ = tofastpaulirotation(circ, pstr.nqubits)
+    # turn the PauliRotation gates into MaskedPauliRotation gates
+    circ = _tomaskedpaulirotation(circ, pstr.nqubits)
 
     n_mcsamples = length(error_array)
     @threads for ii in 1:n_mcsamples
@@ -84,13 +84,13 @@ end
 Perform a single Monte Carlo propagation of a Pauli string through a circuit. Returns the final Pauli string and a boolean indicating whether the path was truncated.
 
 The length the `thetas` vector should be equal to the number of parametrized gates in the circuit. Alternatively, `thetas` can be a single real number applicable for all parametrized gates.
-The default `thetas=π` or any other non-array values assume that the circuit consists only of `(Fast)PauliRotation` -`CliffordGate`.
+The default `thetas=π` or any other non-array values assume that the circuit consists only of `PauliRotation` -`CliffordGate`.
 For `PauliRotation`, `thetas` should be the integration range of the parameters around zero.
 For other currently supported parametrized gates, potential splitting probabilities can be derived from the parameters (e.g., for `AmplitudeDampingNoise`). 
 We currently support no non-parametrized splitting gates. This may change in the future.
 """
 function montecarlopropagation(circ, pstr::PauliString, thetas=π; circuit_reversed=false, max_weight=Inf, max_freq=Inf, max_sins=Inf, kwargs...)
-    if !all(g -> isa(g, PauliRotationUnion) || isa(g, CliffordGate), circ)
+    if !all(g -> isa(g, ParametrizedGate) || isa(g, CliffordGate), circ)
         throw("`circ` must contain only `ParametrizedGate`s and CliffordGates.")
     end
 
@@ -213,7 +213,7 @@ end
 
 """
 Function that automatically calculates the splitting probability of the gates in the circuit based on a one number theta.
-This assumes that the circuit consists only of `(Fast)PauliRotation` -`CliffordGate`.
+This assumes that the circuit consists only of `PauliRotation` -`CliffordGate`.
 """
 function _calculatesplitprobabilities(circ::AbstractArray, r::Number)
     return 0.5 * (1 + sin(2 * r) / (2 * r))

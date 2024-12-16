@@ -40,8 +40,8 @@ A custom truncation function can be passed as `customtruncatefn` with the signat
 """
 function propagate!(circ, psum::PauliSum; kwargs...)
     # check that circ only constists of Pauli gates and Clifford gates
-    if !all(isa(gate, CliffordGate) || isa(gate, PauliRotationUnion) for gate in circ)
-        throw(ArgumentError("The surrogate currently only accepts Clifford gates and (Fast)Pauli gates."))
+    if !all(isa(gate, CliffordGate) || isa(gate, PauliRotation) for gate in circ)
+        throw(ArgumentError("The surrogate currently only accepts Clifford gates and Pauli gates."))
     end
 
     propagate!(circ, psum.terms; kwargs...)

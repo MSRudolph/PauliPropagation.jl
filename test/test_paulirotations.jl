@@ -44,11 +44,11 @@ using Test
   @test all(apply(gate, pstr.term, th) .≈ (0x01, cos(th), 0x02, -sin(th)))
 end
 
-@testset "Test FastPauliRotation" begin
+@testset "Test MaskedPauliRotation" begin
   nq = 2
   th = randn()
   gate = PauliRotation([:X, :Z], [1, 2])
-  fastgate = tofastpaulirotation(gate, nq)
-  pstr = PauliString(nq, :Z, 2)
-  @test apply(gate, pstr.term, th) == apply(fastgate, pstr.term, th)
+  masked_gate = PauliPropagation._tomaskedpaulirotation(gate, nq)
+  pstr = PauliString(nq, :Z, 1)
+  @test apply(gate, pstr.term, th) == applynoncummuting(masked_gate, pstr.term, th)
 end
