@@ -44,6 +44,14 @@ const _default_clifford_map = Dict(
     ],
 )
 
+"""
+    clifford_map
+
+Global dictionary of Clifford gates and their action on Pauli strings.
+Currently supported Clifford gates are `:H`, `:X`, `:Y`, `:Z`, `:S`, `:CNOT`, `:ZZpihalf`, and `:SWAP`.
+If one indexes into the returned arrays with the integer that corresponds to the partial Pauli string,
+the returned tuple is `(sign, partial_pstr)` where `sign` is the sign change and `partial_pstr` is the new partial Pauli string.
+"""
 const clifford_map = deepcopy(_default_clifford_map)
 
 """
@@ -112,16 +120,6 @@ Apply a `CliffordGate` to an integer Pauli string and an optional coefficient.
 function apply(gate::CliffordGate, pstr::PauliStringType, coefficient=1.0; kwargs...)
     map_array = clifford_map[gate.symbol]
     return applywithmap(gate, pstr, coefficient, map_array)
-end
-
-"""
-    apply(gate::CliffordGate, str::PauliStringType, theta, coefficient)
-
-Apply a `CliffordGate` to an integer Pauli string and a coefficient. 
-The extra `theta` argument may arise in other parts of the package.
-"""
-function apply(gate::CliffordGate, pstr::PauliStringType, theta, coefficient; kwargs...)
-    return apply(gate, pstr, coefficient)
 end
 
 """

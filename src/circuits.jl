@@ -407,7 +407,11 @@ function appendSU4!(circuit, pair)
     push!(circuit, PauliRotation(:Z, pair[2]))
 end
 
+"""
+    ibmeagletopology
 
+Topology of the IBM Eagle device with 127 qubits.
+"""
 const ibmeagletopology = [
     (1, 2), (1, 15), (2, 3), (3, 4), (4, 5), (5, 6), (5, 16), (6, 7), (7, 8), (8, 9), (9, 10), (9, 17),
     (10, 11), (11, 12), (12, 13), (13, 14), (13, 18), (15, 19), (16, 23), (17, 27), (18, 31), (19, 20),

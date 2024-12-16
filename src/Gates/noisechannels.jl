@@ -50,10 +50,20 @@ end
     DephasingNoise(qind::Int)
 
 A dephasing noise channel acting on the qubit at index `qind`.
-Will damp X and Y equally.
+Will damp X and Y Paulis equally.
 """
 struct DephasingNoise <: PauliNoise
     qind::Int
+end
+
+"""
+    DephasingNoise(qind::Int, p::Real)
+
+A frozen dephasing noise channel acting on the qubit at index `qind` with noise strength `p`.
+Will damp X and Y Paulis equally.
+"""
+function DephasingNoise(qind::Int, p::Real)
+    return FrozenGate(DephasingNoise(qind), p)
 end
 
 """

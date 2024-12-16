@@ -96,7 +96,7 @@ end
 Function to count the number of Y and Z Paulis in a `PauliSum`. Returns an array of counts.
 """
 function countyz(psum::PauliSum)
-    return countxy(psum.terms)
+    return countyz(psum.terms)
 end
 
 """
@@ -105,7 +105,7 @@ end
 Function to count the number of Y and Z Paulis in a Pauli sum in the form of a `Dict`. Returns an array of counts.
 """
 function countyz(psum::Dict)
-    return [countxy(pstr) for pstr in keys(psum)]
+    return [countyz(pstr) for pstr in keys(psum)]
 end
 
 """
