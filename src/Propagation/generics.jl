@@ -20,7 +20,7 @@ function propagate(circ, pstr::PauliString, thetas=nothing; kwargs...)
 end
 
 """
-    propagate(circ, psum, thetas=nothing; kwargs...)
+    propagate(circ, psum::PauliSum, thetas=nothing; kwargs...)
 
 Propagate a `PauliSum` through the circuit `circ` in the Heisenberg picture. 
 This means that the circuit is applied to the Pauli sum in reverse order, and the action of each gate is its conjugate action.
@@ -36,7 +36,7 @@ end
 
 
 """
-    propagate!(circ, psum, thetas=nothing; kwargs...)
+    propagate!(circ, psum::PauliSum, thetas=nothing; kwargs...)
 
 Propagate a Pauli sum  through the circuit `circ` in the Heisenberg picture. 
 This means that the circuit is applied to the Pauli sum in reverse order, and the action of each gate is its conjugate action.
@@ -51,7 +51,7 @@ function propagate!(circ, psum::PauliSum, thetas=nothing; kwargs...)
     if isnothing(thetas)
         if any(gate isa ParametrizedGate for gate in circ)
             throw(ArgumentError("The circuit must contain only non-parametrized StaticGates
-            if no `thetas` are passed. "))
+            if thetas are not passed: thetas=$thetas. "))
         end
     end
 
