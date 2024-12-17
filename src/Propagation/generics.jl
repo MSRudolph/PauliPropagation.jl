@@ -29,7 +29,7 @@ If thetas are not passed, the circuit must contain only non-parametrized `Static
 `kwargs` are passed to the truncation function. Supported by default are `max_weight`, `min_abs_coeff`, `max_freq`, and `max_sins`.
 A custom truncation function can be passed as `customtruncatefn` with the signature customtruncatefn(pstr::PauliStringType, coefficient)::Bool.
 """
-function propagate(circ, psum::PauliSum, thetas=nothing; kwargs...)
+function propagate(circ, psum, thetas=nothing; kwargs...)
     psum = propagate!(circ, deepcopy(psum), thetas; kwargs...)
     return psum
 end
@@ -46,7 +46,7 @@ If thetas are not passed, the circuit must contain only non-parametrized `Static
 `kwargs` are passed to the truncation function. Supported by default are `max_weight`, `min_abs_coeff`, `max_freq`, and `max_sins`.
 A custom truncation function can be passed as `customtruncatefn` with the signature customtruncatefn(pstr::PauliStringType, coefficient)::Bool.
 """
-function propagate!(circ, psum::PauliSum, thetas=nothing; kwargs...)
+function propagate!(circ, psum, thetas=nothing; kwargs...)
     # if thetas is nothing, the circuit must contain only StaticGates
     if isnothing(thetas)
         if any(gate isa ParametrizedGate for gate in circ)
