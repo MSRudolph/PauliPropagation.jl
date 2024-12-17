@@ -30,20 +30,8 @@ function DepolarizingNoise(qind::Int, p::Real)
     return FrozenGate(DepolarizingNoise(qind), p)
 end
 
-"""
-    apply(gate::DepolarizingNoise, pstr::PauliStringType, p, coefficient=1.0)
-
-Apply a depolarizing noise channel to an integer Pauli string `pstr` with noise strength `p`.
-Physically `p` is restricted to the range `[0, 1]`.
-A coefficient of the Pauli string can optionally be passed as `coefficient`.
-"""
-function apply(gate::DepolarizingNoise, pstr::PauliStringType, p, coefficient=1.0; kwargs...)
-
-    if getpauli(pstr, gate.qind) != 0   # non-identity Pauli
-        coefficient *= (1 - p)
-    end
-
-    return pstr, coefficient
+function isdamped(::DepolarizingNoise, pauli::PauliType)
+    return pauli != 0
 end
 
 """
@@ -66,21 +54,8 @@ function DephasingNoise(qind::Int, p::Real)
     return FrozenGate(DephasingNoise(qind), p)
 end
 
-"""
-    apply(gate::DephasingNoise, pstr::PauliStringType, p, coefficient=1.0)
-
-Apply a dephasing noise channel to an integer Pauli string `pstr` with noise strength `p`.
-Physically `p` is restricted to the range `[0, 1]`.
-A coefficient of the Pauli string can optionally be passed as `coefficient`.
-"""
-function apply(gate::DephasingNoise, pstr::PauliStringType, p, coefficient=1.0; kwargs...)
-
-    pauli = getpauli(pstr, gate.qind)
-    if pauli == 1 || pauli == 2   # X or Y Pauli
-        coefficient *= (1 - p)
-    end
-
-    return pstr, coefficient
+function isdamped(::DephasingNoise, pauli::PauliType)
+    return pauli == 1 || pauli == 2
 end
 
 ### Individual Pauli noise channels
@@ -104,20 +79,8 @@ function PauliXNoise(qind::Int, p::Real)
     return FrozenGate(PauliXNoise(qind), p)
 end
 
-"""
-    apply(gate::PauliXNoise, pstr::PauliStringType, p, coefficient=1.0)
-
-Apply a Pauli-X noise channel to an integer Pauli string `pstr` with noise strength `p`.
-Physically `p` is restricted to the range `[0, 1]`.
-A coefficient of the Pauli string can optionally be passed as `coefficient`.
-"""
-function apply(gate::PauliXNoise, pstr::PauliStringType, p, coefficient=1.0; kwargs...)
-
-    if getpauli(pstr, gate.qind) == 1   # X Pauli
-        coefficient *= (1 - p)
-    end
-
-    return pstr, coefficient
+function isdamped(::PauliXNoise, pauli::PauliType)
+    return pauli == 1
 end
 
 """
@@ -140,20 +103,8 @@ function PauliYNoise(qind::Int, p::Real)
     return FrozenGate(PauliYNoise(qind), p)
 end
 
-"""
-    apply(gate::PauliYNoise, pstr::PauliStringType, p, coefficient=1.0)
-
-Apply a Pauli-Y noise channel to an integer Pauli string `pstr` with noise strength `p`.
-Physically `p` is restricted to the range `[0, 1]`.
-A coefficient of the Pauli string can optionally be passed as `coefficient`.
-"""
-function apply(gate::PauliYNoise, pstr::PauliStringType, p, coefficient=1.0; kwargs...)
-
-    if getpauli(pstr, gate.qind) == 2   # Y Pauli
-        coefficient *= (1 - p)
-    end
-
-    return pstr, coefficient
+function isdamped(::PauliYNoise, pauli::PauliType)
+    return pauli == 2
 end
 
 """
@@ -176,20 +127,8 @@ function PauliZNoise(qind::Int, p::Real)
     return FrozenGate(PauliZNoise(qind), p)
 end
 
-"""
-    apply(gate::PauliZNoise, pstr::PauliStringType, p, coefficient=1.0)
-
-Apply a Pauli-Z noise channel to an integer Pauli string `pstr` with noise strength `p`.
-Physically `p` is restricted to the range `[0, 1]`.
-A coefficient of the Pauli string can optionally be passed as `coefficient`.
-"""
-function apply(gate::PauliZNoise, pstr::PauliStringType, p, coefficient=1.0; kwargs...)
-
-    if getpauli(pstr, gate.qind) == 3   # Z Pauli
-        coefficient *= (1 - p)
-    end
-
-    return pstr, coefficient
+function isdamped(::PauliZNoise, pauli::PauliType)
+    return pauli == 3
 end
 
 """
@@ -212,22 +151,6 @@ function AmplitudeDampingNoise(qind::Int, gamma::Real)
     return FrozenGate(AmplitudeDampingNoise(qind), gamma)
 end
 
-"""
-   apply(gate::AmplitudeDampingNoise, pstr::PauliStringType, gamma, coefficient=1.0) 
-
-Apply an amplitude damping noise channel to an integer Pauli string `pstr` with noise strength `gamma`.
-Returns a tuple of either a single pair of Pauli string and coefficient or two pairs of Pauli strings and coefficients.
-Physically `gamma` is restricted to the range `[0, 1]`.
-A coefficient of the Pauli string can optionally be passed as `coefficient`.
-"""
-function apply(gate::AmplitudeDampingNoise, pstr::PauliStringType, gamma, coefficient=1.0; kwargs...)
-
-    if actsdiagonally(gate, pstr)  # test for Z Pauli
-        return diagonalapply(gate, pstr, gamma, coefficient)
-    end
-
-    return splitapply(gate, pstr, gamma, coefficient)
-end
 
 """
     actsdiagonally(gate::AmplitudeDampingNoise, pstr::PauliStringType)

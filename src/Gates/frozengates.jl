@@ -44,24 +44,3 @@ function freeze(gates, parameters)
     end
     return frozen_gates
 end
-
-"""
-Get the maximum qubit index that the frozen gate acts on.
-"""
-_getmaxqubits(frozen_gate::FrozenGate) = _getmaxqubits(frozen_gate.gate)
-
-"""
-    apply(frozen_gate::FrozenGate, pstr, theta, args...)
-
-Apply a `FrozenGate` to a Pauli string `pstr` with the parameter `FrozenGate.parameter`.
-The passed `theta` will be ignored.
-"""
-function apply(frozen_gate::FrozenGate, pstr, theta, coefficient=1.0; kwargs...)
-    return apply(frozen_gate.gate, pstr, frozen_gate.parameter, coefficient; kwargs...)
-end
-
-"""
-Get the maxium number of qubits a gate acts on by calling this function on the wrapped gate.
-"""
-_maxqubits(gate::FrozenGate) = _maxqubits(gate.gate)
-

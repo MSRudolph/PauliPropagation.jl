@@ -64,11 +64,11 @@ end
 
 ## For Pauli Gates
 
-function applycos(node::CircuitNode, theta; sign=1, param_idx=0, kwargs...)
+function _applycos(node::CircuitNode, theta; sign=1, param_idx=0, kwargs...)
     return PauliRotationNode(parents=[node], trig_inds=[1], signs=[sign], param_idx=param_idx)
 end
 
-function applysin(node::CircuitNode, theta; sign=1, param_idx=0, kwargs...)
+function _applysin(node::CircuitNode, theta; sign=1, param_idx=0, kwargs...)
     return PauliRotationNode(parents=[node], trig_inds=[-1], signs=[sign], param_idx=param_idx)
 end
 

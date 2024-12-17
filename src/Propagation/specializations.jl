@@ -30,7 +30,7 @@ function applytoall!(gate::PauliRotationUnion, theta, psum, aux_psum, args...; k
         end
 
         # else we know the gate will split th Pauli string into two
-        pstr, coeff1, new_pstr, coeff2 = applynoncummuting(gate, pstr, theta, coeff; kwargs...)
+        pstr, coeff1, new_pstr, coeff2 = splitapply(gate, pstr, theta, coeff; kwargs...)
 
         # set the coefficient of the original Pauli string
         set!(psum, pstr, coeff1)
@@ -54,6 +54,7 @@ Use `set!()` instead of `add!()` because Clifford gates create non-overlapping P
 """
 @inline function applyandadd!(gate::CliffordGate, pstr, coeff, theta, output_psum, args...; kwargs...)
 
+    # TODO: test whether it is significantly faster to get the map_array in applytoall! and pass it here
     new_pstr, new_coeff = apply(gate, pstr, theta, coeff; kwargs...)
     # we can set the coefficient because Cliffords create non-overlapping Pauli strings
     set!(output_psum, new_pstr, new_coeff)
@@ -61,6 +62,15 @@ Use `set!()` instead of `add!()` because Clifford gates create non-overlapping P
     return
 end
 
+"""
+    apply(gate::CliffordGate, pstr::PauliStringType, coefficient=1.0)
+
+Apply a `CliffordGate` to an integer Pauli string and an optional coefficient. 
+"""
+function apply(gate::CliffordGate, pstr::PauliStringType, coefficient=1.0; kwargs...)
+    map_array = clifford_map[gate.symbol]
+    return applywithmap(gate, pstr, coefficient, map_array)
+end
 
 ### Pauli Noise
 """
@@ -86,6 +96,24 @@ function applytoall!(gate::PauliNoise, theta, psum, aux_psum, args...; kwargs...
     end
 
     return
+end
+
+
+"""
+    apply(gate::DepolarizingNoise, pstr::PauliStringType, p, coefficient=1.0)
+
+Apply a depolarizing noise channel to an integer Pauli string `pstr` with noise strength `p`.
+Physically `p` is restricted to the range `[0, 1]`.
+A coefficient of the Pauli string can optionally be passed as `coefficient`.
+"""
+function apply(gate::PauliNoise, pstr::PauliStringType, p, coefficient; kwargs...)
+    pauli = getpauli(pstr, gate.qind)
+
+    if isdamped(gate, pauli) # this function is defined in the noisechannels.jl file for each Pauli noise channel
+        coefficient *= (1 - p)
+    end
+
+    return pstr, coefficient
 end
 
 
@@ -138,3 +166,14 @@ Overload of `applytoall!` for `FrozenGate`s. Re-directs to `applytoall!` for the
 function applytoall!(gate::FrozenGate, theta, psum, aux_psum, args...; kwargs...)
     return applytoall!(gate.gate, gate.parameter, psum, aux_psum, args...; kwargs...)
 end
+
+# TODO: to we need the apply() function at all?
+# """
+#     apply(frozen_gate::FrozenGate, pstr, theta, args...)
+
+# Apply a `FrozenGate` to a Pauli string `pstr` with the parameter `FrozenGate.parameter`.
+# The passed `theta` will be ignored.
+# """
+# function apply(frozen_gate::FrozenGate, pstr, theta, coefficient=1.0; kwargs...)
+#     return apply(frozen_gate.gate, pstr, frozen_gate.parameter, coefficient; kwargs...)
+# end

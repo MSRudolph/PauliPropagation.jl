@@ -102,26 +102,7 @@ function createcliffordmap(gate_relations::Dict)
     return mapped_gate
 end
 
-### Applying Clifford gates
-"""
-    apply(gate::CliffordGate, pstr::PauliString, args...)
-
-Apply a `CliffordGate` to a `PauliString`. Returns a new `PauliString`.
-"""
-function apply(gate::CliffordGate, pstr::PauliString, args...; kwargs...)
-    return PauliString(pstr.nqubits, apply(gate, pstr.term, pstr.coeff)...)
-end
-
-"""
-    apply(gate::CliffordGate, pstr::PauliStringType, coefficient=1.0)
-
-Apply a `CliffordGate` to an integer Pauli string and an optional coefficient. 
-"""
-function apply(gate::CliffordGate, pstr::PauliStringType, coefficient=1.0; kwargs...)
-    map_array = clifford_map[gate.symbol]
-    return applywithmap(gate, pstr, coefficient, map_array)
-end
-
+## Apply CliffordGate helpers
 """
     applywithmap(gate::CliffordGate, pstr::PauliStringType, coefficient, map_array)
 

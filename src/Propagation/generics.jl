@@ -152,6 +152,15 @@ E.g., a Pauli gate returns 1 or 2 (pstr, coefficient) outputs.
     return
 end
 
+## Re-route apply() for StaticGates to a version without theta. Works either way if manually defined.
+# TODO: swith around theta and coefficient arguments everywhere in apply()
+"""
+    apply(gate::StaticGate, pstr, theta, coeff)
+
+Calling apply on a `StaticGate` will dispatch to a 3-argument apply function without the paramter `theta`.
+If a 4-argument apply function is defined for a concrete type, it will still dispatch to that one.
+"""
+apply(gate::SG, pstr, theta, coeff; kwargs...) where {SG<:StaticGate} = apply(gate, pstr, coeff; kwargs...)
 
 ### MERGE
 """

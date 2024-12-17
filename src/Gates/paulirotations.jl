@@ -136,52 +136,20 @@ function _tomaskedpaulirotation(pauli_gate::PauliRotation, ::Type{TT}) where {TT
 end
 
 
-### Apply Pauli gates  
-# TODO: Implement an apply wrapper function for `PauliString` that works for every low-level apply function.
-# like function apply(gate::Gate, pstr::Paulistring, theta, coefficient) and loops over the outcomes to create `PauliString`s
-"""
-    apply(gate::PauliRotationUnion, pstr::PauliString, theta)
-
-Apply a `PauliRotation` with an angle `theta` to a `PauliString`.
-Returns either a single `PauliString` or a tuple of two `PauliString`s. 
-The latter is the case when the `gate` does not commute with the `PauliString`.
-"""
-function apply(gate::PauliRotation, pstr::PauliString, theta)
-    if commutes(gate, pstr)
-        return pstr
-    else
-        pstr1, c1, pstr2, c2 = applynoncummuting(gate, pstr.term, theta, pstr.coeff)
-        return PauliString(pstr.nqubits, pstr1, c1), PauliString(pstr.nqubits, pstr2, c2)
-    end
-end
+### Apply PauliRotation helpers
 
 """
-    apply(gate::PauliRotation, pstr::PauliStringType, theta, coefficient=1.0)
-
-Apply a `PauliRotation` with an angle `theta` and a coefficient `coefficient` to an integer Pauli string.
-Returns either one pair of (pstr, coefficient) in one tuple or two pairs as one tuple.
-The latter is the case when the `gate` does not commute with the Pauli string.
-"""
-function apply(gate::PauliRotation, pstr::PauliStringType, theta, coefficient=1.0)
-    if commutes(gate, pstr)
-        return pstr, coefficient
-    else
-        return applynoncummuting(gate, pstr, theta, coefficient)
-    end
-end
-
-"""
-    applynoncummuting(gate::PauliRotation, pstr::PauliStringType, theta, coefficient=1.0; kwargs...)
+    splitapply(gate::PauliRotation, pstr::PauliStringType, theta, coefficient=1.0; kwargs...)
 
 Apply a `PauliRotation` with an angle `theta` and a coefficient `coefficient` to an integer Pauli string,
 assuming that the gate does not commute with the Pauli string.
 Returns two pairs of (pstr, coefficient) as one tuple.
 Currently `kwargs` are passed to `applycos` and `applysin` for the Surrogate.
 """
-function applynoncummuting(gate::PauliRotationUnion, pstr::PauliStringType, theta, coefficient=1.0; kwargs...)
-    coeff1 = applycos(coefficient, theta; kwargs...)
-    new_pstr, sign = getnewpaulistring(gate, pstr)
-    coeff2 = applysin(coefficient, theta; sign=sign, kwargs...)
+function splitapply(gate::PauliRotationUnion, pstr::PauliStringType, theta, coefficient=1.0; kwargs...)
+    coeff1 = _applycos(coefficient, theta; kwargs...)
+    new_pstr, sign = _getnewpaulistring(gate, pstr)
+    coeff2 = _applysin(coefficient, theta; sign=sign, kwargs...)
 
     return pstr, coeff1, new_pstr, coeff2
 end
@@ -214,37 +182,37 @@ function commutes(gate::MaskedPauliRotation, pstr::PauliStringType)
 end
 
 """
-    applysin(old_coeff::Number, theta; sign=1, kwargs...)
+    _applysin(old_coeff::Number, theta; sign=1, kwargs...)
 
 Multiply a numerical coefficient with sin(theta) * sign.
 """
-function applysin(old_coeff::Number, theta; sign=1, kwargs...)
+function _applysin(old_coeff::Number, theta; sign=1, kwargs...)
     return old_coeff * sin(theta) * sign
 end
 
 """
-    applycos(old_coeff::Number, theta; sign=1, kwargs...)
+    _applycos(old_coeff::Number, theta; sign=1, kwargs...)
 
 Multiply a numerical coefficient with cos(theta) * sign.
 """
-function applycos(old_coeff::Number, theta; sign=1, kwargs...)
+function _applycos(old_coeff::Number, theta; sign=1, kwargs...)
     return old_coeff * cos(theta) * sign
 end
 
 # TODO: Simplify the following functions
 """
-    applysin(pth::PathProperties, theta; sign=1, kwargs...)
+    _applysin(pth::PathProperties, theta; sign=1, kwargs...)
 
 Multiply sin(theta) * sign to the `coeff` field of a `PathProperties` object.
 Increments the `nsins` and `freq` fields by 1 if applicable.
 """
-function applysin(pth::T, theta; sign=1, kwargs...) where {T<:PathProperties}
+function _applysin(pth::T, theta; sign=1, kwargs...) where {T<:PathProperties}
     fields = fieldnames(T)
 
     @inline function updateval(val, field)
         if field == :coeff
             # apply sin to the `coeff` field
-            return applysin(val, theta; sign=sign, kwargs...)
+            return _applysin(val, theta; sign=sign, kwargs...)
         elseif field == :nsins
             return val + 1
         elseif field == :freq
@@ -257,18 +225,18 @@ function applysin(pth::T, theta; sign=1, kwargs...) where {T<:PathProperties}
 end
 
 """
-    applycos(pth::PathProperties, theta; sign=1, kwargs...)
+    _applycos(pth::PathProperties, theta; sign=1, kwargs...)
 
 Multiply cos(theta) * sign to the `coeff` field of a `PathProperties` object.
 Increments the `ncos` and `freq` fields by 1 if applicable.
 """
-function applycos(pth::T, theta; sign=1, kwargs...) where {T<:PathProperties}
+function _applycos(pth::T, theta; sign=1, kwargs...) where {T<:PathProperties}
     fields = fieldnames(T)
 
     @inline function updateval(val, field)
         if field == :coeff
             # apply cos to the `coeff` field
-            return applycos(val, theta; sign=sign, kwargs...)
+            return _applycos(val, theta; sign=sign, kwargs...)
         elseif field == :ncos
             return val + 1
         elseif field == :freq
@@ -281,12 +249,12 @@ function applycos(pth::T, theta; sign=1, kwargs...) where {T<:PathProperties}
 end
 
 """
-    getnewpaulistring(gate::PauliRotation, pstr::PauliStringType)
+    _getnewpaulistring(gate::PauliRotation, pstr::PauliStringType)
 
 Get the new Pauli string after applying a `PauliRotation` to an integer Pauli string,
 as well as the corresponding ±1 coefficient.
 """
-function getnewpaulistring(gate::PauliRotation, pstr::PauliStringType)
+function _getnewpaulistring(gate::PauliRotation, pstr::PauliStringType)
     new_pstr = copy(pstr)
 
     total_sign = 1  # this coefficient will be imaginary
@@ -299,12 +267,12 @@ function getnewpaulistring(gate::PauliRotation, pstr::PauliStringType)
 end
 
 """
-    getnewpaulistring(gate::MaskedPauliRotation, pstr::PauliStringType)
+    _getnewpaulistring(gate::MaskedPauliRotation, pstr::PauliStringType)
 
 Get the new Pauli string after applying a `MaskedPauliRotation` to an integer Pauli string,
 as well as the corresponding ±1 coefficient.
 """
-function getnewpaulistring(gate::MaskedPauliRotation, pstr::PauliStringType)
+function _getnewpaulistring(gate::MaskedPauliRotation, pstr::PauliStringType)
     # TODO: This allocates memory
     sign, new_pstr = pauliprod(gate.generator_mask, pstr, gate.qinds)
     return new_pstr, real(1im * sign)
