@@ -85,6 +85,7 @@ export
     tfitrottercircuit,
     tiltedtfitrottercircuit,
     heisenbergtrottercircuit,
+    trottercircuitandparams,
     su4ansatz,
     qcnnansatz,
     appendSU4!,
