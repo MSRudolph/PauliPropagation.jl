@@ -1,73 +1,52 @@
 ### Propagation necessities
 
 """
-    propagate(circ, pstr::PauliString; kwargs...)
+    propagate(circ, pstr::PauliString{PauliStringType,NodePathProperties}; kwargs...)
 
-Propagate a `PauliString` through the circuit `circ` in the Heisenberg picture. 
-This means that the circuit is applied to the Pauli sum in reverse order, and the action of each gate is its conjugate action.
-`kwargs` are passed to the truncation function. Supported by default are `max_weight`, `min_abs_coeff`, `max_freq`, and `max_sins`.
+Construct a Pauli propagation surrogate of the propagated `PauliString` through the circuit `circ` in the Heisenberg picture. 
+The circuit must only contain `CliffordGate`s and `PauliRotation`s.
+It is applied to the Pauli string in reverse order, and the action of each gate is its conjugate action.
+`kwargs` are passed to the truncation function. Supported by default for the surrogation are `max_weight`, `max_freq`, and `max_sins`.
 A custom truncation function can be passed as `customtruncatefn` with the signature customtruncatefn(pstr::PauliStringType, coefficient)::Bool.
 """
-function propagate(circ, pstr::PauliString; kwargs...)
-    _checkcoefftype(pstr)
-    psum = PauliSum(pstr.nqubits, pstr)
-    return propagate(circ, psum; kwargs...)
+function propagate(circ, pstr::PauliString{TT,NodePathProperties}; kwargs...) where {TT<:PauliStringType}
+    return propagate(circ, PauliSum(pstr); kwargs...)
 end
 
 """
-    propagate(circ, psum::PauliSum; kwargs...)
+    propagate(circ, psum::PauliSum{PauliStringType,NodePathProperties}; kwargs...)
 
-Propagate a `PauliSum` through the circuit `circ` in the Heisenberg picture. 
-This means that the circuit is applied to the Pauli sum in reverse order, and the action of each gate is its conjugate action.
-`kwargs` are passed to the truncation function. Supported by default are `max_weight`, `min_abs_coeff`, `max_freq`, and `max_sins`.
+Construct a Pauli propagation surrogate of the propagated `PauliSum` through the circuit `circ` in the Heisenberg picture.
+The circuit must only contain `CliffordGate`s and `PauliRotation`s. 
+It is applied to the Pauli sum in reverse order, and the action of each gate is its conjugate action.
+`kwargs` are passed to the truncation function. Supported by default for the surrogation are `max_weight`, `max_freq`, and `max_sins`.
 A custom truncation function can be passed as `customtruncatefn` with the signature customtruncatefn(pstr::PauliStringType, coefficient)::Bool.
 """
-function propagate(circ, psum::PauliSum; kwargs...)
-    _checkcoefftype(psum)
-    pauli_dict = propagate!(circ, deepcopy(psum.terms); kwargs...)
-    return PauliSum(psum.nqubits, pauli_dict)
+function propagate(circ, psum::PauliSum{TT,NodePathProperties}; kwargs...) where {TT<:PauliStringType}
+    _checksurrogationconditions(circ)
+    return propagate!(circ, PauliSum(psum.nqubits, copy(psum.terms)); kwargs...)
 end
 
-
 """
-    propagate!(circ, psum::PauliSum; kwargs...)
+    propagate!(circ, psum::PauliSum{PauliStringType,NodePathProperties}; kwargs...)
 
-Propagate a `PauliSum` through the circuit `circ` in the Heisenberg picture. 
-This means that the circuit is applied to the Pauli sum in reverse order, and the action of each gate is its conjugate action.
+Construct a Pauli propagation surrogate of the propagated `PauliSum` through the circuit `circ` in the Heisenberg picture. 
+The `PauliSum` `psum` is modified in place.
+The circuit must only contain `CliffordGate`s and `PauliRotation`s. 
+It is applied to the Pauli sum in reverse order, and the action of each gate is its conjugate action.
 The input `psum` will be modified.
-`kwargs` are passed to the truncation function. Supported by default are `max_weight`, `min_abs_coeff`, `max_freq`, and `max_sins`.
+`kwargs` are passed to the truncation function. Supported by default for the surrogation are `max_weight`, `max_freq`, and `max_sins`.
 A custom truncation function can be passed as `customtruncatefn` with the signature customtruncatefn(pstr::PauliStringType, coefficient)::Bool.
 """
-function propagate!(circ, psum::PauliSum; kwargs...)
-    # check that circ only constists of Pauli gates and Clifford gates
-    if !all(isa(gate, CliffordGate) || isa(gate, PauliRotation) for gate in circ)
-        throw(ArgumentError("The surrogate currently only accepts Clifford gates and Pauli gates."))
-    end
+function propagate!(circ, psum::PauliSum{TT,NodePathProperties}; kwargs...) where {TT<:PauliStringType}
+    _checksurrogationconditions(circ)
 
-    propagate!(circ, psum.terms; kwargs...)
-    return psum
-end
-
-"""
-    propagate!(circ, d::Dict{TermType,NodePathProperties}; kwargs...)
-
-Propagate a `Dict{PauliStringType,CoeffType}` through the circuit `circ` in the Heisenberg picture. 
-This means that the circuit is applied to the Pauli sum in reverse order, and the action of each gate is its conjugate action.
-The input `psum` will be modified.
-`kwargs` are passed to the truncation function. Supported by default are `max_weight`, `min_abs_coeff`, `max_freq`, and `max_sins`.
-A custom truncation function can be passed as `customtruncatefn` with the signature customtruncatefn(pstr::PauliStringType, coefficient)::Bool.
-"""
-function propagate!(circ, psum::Dict{TT,NodePathProperties}; kwargs...) where {TT}
     thetas = Array{Float64}(undef, countparameters(circ))
 
     param_idx = length(thetas)
 
-    aux_psum = typeof(psum)()  # pre-allocating somehow doesn't do anything
+    aux_psum = similar(psum)
 
-    ## TODO:
-    # - decide where to reverse the circuit
-    # - verbose option  
-    # - more elegant param_idx incrementation
     for gate in reverse(circ)
         # add param_index as kwarg, which will descend into the apply function eventually
         psum, aux_psum, param_idx = applymergetruncate!(gate, psum, aux_psum, thetas, param_idx; param_idx=param_idx, kwargs...)
@@ -75,16 +54,9 @@ function propagate!(circ, psum::Dict{TT,NodePathProperties}; kwargs...) where {T
     return psum
 end
 
-
-function _checkcoefftype(pobj::Union{PauliString,PauliSum})
-    # convert numerical coefficients to `NodePathProperties` 
-    CoeffType = typeof(pobj).parameters[2]
-    if CoeffType <: Number
-        throw(
-            "`You are using the Surrogate's propagation function without passing parameters. " *
-            "But the current coefficient type is $(CoeffType)`. " *
-            "Consider converting to `NodePathProperties` via `wrapcoefficients(your_current_paulis, NodePathProperties)`."
-        )
+function _checksurrogationconditions(circ)
+    if !all(isa(gate, CliffordGate) || isa(gate, PauliRotation) for gate in circ)
+        throw(ArgumentError("The surrogate currently only accepts `CliffordGate`s and `PauliRotation`s."))
     end
     return
 end
