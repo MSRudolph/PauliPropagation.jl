@@ -5,11 +5,12 @@
 ##
 ###
 """
-    propagate(circ, pstr::PauliString, thetas; kwargs...)
+    propagate(circ, pstr::PauliString, thetas=nothing; kwargs...)
 
 Propagate a `PauliString` through the circuit `circ` in the Heisenberg picture. 
 This means that the circuit is applied to the Pauli string in reverse order, and the action of each gate is its conjugate action.
 Parameters for the parametrized gates in `circ` are given by `thetas`, and need to be passed as if the circuit was applied as written in the Schrödinger picture.
+If thetas are not passed, the circuit must contain only non-parametrized `StaticGates`.
 `kwargs` are passed to the truncation function. Supported by default are `max_weight`, `min_abs_coeff`, `max_freq`, and `max_sins`.
 A custom truncation function can be passed as `customtruncatefn` with the signature customtruncatefn(pstr::PauliStringType, coefficient)::Bool.
 """
@@ -19,11 +20,12 @@ function propagate(circ, pstr::PauliString, thetas=nothing; kwargs...)
 end
 
 """
-    propagate(circ, psum, thetas; kwargs...)
+    propagate(circ, psum, thetas=nothing; kwargs...)
 
 Propagate a `PauliSum` through the circuit `circ` in the Heisenberg picture. 
 This means that the circuit is applied to the Pauli sum in reverse order, and the action of each gate is its conjugate action.
 Parameters for the parametrized gates in `circ` are given by `thetas`, and need to be passed as if the circuit was applied as written in the Schrödinger picture.
+If thetas are not passed, the circuit must contain only non-parametrized `StaticGates`.
 `kwargs` are passed to the truncation function. Supported by default are `max_weight`, `min_abs_coeff`, `max_freq`, and `max_sins`.
 A custom truncation function can be passed as `customtruncatefn` with the signature customtruncatefn(pstr::PauliStringType, coefficient)::Bool.
 """
@@ -34,12 +36,13 @@ end
 
 
 """
-    propagate!(circ, psum, thetas; kwargs...)
+    propagate!(circ, psum, thetas=nothing; kwargs...)
 
 Propagate a Pauli sum  through the circuit `circ` in the Heisenberg picture. 
 This means that the circuit is applied to the Pauli sum in reverse order, and the action of each gate is its conjugate action.
 The input `psum` will be modified.
 Parameters for the parametrized gates in `circ` are given by `thetas`, and need to be passed as if the circuit was applied as written in the Schrödinger picture.
+If thetas are not passed, the circuit must contain only non-parametrized `StaticGates`.
 `kwargs` are passed to the truncation function. Supported by default are `max_weight`, `min_abs_coeff`, `max_freq`, and `max_sins`.
 A custom truncation function can be passed as `customtruncatefn` with the signature customtruncatefn(pstr::PauliStringType, coefficient)::Bool.
 """
