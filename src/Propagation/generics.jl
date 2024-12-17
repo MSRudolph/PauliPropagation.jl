@@ -13,7 +13,7 @@ Parameters for the parametrized gates in `circ` are given by `thetas`, and need 
 `kwargs` are passed to the truncation function. Supported by default are `max_weight`, `min_abs_coeff`, `max_freq`, and `max_sins`.
 A custom truncation function can be passed as `customtruncatefn` with the signature customtruncatefn(pstr::PauliStringType, coefficient)::Bool.
 """
-function propagate(circ, pstr::PauliString, thetas; kwargs...)
+function propagate(circ, pstr::PauliString, thetas=nothing; kwargs...)
     psum = PauliSum(pstr.nqubits, pstr)
     return propagate(circ, psum, thetas; kwargs...)
 end
@@ -27,7 +27,7 @@ Parameters for the parametrized gates in `circ` are given by `thetas`, and need 
 `kwargs` are passed to the truncation function. Supported by default are `max_weight`, `min_abs_coeff`, `max_freq`, and `max_sins`.
 A custom truncation function can be passed as `customtruncatefn` with the signature customtruncatefn(pstr::PauliStringType, coefficient)::Bool.
 """
-function propagate(circ, psum, thetas; kwargs...)
+function propagate(circ, psum::PauliSum, thetas=nothing; kwargs...)
     psum = propagate!(circ, deepcopy(psum), thetas; kwargs...)
     return psum
 end
@@ -43,10 +43,17 @@ Parameters for the parametrized gates in `circ` are given by `thetas`, and need 
 `kwargs` are passed to the truncation function. Supported by default are `max_weight`, `min_abs_coeff`, `max_freq`, and `max_sins`.
 A custom truncation function can be passed as `customtruncatefn` with the signature customtruncatefn(pstr::PauliStringType, coefficient)::Bool.
 """
-function propagate!(circ, psum, thetas; kwargs...)
+function propagate!(circ, psum::PauliSum, thetas=nothing; kwargs...)
+    # if thetas is nothing, the circuit must contain only StaticGates
+    if isnothing(thetas)
+        if any(gate isa ParametrizedGate for gate in circ)
+            throw(ArgumentError("The circuit must contain only non-parametrized StaticGates
+            if no `thetas` are passed. "))
+        end
+    end
 
-    # start from the last parameter
-    param_idx = length(thetas)
+    # start from the last parameter if thetas is not nothing
+    param_idx = thetas === nothing ? nothing : length(thetas)
 
     aux_psum = similar(psum)
 
@@ -72,8 +79,15 @@ A custom truncation function can be passed as `customtruncatefn` with the signat
 """
 function applymergetruncate!(gate, psum, aux_psum, thetas, param_idx, args...; kwargs...)
 
-    # Pick out the theta of the next parametrized gate. Will not be used by static gates, even though it is passed.
-    theta = thetas[param_idx]
+    # Pick out the next theta if gate is a ParametrizedGate.
+    # Else set the paramter to nothing for clarity that theta is not used.
+    if gate isa ParametrizedGate
+        theta = thetas[param_idx]
+        # If the gate is parametrized, decrement theta index by one.
+        param_idx -= 1
+    else
+        theta = nothing
+    end
 
     # Apply the gate to all Pauli strings in psum, potentially writing into auxillary aux_psum in the process.
     # The pauli sums will be changed in-place
@@ -85,12 +99,6 @@ function applymergetruncate!(gate, psum, aux_psum, thetas, param_idx, args...; k
 
     # Check truncation conditions on all Pauli strings in psum and remove them if they are truncated.
     checktruncationonall!(psum; kwargs...)
-
-    # If the gate was parametrized and used the theta, decrement theta index by one.
-    # Don't go below index 1 because a theta will still be picked out for all remaining static gates.
-    if isa(gate, ParametrizedGate) && param_idx > 1
-        param_idx -= 1
-    end
 
     return psum, aux_psum, param_idx
 end
