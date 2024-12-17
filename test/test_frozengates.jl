@@ -21,7 +21,7 @@ using Test
     pstr = PauliString(nq, [:Y, :X], [3, 6])
 
     psum1 = propagate(circ, pstr, thetas)
-    psum2 = propagate(frozen_circ, pstr, [0])
+    psum2 = propagate(frozen_circ, pstr)
 
     @test overlapwithzero(psum1) ≈ overlapwithzero(psum2)
 

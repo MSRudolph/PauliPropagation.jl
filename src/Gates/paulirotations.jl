@@ -181,6 +181,7 @@ function commutes(gate::MaskedPauliRotation, pstr::PauliStringType)
     return commutes(gate.generator_mask, pstr)
 end
 
+# NOTE: The reason we have all these functions defined is for working with PathProperties and the Surrogate
 """
     _applysin(old_coeff::Number, theta; sign=1, kwargs...)
 

@@ -47,17 +47,19 @@ If thetas are not passed, the circuit must contain only non-parametrized `Static
 A custom truncation function can be passed as `customtruncatefn` with the signature customtruncatefn(pstr::PauliStringType, coefficient)::Bool.
 """
 function propagate!(circ, psum, thetas=nothing; kwargs...)
+
+    # if circ is actually a single gate, promote it to a list [gate]
+    # similarly the theta if it is a single number
+    circ, thetas = _promotecircandthetas(circ, thetas)
+
     # if thetas is nothing, the circuit must contain only StaticGates
-    if isnothing(thetas)
-        if any(gate isa ParametrizedGate for gate in circ)
-            throw(ArgumentError("The circuit must contain only non-parametrized StaticGates
-            if thetas are not passed: thetas=$thetas. "))
-        end
-    end
+    # also check if the length of thetas equals the number of parametrized gates
+    _checkcircandthetas(circ, thetas)
 
     # start from the last parameter if thetas is not nothing
     param_idx = thetas === nothing ? nothing : length(thetas)
 
+    # get our auxillary Pauli sum that we will move splitting Pauli strings into 
     aux_psum = similar(psum)
 
     ## TODO:
@@ -70,7 +72,6 @@ function propagate!(circ, psum, thetas=nothing; kwargs...)
     return psum
 end
 
-# TODO: somehow propagate is not type stable
 
 """
     applymergetruncate!(gate, psum, aux_psum, thetas, param_idx, args...; kwargs...)
@@ -137,10 +138,10 @@ This function can be overwritten for a custom gate if the lower-level function `
 This is likely the the case if `apply` is not type-stable because it does not return a unique number of outputs. 
 E.g., a Pauli gate returns 1 or 2 (pstr, coefficient) outputs.
 """
-@inline function applyandadd!(gate, pstr, coefficient, theta, output_psum, args...; kwargs...)
+@inline function applyandadd!(gate, pstr, coeff, theta, output_psum, args...; kwargs...)
 
     # Get the (potentially new) pauli strings and their coefficients like (pstr1, coeff1, pstr2, coeff2, ...)
-    pstrs_and_coeffs = apply(gate, pstr, theta, coefficient; kwargs...)
+    pstrs_and_coeffs = apply(gate, pstr, theta, coeff; kwargs...)
 
     for ii in 1:2:length(pstrs_and_coeffs)
         # Itererate over the pairs of pstr and coeff
@@ -258,5 +259,40 @@ A custom truncation function can be passed as `customtruncatefn` with the signat
     if is_truncated
         delete!(psum, pstr)
     end
+    return
+end
+
+
+## Further utilities here
+
+function _promotecircandthetas(circ, thetas)
+    if circ isa Gate
+        circ = [circ]
+    end
+    if thetas isa Number
+        thetas = [thetas]
+    end
+    return circ, thetas
+end
+
+function _checkcircandthetas(circ, thetas)
+    nparams = countparameters(circ)
+
+    if isnothing(thetas)
+        if nparams > 0
+            throw(
+                ArgumentError("The circuit must contain only non-parametrized StaticGates 
+                    if thetas are not passed: thetas=$thetas. ")
+            )
+        end
+        # return early because no more things can go wrong (they always can)
+        return
+    end
+
+    if nparams != length(thetas)
+        throw(ArgumentError("The number of thetas must match the number of parametrized gates in the circuit.
+        countparameters(circ)=$nparams, length(thetas)=$(length(thetas))."))
+    end
+
     return
 end
