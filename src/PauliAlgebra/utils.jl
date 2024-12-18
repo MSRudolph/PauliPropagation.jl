@@ -16,12 +16,15 @@ function symboltoint(pstr)
 end
 
 """
-    symboltoint(nqubits::Integer, pstr, qinds)
+    symboltoint(nqubits::Integer, pstr::Vector{Symbol}, qinds::Vector{Int})
 
 Maps a vector of symbols `pstr` acting on the indices `qinds` to an integer Pauli string. Other sites are set to the identity.
 `qinds` can be any iterable.
 """
 function symboltoint(nqubits::Integer, pstr, qinds)
+    if nqubits < maximum(qinds)
+        throw(ArgumentError("Indices in `qinds`=$qinds acts on more qubits than `nqubits`=$nqubits."))
+    end
     inttype = getinttype(nqubits)
     return symboltoint(inttype, pstr, qinds)
 end

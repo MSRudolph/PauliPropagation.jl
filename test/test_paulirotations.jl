@@ -1,55 +1,54 @@
 using Random
 using Test
 
-# TODO: rework this test file with `propagate()` instead of `apply()`
-# @testset "Test Pauli gates apply function" begin
-#   """Test apply function for Pauli gates."""
-#   nq = 1
-#   th = randn()
-#   # single qubit X gate
-#   gate = PauliRotation([:X], [1])
-#   # apply to Z
-#   pstr = PauliString(nq, :Z, 1)
-#   @test all(apply(gate, pstr.term, th) .≈ (0x03, cos(th), 0x02, sin(th)))
-#   # apply to Y
-#   pstr = PauliString(nq, :Y, 1)
-#   # YT: the ordering of Paulis after applying a gate is not unique.
-#   @test all(apply(gate, pstr.term, th) .≈ (0x02, cos(th), 0x03, -sin(th)))
-#   # apply to X
-#   pstr = PauliString(nq, :X, 1)
-#   @test all(apply(gate, pstr.term, th) .≈ (0x01, 1.0))
+@testset "Test Pauli gates apply function" begin
+  """Test apply function for Pauli gates."""
+  nq = 1
+  th = randn()
+  # single qubit X gate
+  gate = PauliRotation([:X], [1])
+  # apply to Z
+  pstr = PauliString(nq, :Z, 1)
+  @test propagate(gate, pstr, th) == PauliSum([PauliString(nq, :Z, 1, cos(th)), PauliString(nq, :Y, 1, sin(th))])
+  # apply to Y
+  pstr = PauliString(nq, :Y, 1)
+  @test propagate(gate, pstr, th) == PauliSum([PauliString(nq, :Y, 1, cos(th)), PauliString(nq, :Z, 1, -sin(th))])
+  # apply to X
+  pstr = PauliString(nq, :X, 1)
+  @test propagate(gate, pstr, th) == PauliSum(pstr)
 
-#   # two-qubit Y gate
-#   gate = PauliRotation([:Y, :Y], [1, 2])
-#   # apply to Z
-#   pstr = PauliString(nq, :Z, 2)
-#   @test all(apply(gate, pstr.term, th) .≈ (0x0c, cos(th), 0x06, -sin(th)))
-#   # apply to Y
-#   pstr = PauliString(nq, :Y, 2)
-#   @test all(apply(gate, pstr.term, th) .≈ (0x08, 1.0))
-#   # apply to X
-#   pstr = PauliString(nq, :X, 2)
-#   @test all(apply(gate, pstr.term, th) .≈ (0x04, cos(th), 0x0e, sin(th)))
+  nq = 2
+  # two-qubit Y gate
+  gate = PauliRotation([:Y, :Y], [1, 2])
+  # apply to Z
+  pstr = PauliString(nq, :Z, 2)
+  @test propagate(gate, pstr, th) == PauliSum([PauliString(nq, [:I, :Z], [1, 2], cos(th)), PauliString(nq, [:Y, :X], [1, 2], -sin(th))])
+  # apply to Y
+  pstr = PauliString(nq, :Y, 2)
+  @test propagate(gate, pstr, th) == PauliSum(pstr)
+  # apply to X
+  pstr = PauliString(nq, :X, 2)
+  @test propagate(gate, pstr, th) == PauliSum([PauliString(nq, [:I, :X], [1, 2], cos(th)), PauliString(nq, [:Y, :Z], [1, 2], sin(th))])
 
-#   # single qubit Z gate on two qubits
-#   nq = 2
-#   gate = PauliRotation([:Z], [1])
-#   # apply to Z
-#   pstr = PauliString(nq, :Z, 1)
-#   @test all(apply(gate, pstr.term, th) .≈ (0x03, 1.0))
-#   # apply to Y
-#   pstr = PauliString(nq, :Y, 1)
-#   @test all(apply(gate, pstr.term, th) .≈ (0x02, cos(th), 0x01, sin(th)))
-#   # apply to X
-#   pstr = PauliString(nq, :X, 1)
-#   @test all(apply(gate, pstr.term, th) .≈ (0x01, cos(th), 0x02, -sin(th)))
-# end
+  # single qubit Z gate on three-qubit Pauli sums
+  nq = 3
+  gate = PauliRotation([:Z], [2])
+  # apply to Z
+  psum = PauliSum(PauliString(nq, :Z, 2))
+  @test propagate(gate, psum, th) == psum
+  # apply to Y
+  psum = PauliSum(PauliString(nq, :Y, 2))
+  @test propagate(gate, psum, th) == PauliSum([PauliString(nq, :Y, 2, cos(th)), PauliString(nq, :X, 2, sin(th))])
+  # apply to X
+  psum = PauliSum(PauliString(nq, :X, 2))
+  @test propagate(gate, psum, th) == PauliSum([PauliString(nq, :X, 2, cos(th)), PauliString(nq, :Y, 2, -sin(th))])
+end
 
-# @testset "Test MaskedPauliRotation" begin
-#   nq = 2
-#   th = randn()
-#   gate = PauliRotation([:X, :Z], [1, 2])
-#   masked_gate = PauliPropagation._tomaskedpaulirotation(gate, nq)
-#   pstr = PauliString(nq, :Z, 1)
-#   @test apply(gate, pstr.term, th) == applynoncummuting(masked_gate, pstr.term, th)
-# end
+@testset "Test MaskedPauliRotation" begin
+  nq = 2
+  th = randn()
+  gate = PauliRotation([:X, :Z], [1, 2])
+  masked_gate = PauliPropagation._tomaskedpaulirotation(gate, nq)
+  pstr = PauliString(nq, :Z, 1)
+  @test propagate(gate, pstr, th) == propagate(masked_gate, pstr, th)
+end

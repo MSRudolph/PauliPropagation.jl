@@ -127,7 +127,7 @@ function PauliSum(nq::Int, COEFFTYPE::Type{CT}) where {CT}
 end
 
 """
-    PauliSum(nqubits::Integer, psum::Dict{Vector{Symbol},CoeffType}) where {CoeffType}
+    PauliSum(nqubits::Integer, psum::Dict{Vector{Symbol},CoeffType})
 
 Constructor for a `PauliSum` on `nqubits` qubits from a dictionary of {Vector{Symbols} => coefficients}.
 """
@@ -155,13 +155,24 @@ Constructor for a `PauliSum` on `nqubits` qubits from a `PauliString`.
 PauliSum(pstr::PauliString) = PauliSum(pstr.nqubits, pstr)
 
 """
-    PauliSum(nq::Integer, pstr::PauliString{TermType,CoeffType}) where {TermType,CoeffType}
+    PauliSum(nq::Integer, pstr::PauliString)
 
 Constructor for a `PauliSum` on `nqubits` qubits from a `PauliString`.
 """
 function PauliSum(nq::Integer, pstr::PauliString{TT,CT}) where {TT,CT}
     _checknumberofqubits(nq, pstr)
     return PauliSum(nq, Dict{TT,CT}(pstr.term => pstr.coeff))
+end
+
+"""
+    PauliSum(pstrs::Vector{PauliString})
+
+Constructor for a `PauliSum` on `nqubits` qubits from a `PauliString`.
+"""
+function PauliSum(pstrs::Union{AbstractArray,Tuple,Base.Generator})
+    _checknumberofqubits(pstrs)
+    nq = first(pstrs).nqubits
+    return PauliSum(nq, Dict(pstr.term => pstr.coeff for pstr in pstrs))
 end
 
 """
@@ -776,6 +787,20 @@ function _checknumberofqubits(pobj1::Union{PauliString,PauliSum}, pobj2::Union{P
         throw(
             ArgumentError(
                 "Number of qubits ($(pobj1.nqubits)) in $(typeof(pobj1)) must equal number of qubits ($(pobj2.nqubits)) in $(typeof(pobj2))"
+            )
+        )
+    end
+end
+
+"""
+Checks whether the number of qubits `nqubits` is the same between in some collection.
+"""
+function _checknumberofqubits(pobjects::Union{AbstractArray,Tuple,Base.Generator})
+
+    if !allequal(pobj.nqubits for pobj in pobjects)
+        throw(
+            ArgumentError(
+                "Number of qubits in passed collection of type $(typeof(pobjects)) is not consistent."
             )
         )
     end
