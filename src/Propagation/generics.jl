@@ -266,32 +266,30 @@ end
 ## Further utilities here
 
 function _promotecircandthetas(circ, thetas)
+    # if users pass a gate, we assume that thetas also requires a `[]` around it
     if circ isa Gate
         circ = [circ]
+
+        if !isnothing(thetas)
+            thetas = [thetas]
+        end
     end
-    if thetas isa Number
-        thetas = [thetas]
+
+    if isnothing(thetas)
+        thetas = []
     end
+
     return circ, thetas
 end
 
 function _checkcircandthetas(circ, thetas)
     nparams = countparameters(circ)
 
-    if isnothing(thetas)
-        if nparams > 0
-            throw(
-                ArgumentError("The circuit must contain only non-parametrized StaticGates 
-                    if thetas are not passed: thetas=$thetas. ")
-            )
-        end
-        # return early because no more things can go wrong (they always can)
-        return
-    end
-
     if nparams != length(thetas)
-        throw(ArgumentError("The number of thetas must match the number of parametrized gates in the circuit.
-        countparameters(circ)=$nparams, length(thetas)=$(length(thetas))."))
+        throw(ArgumentError(
+            "The number of thetas must match the number of parametrized gates in the circuit. " *
+            "countparameters(circ)=$nparams, length(thetas)=$(length(thetas)).")
+        )
     end
 
     return
