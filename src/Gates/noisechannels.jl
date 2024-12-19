@@ -163,7 +163,7 @@ function actsdiagonally(gate::AmplitudeDampingNoise, pstr::PauliStringType; kwar
 end
 
 """
-    diagonalapply(gate::AmplitudeDampingNoise, pstr::PauliStringType, gamma, coefficient=1.0)
+    diagonalapply(gate::AmplitudeDampingNoise, pstr::PauliStringType, coeff, gamma)
 
 Apply an amplitude damping noise channel to an integer Pauli string `pstr` with noise strength `gamma`.
 This is under the assumption that it has been checked that the noise channel acts diagonally on the Pauli string.
@@ -171,19 +171,19 @@ Returns a tuple of Pauli string and coefficient.
 Physically `gamma` is restricted to the range `[0, 1]`.
 A coefficient of the Pauli string can optionally be passed as `coefficient`.
 """
-function diagonalapply(gate::AmplitudeDampingNoise, pstr::PauliStringType, gamma, coefficient=1.0; kwargs...)
+function diagonalapply(gate::AmplitudeDampingNoise, pstr::PauliStringType, coeff, gamma; kwargs...)
 
     local_pauli = getpauli(pstr, gate.qind)
 
     if local_pauli != 0  # non-identity Pauli
-        coefficient *= sqrt(1 - gamma)
+        coeff *= sqrt(1 - gamma)
     end
 
-    return pstr, coefficient
+    return pstr, coeff
 end
 
 """
-    splitapply(gate::AmplitudeDampingNoise, pstr::PauliStringType, gamma, coefficient=1.0)
+    splitapply(gate::AmplitudeDampingNoise, pstr::PauliStringType, coeff, gamma)
 
 Apply an amplitude damping noise channel to an integer Pauli string `pstr` with noise strength `gamma`.
 This is under the assumption that it has been checked that the noise channel acts on a Z Pauli and splits.
@@ -191,7 +191,7 @@ Returns a tuple of two pairs of Pauli strings and coefficients.
 Physically `gamma` is restricted to the range `[0, 1]`.
 A coefficient of the Pauli string can optionally be passed as `coefficient`.
 """
-function splitapply(gate::AmplitudeDampingNoise, pstr::PauliStringType, gamma, coefficient=1.0; kwargs...)
+function splitapply(gate::AmplitudeDampingNoise, pstr::PauliStringType, coeff, gamma; kwargs...)
     new_pstr = setpauli(pstr, 0, gate.qind)
-    return pstr, (1 - gamma) * coefficient, new_pstr, gamma * coefficient
+    return pstr, (1 - gamma) * coeff, new_pstr, gamma * coeff
 end

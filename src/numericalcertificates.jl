@@ -154,7 +154,7 @@ end
 
 Default `mcapply` function for numerical certificates. Assumes that the `apply` function for `gate` does the job.
 """
-mcapply(gate, pauli, coeff, theta, split_probability; kwargs...) = apply(gate, pauli, theta, coeff; kwargs...) # TODO: have more sensible default functions once the numerical certificate is figured out.
+mcapply(gate, pauli, coeff, theta, split_probability; kwargs...) = apply(gate, pauli, coeff, theta; kwargs...) # TODO: have more sensible default functions once the numerical certificate is figured out.
 
 """
     mcapply(gate::PauliRotationUnion, pauli, coeff, theta, split_prob=0.5; kwargs...) 

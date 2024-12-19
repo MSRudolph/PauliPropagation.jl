@@ -141,7 +141,7 @@ E.g., a Pauli gate returns 1 or 2 (pstr, coefficient) outputs.
 @inline function applyandadd!(gate, pstr, coeff, theta, output_psum, args...; kwargs...)
 
     # Get the (potentially new) pauli strings and their coefficients like (pstr1, coeff1, pstr2, coeff2, ...)
-    pstrs_and_coeffs = apply(gate, pstr, theta, coeff; kwargs...)
+    pstrs_and_coeffs = apply(gate, pstr, coeff, theta; kwargs...)
 
     for ii in 1:2:length(pstrs_and_coeffs)
         # Itererate over the pairs of pstr and coeff
@@ -156,12 +156,12 @@ end
 ## Re-route apply() for StaticGates to a version without theta. Works either way if manually defined.
 # TODO: swith around theta and coefficient arguments everywhere in apply()
 """
-    apply(gate::StaticGate, pstr, theta, coeff)
+    apply(gate::StaticGate, pstr, coeff, theta)
 
 Calling apply on a `StaticGate` will dispatch to a 3-argument apply function without the paramter `theta`.
 If a 4-argument apply function is defined for a concrete type, it will still dispatch to that one.
 """
-apply(gate::SG, pstr, theta, coeff; kwargs...) where {SG<:StaticGate} = apply(gate, pstr, coeff; kwargs...)
+apply(gate::SG, pstr, coeff, theta; kwargs...) where {SG<:StaticGate} = apply(gate, pstr, coeff; kwargs...)
 
 ### MERGE
 """

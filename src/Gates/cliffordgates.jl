@@ -109,15 +109,15 @@ end
 Apply a `CliffordGate` to an integer Pauli string and a coefficient 
 using the a `map_array` corresponding to the `CliffordGate`.
 """
-function applywithmap(gate::CliffordGate, pstr::PauliStringType, coefficient, map_array; kwargs...)
+function applywithmap(gate::CliffordGate, pstr::PauliStringType, coeff, map_array; kwargs...)
     qinds = gate.qinds
 
     lookup_int = _extractlookupop(pstr, qinds)
     sign, partial_pstr = map_array[lookup_int+1]  # +1 because Julia is 1-indexed and lookup_int is 0-indexed
     pstr = _insertnewpaulis!(pstr, partial_pstr, qinds)
 
-    coefficient = _multiplysign(coefficient, sign)
-    return pstr, coefficient
+    coeff = _multiplysign(coeff, sign)
+    return pstr, coeff
 end
 
 function _extractlookupop(lookup_int::PauliStringType, qinds)

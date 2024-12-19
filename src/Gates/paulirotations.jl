@@ -45,19 +45,12 @@ The `term` is the integer representation of the Pauli string with the correct in
 This allows for faster application of the gate.
 See `tomaskedpaulirotation` for conversion from `PauliRotation`, which is the easiest way to construct a `MaskedPauliRotation`.
 """
-struct MaskedPauliRotation{T} <: ParametrizedGate where {T<:PauliStringType}  # TODO rename
+struct MaskedPauliRotation{T} <: ParametrizedGate where {T<:PauliStringType}
     symbols::Vector{Symbol}
     qinds::Vector{Int}
     generator_mask::T
 end
 
-import Base.show
-"""
-Pretty print for `MaskedPauliRotation`.
-"""
-function show(io::IO, gate::MaskedPauliRotation)
-    print(io, "MaskedPauliRotation{$(typeof(gate.generator_mask))}($(gate.symbols), $(gate.qinds))")
-end
 
 """
     PauliRotationUnion
@@ -139,17 +132,17 @@ end
 ### Apply PauliRotation helpers
 
 """
-    splitapply(gate::PauliRotation, pstr::PauliStringType, theta, coefficient=1.0; kwargs...)
+    splitapply(gate::PauliRotation, pstr::PauliStringType, coeff, theta; kwargs...)
 
-Apply a `PauliRotation` with an angle `theta` and a coefficient `coefficient` to an integer Pauli string,
+Apply a `PauliRotation` with an angle `theta` and a coefficient `coeff` to an integer Pauli string,
 assuming that the gate does not commute with the Pauli string.
-Returns two pairs of (pstr, coefficient) as one tuple.
+Returns two pairs of (pstr, coeff) as one tuple.
 Currently `kwargs` are passed to `applycos` and `applysin` for the Surrogate.
 """
-function splitapply(gate::PauliRotationUnion, pstr::PauliStringType, theta, coefficient=1.0; kwargs...)
-    coeff1 = _applycos(coefficient, theta; kwargs...)
+function splitapply(gate::PauliRotationUnion, pstr::PauliStringType, coeff, theta; kwargs...)
+    coeff1 = _applycos(coeff, theta; kwargs...)
     new_pstr, sign = _getnewpaulistring(gate, pstr)
-    coeff2 = _applysin(coefficient, theta; sign=sign, kwargs...)
+    coeff2 = _applysin(coeff, theta; sign=sign, kwargs...)
 
     return pstr, coeff1, new_pstr, coeff2
 end
