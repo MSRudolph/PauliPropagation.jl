@@ -24,7 +24,7 @@ function hybridPP(nq, nl, W, min_abs_coeff, max_freq)
 
     pstr = PauliString(nq, :Z, round(Int, nq / 2))
 
-    wrapped_pstr = wrapcoefficients(pstr, NumericPathProperties)
+    wrapped_pstr = wrapcoefficients(pstr, PauliFreqTracker)
 
     topo = bricklayertopology(nq; periodic=false)
     circ = hardwareefficientcircuit(nq, nl; topology=topo)
