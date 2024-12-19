@@ -1,3 +1,11 @@
+### noisechannels.jl
+##
+# A file for noise channels. 
+# In particular Pauli noise channels and amplitude damping noise.
+##
+###
+
+
 # Depolarzing noise channel
 """
 Abstract type for parametrized noise channels
@@ -149,49 +157,4 @@ Damps X and Y Paulis, and splits Z into and I and Z component (in the transposed
 """
 function AmplitudeDampingNoise(qind::Int, gamma::Real)
     return FrozenGate(AmplitudeDampingNoise(qind), gamma)
-end
-
-
-"""
-    actsdiagonally(gate::AmplitudeDampingNoise, pstr::PauliStringType)
-
-Check if the amplitude damping noise channel acts diagonally on the Pauli string `pstr`.
-This implies no splitting (acting diagonally) which happens when acting on I, X, and Y.
-"""
-function actsdiagonally(gate::AmplitudeDampingNoise, pstr::PauliStringType; kwargs...)
-    return getpauli(pstr, gate.qind) != 3
-end
-
-"""
-    diagonalapply(gate::AmplitudeDampingNoise, pstr::PauliStringType, coeff, gamma)
-
-Apply an amplitude damping noise channel to an integer Pauli string `pstr` with noise strength `gamma`.
-This is under the assumption that it has been checked that the noise channel acts diagonally on the Pauli string.
-Returns a tuple of Pauli string and coefficient.
-Physically `gamma` is restricted to the range `[0, 1]`.
-A coefficient of the Pauli string can optionally be passed as `coefficient`.
-"""
-function diagonalapply(gate::AmplitudeDampingNoise, pstr::PauliStringType, coeff, gamma; kwargs...)
-
-    local_pauli = getpauli(pstr, gate.qind)
-
-    if local_pauli != 0  # non-identity Pauli
-        coeff *= sqrt(1 - gamma)
-    end
-
-    return pstr, coeff
-end
-
-"""
-    splitapply(gate::AmplitudeDampingNoise, pstr::PauliStringType, coeff, gamma)
-
-Apply an amplitude damping noise channel to an integer Pauli string `pstr` with noise strength `gamma`.
-This is under the assumption that it has been checked that the noise channel acts on a Z Pauli and splits.
-Returns a tuple of two pairs of Pauli strings and coefficients.
-Physically `gamma` is restricted to the range `[0, 1]`.
-A coefficient of the Pauli string can optionally be passed as `coefficient`.
-"""
-function splitapply(gate::AmplitudeDampingNoise, pstr::PauliStringType, coeff, gamma; kwargs...)
-    new_pstr = setpauli(pstr, 0, gate.qind)
-    return pstr, (1 - gamma) * coeff, new_pstr, gamma * coeff
 end

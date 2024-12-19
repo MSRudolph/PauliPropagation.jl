@@ -43,6 +43,78 @@ function applytoall!(gate::PauliRotationUnion, theta, psum, aux_psum, args...; k
     return
 end
 
+"""
+    splitapply(gate::PauliRotation, pstr::PauliStringType, coeff, theta; kwargs...)
+
+Apply a `PauliRotation` with an angle `theta` and a coefficient `coeff` to an integer Pauli string,
+assuming that the gate does not commute with the Pauli string.
+Returns two pairs of (pstr, coeff) as one tuple.
+Currently `kwargs` are passed to `applycos` and `applysin` for the Surrogate.
+"""
+function splitapply(gate::PauliRotationUnion, pstr::PauliStringType, coeff, theta; kwargs...)
+    coeff1 = _applycos(coeff, theta; kwargs...)
+    new_pstr, sign = getnewpaulistring(gate, pstr)
+    coeff2 = _applysin(coeff, theta; sign=sign, kwargs...)
+
+    return pstr, coeff1, new_pstr, coeff2
+end
+
+"""
+    getnewpaulistring(gate::PauliRotation, pstr::PauliStringType)
+
+Get the new Pauli string after applying a `PauliRotation` to an integer Pauli string,
+as well as the corresponding ±1 coefficient.
+"""
+function getnewpaulistring(gate::PauliRotation, pstr::PauliStringType)
+    new_pstr = copy(pstr)
+
+    total_sign = 1  # this coefficient will be imaginary
+    for (qind, gate_sym) in zip(gate.qinds, gate.symbols)
+        sign, new_partial_str = pauliprod(gate_sym, getpauli(new_pstr, qind))
+        total_sign *= sign
+        new_pstr = setpauli(new_pstr, new_partial_str, qind)
+    end
+    return new_pstr, real(1im * total_sign)
+end
+
+"""
+    getnewpaulistring(gate::MaskedPauliRotation, pstr::PauliStringType)
+
+Get the new Pauli string after applying a `MaskedPauliRotation` to an integer Pauli string,
+as well as the corresponding ±1 coefficient.
+"""
+function getnewpaulistring(gate::MaskedPauliRotation, pstr::PauliStringType)
+    sign, new_pstr = pauliprod(gate.generator_mask, pstr, gate.qinds)
+    return new_pstr, real(1im * sign)
+end
+
+# NOTE: The reason we have the following functions defined is so PathProperties and Surrogate can overload them
+"""
+    _applysin(old_coeff::Number, theta; sign=1, kwargs...)
+
+Multiply a numerical coefficient with sin(theta) * sign.
+"""
+function _applysin(old_coeff::Number, theta; sign=1, kwargs...)
+    return old_coeff * sin(theta) * sign
+end
+
+"""
+    _applycos(old_coeff::Number, theta; sign=1, kwargs...)
+
+Multiply a numerical coefficient with cos(theta) * sign.
+"""
+function _applycos(old_coeff::Number, theta; sign=1, kwargs...)
+    return old_coeff * cos(theta) * sign
+end
+
+function _incrementcosandfreq(coeff)
+    return coeff
+end
+
+function _incrementsinandfreq(coeff)
+    return coeff
+end
+
 
 ### Clifford gates
 """
@@ -70,6 +142,42 @@ Apply a `CliffordGate` to an integer Pauli string and an optional coefficient.
 function apply(gate::CliffordGate, pstr::PauliStringType, coeff; kwargs...)
     map_array = clifford_map[gate.symbol]
     return applywithmap(gate, pstr, coeff, map_array)
+end
+
+"""
+    applywithmap(gate::CliffordGate, pstr::PauliStringType, coefficient, map_array)
+
+Apply a `CliffordGate` to an integer Pauli string and a coefficient 
+using the a `map_array` corresponding to the `CliffordGate`.
+"""
+function applywithmap(gate::CliffordGate, pstr::PauliStringType, coeff, map_array; kwargs...)
+    qinds = gate.qinds
+
+    lookup_int = _extractlookupop(pstr, qinds)
+    sign, partial_pstr = map_array[lookup_int+1]  # +1 because Julia is 1-indexed and lookup_int is 0-indexed
+    pstr = _insertnewpaulis!(pstr, partial_pstr, qinds)
+
+    coeff = _multiplysign(coeff, sign)
+    return pstr, coeff
+end
+
+function _extractlookupop(lookup_int::PauliStringType, qinds)
+    partial_pstr = typeof(lookup_int)(0)
+    for ii in eachindex(qinds)
+        partial_pstr = setpauli(partial_pstr, getpauli(lookup_int, qinds[ii]), ii)
+    end
+    return partial_pstr
+end
+
+function _insertnewpaulis!(pstr::PauliStringType, partial_pstr::PauliStringType, qinds)
+    for ii in eachindex(qinds)
+        pstr = setpauli(pstr, getpauli(partial_pstr, ii), qinds[ii])
+    end
+    return pstr
+end
+
+function _multiplysign(coefficient, sign)
+    return coefficient * sign
 end
 
 ### Pauli Noise
@@ -155,6 +263,49 @@ function applytoall!(gate::AmplitudeDampingNoise, theta, psum, aux_psum, args...
     return
 end
 
+"""
+    actsdiagonally(gate::AmplitudeDampingNoise, pstr::PauliStringType)
+
+Check if the amplitude damping noise channel acts diagonally on the Pauli string `pstr`.
+This implies no splitting (acting diagonally) which happens when acting on I, X, and Y.
+"""
+function actsdiagonally(gate::AmplitudeDampingNoise, pstr::PauliStringType; kwargs...)
+    return getpauli(pstr, gate.qind) != 3
+end
+
+"""
+    diagonalapply(gate::AmplitudeDampingNoise, pstr::PauliStringType, coeff, gamma)
+
+Apply an amplitude damping noise channel to an integer Pauli string `pstr` with noise strength `gamma`.
+This is under the assumption that it has been checked that the noise channel acts diagonally on the Pauli string.
+Returns a tuple of Pauli string and coefficient.
+Physically `gamma` is restricted to the range `[0, 1]`.
+A coefficient of the Pauli string can optionally be passed as `coefficient`.
+"""
+function diagonalapply(gate::AmplitudeDampingNoise, pstr::PauliStringType, coeff, gamma; kwargs...)
+
+    local_pauli = getpauli(pstr, gate.qind)
+
+    if local_pauli != 0  # non-identity Pauli
+        coeff *= sqrt(1 - gamma)
+    end
+
+    return pstr, coeff
+end
+
+"""
+    splitapply(gate::AmplitudeDampingNoise, pstr::PauliStringType, coeff, gamma)
+
+Apply an amplitude damping noise channel to an integer Pauli string `pstr` with noise strength `gamma`.
+This is under the assumption that it has been checked that the noise channel acts on a Z Pauli and splits.
+Returns a tuple of two pairs of Pauli strings and coefficients.
+Physically `gamma` is restricted to the range `[0, 1]`.
+A coefficient of the Pauli string can optionally be passed as `coefficient`.
+"""
+function splitapply(gate::AmplitudeDampingNoise, pstr::PauliStringType, coeff, gamma; kwargs...)
+    new_pstr = setpauli(pstr, 0, gate.qind)
+    return pstr, (1 - gamma) * coeff, new_pstr, gamma * coeff
+end
 
 ### Frozen Gates
 """

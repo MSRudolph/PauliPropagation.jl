@@ -168,7 +168,7 @@ function mcapply(gate::PauliRotationUnion, pauli, coeff, theta, split_prob=0.5; 
         # if the gate does not commute with the pauli string, remain with probability `split_prob` and split off with probability 1 - `split_prob`.
         if rand() > split_prob
             # branch into the new Pauli
-            pauli, sign = _getnewpaulistring(gate, pauli) # TODO: This allocates
+            pauli, sign = getnewpaulistring(gate, pauli) # TODO: This allocates
             # for PathProperties: increment sin and frequency count
             coeff = _incrementsinandfreq(coeff)
         else

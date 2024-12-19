@@ -1,3 +1,11 @@
+### frozengates.jl
+##
+# A file for frozen gates. Frozen gates are wrappers around parametrized gates tied to a fixed parameter.
+# This way a parameter does not need to be passed to `propagate`, because it is already attached to the gate.
+# This is not the intended way of using parametrized gates if the parameters change of the gate parameters are to be optimized. 
+##
+###
+
 """
     FrozenGate(gate::ParametrizedGate, parameter::Number)
 

@@ -1,3 +1,11 @@
+### Gates.jl
+##
+# The top level file for gates.
+# Gates are defined as structs that subtype either `ParametrizedGate` or `StaticGate`.
+# How the gates act is defined in the `Propagation` module.
+##
+###
+
 """
 Abstract type for gates. 
 """

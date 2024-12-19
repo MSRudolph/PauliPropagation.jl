@@ -164,3 +164,82 @@ A one-argument constructor of the custom `PathProperties` type from a coefficien
 function wrapcoefficients(psum::PauliSum, ::Type{PProp}) where {PProp<:PathProperties}
     return PauliSum(psum.nqubits, Dict(pstr => PProp(coeff) for (pstr, coeff) in psum.terms))
 end
+
+
+
+# Utilities for Pauli Gates
+"""
+    _applysin(pth::PathProperties, theta; sign=1, kwargs...)
+
+Multiply sin(theta) * sign to the `coeff` field of a `PathProperties` object.
+Increments the `nsins` and `freq` fields by 1 if applicable.
+"""
+function _applysin(pth::T, theta; sign=1, kwargs...) where {T<:PathProperties}
+    fields = fieldnames(T)
+
+    @inline function updateval(val, field)
+        if field == :coeff
+            # apply sin to the `coeff` field
+            return _applysin(val, theta; sign=sign, kwargs...)
+        elseif field == :nsins
+            return val + 1
+        elseif field == :freq
+            return val + 1
+        else
+            return val
+        end
+    end
+    return T((updateval(getfield(pth, field), field) for field in fields)...)
+end
+
+"""
+    _applycos(pth::PathProperties, theta; sign=1, kwargs...)
+
+Multiply cos(theta) * sign to the `coeff` field of a `PathProperties` object.
+Increments the `ncos` and `freq` fields by 1 if applicable.
+"""
+function _applycos(pth::T, theta; sign=1, kwargs...) where {T<:PathProperties}
+    fields = fieldnames(T)
+
+    @inline function updateval(val, field)
+        if field == :coeff
+            # apply cos to the `coeff` field
+            return _applycos(val, theta; sign=sign, kwargs...)
+        elseif field == :ncos
+            return val + 1
+        elseif field == :freq
+            return val + 1
+        else
+            return val
+        end
+    end
+    return T((updateval(getfield(pth, field), field) for field in fields)...)
+end
+
+function _incrementcosandfreq(pth::T) where {T<:PathProperties}
+    fields = fieldnames(T)
+    @inline function updateval(val, field)
+        if field == :ncos
+            return val + 1
+        elseif field == :freq
+            return val + 1
+        else
+            return val
+        end
+    end
+    return T((updateval(getfield(pth, field), field) for field in fields)...)
+end
+
+function _incrementsinandfreq(pth::T) where {T<:PathProperties}
+    fields = fieldnames(T)
+    @inline function updateval(val, field)
+        if field == :nsins
+            return val + 1
+        elseif field == :freq
+            return val + 1
+        else
+            return val
+        end
+    end
+    return T((updateval(getfield(pth, field), field) for field in fields)...)
+end
