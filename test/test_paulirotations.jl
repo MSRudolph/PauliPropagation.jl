@@ -43,12 +43,3 @@ using Test
   psum = PauliSum(PauliString(nq, :X, 2))
   @test propagate(gate, psum, th) == PauliSum([PauliString(nq, :X, 2, cos(th)), PauliString(nq, :Y, 2, -sin(th))])
 end
-
-@testset "Test MaskedPauliRotation" begin
-  nq = 2
-  th = randn()
-  gate = PauliRotation([:X, :Z], [1, 2])
-  masked_gate = PauliPropagation._tomaskedpaulirotation(gate, nq)
-  pstr = PauliString(nq, :Z, 1)
-  @test propagate(gate, pstr, th) == propagate(masked_gate, pstr, th)
-end

@@ -31,19 +31,27 @@
     @test estimateaverageerror(circ, wrapped_pstr, 100, ones(nparams) * 1.23; max_sins=0) >= estimateaverageerror(circ, pstr, 100, ones(nparams) * 1.23; max_sins=nq) == 0.0
 
     # Numerical Coefficient
+    # convert to masked pauli rotations because the code requires this at the lower level
+
     pstr = PauliString(nq, :X, rand(1:nq))
+    circ = PauliPropagation._tomaskedpaulirotation(circ, pstr.nqubits)
     @test typeof(montecarlopropagation(circ, pstr)) <: Tuple{typeof(pstr),Bool}
     pstr = PauliString(nq, :Y, rand(1:nq))
+    circ = PauliPropagation._tomaskedpaulirotation(circ, pstr.nqubits)
     @test typeof(montecarlopropagation(circ, pstr, 0.5)) <: Tuple{typeof(pstr),Bool}
     pstr = PauliString(nq, :Z, rand(1:nq))
+    circ = PauliPropagation._tomaskedpaulirotation(circ, pstr.nqubits)
     @test typeof(montecarlopropagation(circ, pstr, ones(nparams) * π)) <: Tuple{typeof(pstr),Bool}
 
     # NumericPathProperties Coefficient
     wrapped_pstr = wrapcoefficients(PauliString(nq, :X, rand(1:nq)))
+    circ = PauliPropagation._tomaskedpaulirotation(circ, pstr.nqubits)
     @test typeof(montecarlopropagation(circ, wrapped_pstr)) <: Tuple{typeof(wrapped_pstr),Bool}
     wrapped_pstr = wrapcoefficients(PauliString(nq, :Y, rand(1:nq)))
+    circ = PauliPropagation._tomaskedpaulirotation(circ, pstr.nqubits)
     @test typeof(montecarlopropagation(circ, wrapped_pstr, 0.5)) <: Tuple{typeof(wrapped_pstr),Bool}
     wrapped_pstr = wrapcoefficients(PauliString(nq, :Z, rand(1:nq)))
+    circ = PauliPropagation._tomaskedpaulirotation(circ, pstr.nqubits)
     @test typeof(montecarlopropagation(circ, wrapped_pstr, ones(nparams) * π)) <: Tuple{typeof(wrapped_pstr),Bool}
 
     # TODO Tests including noise channel
