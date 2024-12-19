@@ -157,12 +157,14 @@ Default `mcapply` function for numerical certificates. Assumes that the `apply` 
 mcapply(gate, pauli, coeff, theta, split_probability; kwargs...) = apply(gate, pauli, coeff, theta; kwargs...) # TODO: have more sensible default functions once the numerical certificate is figured out.
 
 """
-    mcapply(gate::PauliRotationUnion, pauli, coeff, theta, split_prob=0.5; kwargs...) 
+    mcapply(gate::MaskedPauliRotation, pauli, coeff, theta, split_prob=0.5; kwargs...) 
 
-MC apply function for Pauli gates. If the gate commutes with the pauli string, the pauli string is left unchanged. 
+MC apply function for a `MaskedPauliRotation`.
+This will error if a `PauliRotation` is not converted to a `MaskedPauliRotation` before calling this function.
+If the gate commutes with the pauli string, the pauli string is left unchanged. 
 Else the pauli string is split off with a probability 1 - `split_prob`.
 """
-function mcapply(gate::PauliRotationUnion, pauli, coeff, theta, split_prob=0.5; kwargs...)
+function mcapply(gate::MaskedPauliRotation, pauli, coeff, theta, split_prob=0.5; kwargs...)
 
     if !commutes(gate, pauli)
         # if the gate does not commute with the pauli string, remain with probability `split_prob` and split off with probability 1 - `split_prob`.
