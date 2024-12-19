@@ -10,13 +10,13 @@
 
 ### PAULI GATES
 """
-    applytoall!(gate::PauliRotationUnion, theta, psum, aux_psum, args...; kwargs...)
+    applytoall!(gate::PauliRotation, theta, psum, aux_psum, args...; kwargs...)
 
-Overload of `applytoall!` for `PauliRotation` and `MaskedPauliRotation` gates. 
+Overload of `applytoall!` for `PauliRotation` gates. 
 It fixes the type-instability of the `apply()` function and reduces moving Pauli strings between `psum` and `aux_psum`.
 `psum` and `aux_psum` are merged later.
 """
-function applytoall!(gate::PauliRotationUnion, theta, psum, aux_psum, args...; kwargs...)
+function applytoall!(gate::PauliRotation, theta, psum, aux_psum, args...; kwargs...)
     # turn the (potentially) PauliRotation gate into a MaskedPauliRotation gate
     # this allows for faster operations
     gate = _tomaskedpaulirotation(gate, paulitype(psum))
@@ -44,37 +44,19 @@ function applytoall!(gate::PauliRotationUnion, theta, psum, aux_psum, args...; k
 end
 
 """
-    splitapply(gate::PauliRotation, pstr::PauliStringType, coeff, theta; kwargs...)
+    splitapply(gate::MaskedPauliRotation, pstr::PauliStringType, coeff, theta; kwargs...)
 
-Apply a `PauliRotation` with an angle `theta` and a coefficient `coeff` to an integer Pauli string,
+Apply a `MaskedPauliRotation` with an angle `theta` and a coefficient `coeff` to an integer Pauli string,
 assuming that the gate does not commute with the Pauli string.
 Returns two pairs of (pstr, coeff) as one tuple.
 Currently `kwargs` are passed to `applycos` and `applysin` for the Surrogate.
 """
-function splitapply(gate::PauliRotationUnion, pstr::PauliStringType, coeff, theta; kwargs...)
+function splitapply(gate::MaskedPauliRotation, pstr::PauliStringType, coeff, theta; kwargs...)
     coeff1 = _applycos(coeff, theta; kwargs...)
     new_pstr, sign = getnewpaulistring(gate, pstr)
     coeff2 = _applysin(coeff, theta; sign=sign, kwargs...)
 
     return pstr, coeff1, new_pstr, coeff2
-end
-
-"""
-    getnewpaulistring(gate::PauliRotation, pstr::PauliStringType)
-
-Get the new Pauli string after applying a `PauliRotation` to an integer Pauli string,
-as well as the corresponding ±1 coefficient.
-"""
-function getnewpaulistring(gate::PauliRotation, pstr::PauliStringType)
-    new_pstr = copy(pstr)
-
-    total_sign = 1  # this coefficient will be imaginary
-    for (qind, gate_sym) in zip(gate.qinds, gate.symbols)
-        sign, new_partial_str = pauliprod(gate_sym, getpauli(new_pstr, qind))
-        total_sign *= sign
-        new_pstr = setpauli(new_pstr, new_partial_str, qind)
-    end
-    return new_pstr, real(1im * total_sign)
 end
 
 """
@@ -88,7 +70,7 @@ function getnewpaulistring(gate::MaskedPauliRotation, pstr::PauliStringType)
     return new_pstr, real(1im * sign)
 end
 
-# NOTE: The reason we have the following functions defined is so PathProperties and Surrogate can overload them
+# TODO: Move this over to PathProperties
 """
     _applysin(old_coeff::Number, theta; sign=1, kwargs...)
 
@@ -107,11 +89,11 @@ function _applycos(old_coeff::Number, theta; sign=1, kwargs...)
     return old_coeff * cos(theta) * sign
 end
 
-function _incrementcosandfreq(coeff)
+function _incrementcosandfreq(coeff::Number)
     return coeff
 end
 
-function _incrementsinandfreq(coeff)
+function _incrementsinandfreq(coeff::Number)
     return coeff
 end
 
@@ -176,6 +158,7 @@ function _insertnewpaulis!(pstr::PauliStringType, partial_pstr::PauliStringType,
     return pstr
 end
 
+# This is left general because it is overloaded in the Surrogate
 function _multiplysign(coefficient, sign)
     return coefficient * sign
 end
