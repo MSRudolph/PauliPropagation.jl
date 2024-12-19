@@ -113,6 +113,30 @@ function getpauli(pstr::PauliStringType, index::Integer)
 end
 
 """
+    getpaulisandinds(pstr::PauliStringType)
+
+Returns `(paulis,indices)`` where `paulis` are all non-identity paulis contained in the
+given Pauli string (as symbols `:X`, `:Y`, `:Z`) and `indices` are their corresponding indices
+"""
+function getpaulisandinds(pstr::PauliStringType)
+    paulis::Vector{Symbol} = []
+    indices::Vector{Int} = []
+
+    maxbit = (pstr==0) ? 0 : ndigits(pstr, base=2)
+    maxind = ceil(Int, maxbit / 2)
+
+    for i in 1:maxind
+        p = getpauli(pstr, i)
+        if (p != 0)
+            push!(paulis, pauli_symbols[p+1])
+            push!(indices, i)
+        end
+    end
+    
+    return (paulis, indices)
+end
+
+"""
     setpauli(pstr::PauliString, target_pauli::T, index::Integer) where {T<:Union{Symbol,PauliType}}
 
 Sets the Pauli on index `index` of an integer `PauliString` to `target_pauli`. That Pauli can be provided as integer (0, 1, 2, 3) or as a symbol (:I, :X, :Y, :Z).
