@@ -41,12 +41,6 @@ export
     getinttype
 
 
-include("pathproperties.jl")
-export
-    PathProperties,
-    NumericPathProperties,
-    wrapcoefficients
-
 include("Gates/Gates.jl")
 export
     Gate,
@@ -86,6 +80,12 @@ export
     qcnnansatz,
     appendSU4!,
     ibmeagletopology
+
+include("PathProperties/PathProperties.jl")
+export
+    PathProperties,
+    PauliFreqTracker,
+    wrapcoefficients
 
 include("truncations.jl")
 export

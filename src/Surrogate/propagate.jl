@@ -64,11 +64,19 @@ end
 
 ## For Pauli Gates
 
-function _applycos(node::CircuitNode, theta; sign=1, param_idx=0, kwargs...)
+function splitapply(gate::MaskedPauliRotation, pstr::PauliStringType, coeff::NodePathProperties, theta; kwargs...)
+    coeff1 = _applycos(coeff, theta; kwargs...)
+    new_pstr, sign = getnewpaulistring(gate, pstr)
+    coeff2 = _applysin(coeff, theta, sign; kwargs...)
+
+    return pstr, coeff1, new_pstr, coeff2
+end
+
+function _applycos(node::CircuitNode, theta, sign=1; param_idx=0, kwargs...)
     return PauliRotationNode(parents=[node], trig_inds=[1], signs=[sign], param_idx=param_idx)
 end
 
-function _applysin(node::CircuitNode, theta; sign=1, param_idx=0, kwargs...)
+function _applysin(node::CircuitNode, theta, sign=1; param_idx=0, kwargs...)
     return PauliRotationNode(parents=[node], trig_inds=[-1], signs=[sign], param_idx=param_idx)
 end
 

@@ -61,7 +61,7 @@ end
 
 @testset "PauliString Tests" begin
     pstr = createpaulistring(7)
-    wrapped_pstr = wrapcoefficients(pstr, NumericPathProperties)
+    wrapped_pstr = wrapcoefficients(pstr, PauliFreqTracker)
 end
 
 # Test PauliSum from Dict creation

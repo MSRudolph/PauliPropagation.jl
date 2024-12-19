@@ -29,11 +29,11 @@ end
 
 
 """
-    truncatemincoeff(path_property::NumericPathProperties, min_abs_coeff::Real)
+    truncatemincoeff(path_property::PauliFreqTracker, min_abs_coeff::Real)
 
 Return `true` if `abs(path_property.coeff) < min_abs_coeff`. 
 """
-function truncatemincoeff(path_property::NumericPathProperties, min_abs_coeff::Real)
+function truncatemincoeff(path_property::PauliFreqTracker, min_abs_coeff::Real)
     return abs(path_property.coeff) < min_abs_coeff
 end
 
