@@ -57,28 +57,28 @@ end
     
     # Test with `PauliString` type
     pstr = PauliString(3, [:X, :Y, :Z], [1, 2, 3])
-    @test getpaulis(pstr, [1, 2, 3]) == pstr
+    @test getpauli(pstr, [1, 2, 3]) == pstr
     
-    @test getpaulis(pstr, [1]) == PauliString(1, [:X], [1])
-    @test getpaulis(pstr, [1, 2]) == PauliString(2, [:X, :Y], [1, 2])
+    @test getpauli(pstr, [1]) == PauliString(1, [:X], [1])
+    @test getpauli(pstr, [1, 2]) == PauliString(2, [:X, :Y], [1, 2])
 
     # Test consistency with integer representation
     rand_int = 13
-    @test getpaulis(rand_int, [1, 2]) == 13
+    @test getpauli(rand_int, [1, 2]) == 13
 
     # Test with `PauliStringType`
     nqubits = 4
     pstr = PauliString(nqubits, :X, 2)
     inds = [1, 3]
-    @test getpaulis(pstr.term, inds) == 0
+    @test getpauli(pstr.term, inds) == 0
     inds = [3, 1]
-    @test getpaulis(pstr.term, inds) == 0
+    @test getpauli(pstr.term, inds) == 0
     inds = [1, 2]
-    @test getpaulis(pstr.term, inds) == 4
-    # if the indices are not sorted, `getpaulis` will reutrn a pauli
+    @test getpauli(pstr.term, inds) == 4
+    # if the indices are not sorted, `getpauli` will reutrn a pauli
     # integer representation according to the unsorted indices
     inds = [2, 1]
-    @test getpaulis(pstr.term, inds) == 1
+    @test getpauli(pstr.term, inds) == 1
 
     # Test with inttosymbol
     inds = [2, 4]
@@ -86,12 +86,12 @@ end
     pstr = PauliString(nqubits, symbols, inds)
 
     @test inttosymbol(
-        getpaulis(pstr.term, inds), length(inds)
+        getpauli(pstr.term, inds), length(inds)
     ) == symbols
 
     # flip `qinds` will return reversed symbols
     @test inttosymbol(
-        getpaulis(pstr.term, [4, 2]), length(inds)
+        getpauli(pstr.term, [4, 2]), length(inds)
     ) == [symbols[2], symbols[1]]    
 
 end
@@ -119,21 +119,21 @@ end
     pstr = PauliString(nqubits, [:X, :Z], [1, 4])
 
     # Test pstr with `PauliString` type and target_pauli as `Integer`
-    transformed_pstr = setpaulis(pstr, 2, [1, 3])
+    transformed_pstr = setpauli(pstr, 2, [1, 3])
     expected_pstr = PauliString(4, [:Y, :Z], [1, 4])
     @test transformed_pstr == expected_pstr
 
     # Test pstr with `PauliString` type and target_pauli as `Symbol`
-    transformed_pstr = setpaulis(pstr, [:Y, :X], [1, 3])
+    transformed_pstr = setpauli(pstr, [:Y, :X], [1, 3])
     expected_pstr = PauliString(4, [:Y, :X, :Z], [1, 3, 4])    
     @test transformed_pstr == expected_pstr    
 
     # Test pstr with `PauliStringType` and target_pauli as `Integer`
-    transformed_pstr = setpaulis(pstr.term, symboltoint([:Y, :X]), [1, 3])
+    transformed_pstr = setpauli(pstr.term, symboltoint([:Y, :X]), [1, 3])
     @test transformed_pstr == expected_pstr.term
 
     expected_pstr = PauliString(4, [:Y, :X, :Z], [3, 1, 4])  
-    transformed_pstr = setpaulis(pstr.term, [:Y, :X], [3, 1])
+    transformed_pstr = setpauli(pstr.term, [:Y, :X], [3, 1])
     @test transformed_pstr == expected_pstr.term    
 end
 

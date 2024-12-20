@@ -129,11 +129,11 @@ end
 
 
 """
-    getpaulis(pstr::PauliStringType, qinds::Vector{Integer})
+    getpauli(pstr::PauliStringType, qinds::Vector{Integer})
 
 Gets the Paulis on indices `qinds` of a `pstr` in the integer representation.
 """
-function getpaulis(pstr::PauliStringType, qinds)
+function getpauli(pstr::PauliStringType, qinds)
 
     # Get the Paulis on the indices `qinds`
     paulis = [getpauli(pstr, index) for index in qinds]
@@ -142,12 +142,12 @@ function getpaulis(pstr::PauliStringType, qinds)
 end
 
 """
-    getpaulis(pstr::PauliString, qinds::Vector{Integer})
+    getpauli(pstr::PauliString, qinds::Vector{Integer})
 
 Gets the Paulis on indices `qinds` of a PauliString `pstr`.
 """
-function getpaulis(pstr::PauliString, qinds)
-    new_pauli = getpaulis(pstr.term, qinds)
+function getpauli(pstr::PauliString, qinds)
+    new_pauli = getpauli(pstr.term, qinds)
     return inttopstr(new_pauli, length(qinds))
 end
 
@@ -188,7 +188,7 @@ end
 
 
 """
-    setpaulis(
+    setpauli(
         pstr::PauliStringType, 
         target_paulis::PauliType, 
         qinds::Vector{Integer}
@@ -196,16 +196,12 @@ end
 
 Set the Paulis `qinds` of an integer Pauli string `pstr` to `target_paulis`.
 """
-function setpaulis(pstr::PauliStringType, target_paulis::PauliType, qinds)
-    for (i, index) in enumerate(qinds)
-        pauli = getpauli(target_paulis, i)
-        pstr = setpauli(pstr, pauli, index)
-    end
-    return pstr
+function setpauli(pstr::PauliStringType, target_paulis::PauliType, qinds)
+    return _setpaulibits(pstr, target_paulis, qinds)
 end
 
 """
-    setpaulis(
+    setpauli(
         pstr::PauliStringType, 
         target_paulis::Vector{Symbol}, 
         qinds::Vector{Integer}
@@ -214,12 +210,12 @@ end
 Set the Paulis `qinds` of an integer Pauli string `pstr` to `target_paulis`.
 `target_paulis` is a vector of symbols.
 """
-function setpaulis(pstr::PauliStringType, target_paulis, qinds)
-    return setpaulis(pstr, symboltoint(target_paulis), qinds)
+function setpauli(pstr::PauliStringType, target_paulis, qinds)
+    return setpauli(pstr, symboltoint(target_paulis), qinds)
 end
 
 """
-    setpaulis(
+    setpauli(
         pstr::PauliString, 
         target_paulis::Union{PauliType, Vector{Symbol}}, 
         qinds::Vector{Integer}
@@ -227,8 +223,8 @@ end
 
 Set the Paulis `qinds` of a `pstr` to `target_paulis`.
 """
-function setpaulis(pstr::PauliString, target_paulis, qinds)
-    new_pstr = setpaulis(pstr.term, target_paulis, qinds)
+function setpauli(pstr::PauliString, target_paulis, qinds)
+    new_pstr = setpauli(pstr.term, target_paulis, qinds)
     return inttopstr(new_pstr, pstr.nqubits)
 end
 
@@ -238,7 +234,7 @@ end
 
 Returns a string representation of an integer Pauli string `pstr` on `nqubits` qubits.
 """
-inttostring(pstr::PauliType, nqubits::Integer) = prod("$(inttosymbol(getpauli(pstr, ii)))" for ii = 1:nqubits)
+inttostring(pstr::PauliType, nqubits::Integer) = prod("$(inttosymbol(getpauli(pstr, ii)))" for ii in 1:nqubits)
 
 """
 Pretty string function.
