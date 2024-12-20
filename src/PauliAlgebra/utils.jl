@@ -100,14 +100,6 @@ Maps an integer Pauli to its corresponding symbol.
 inttosymbol(pauli::PauliType) = pauli_symbols[pauli+1]
 
 ## get and set functions
-"""
-    getpauli(pstr::PauliString, index::Integer)
-
-Gets the Pauli on index `index` of a `PauliString` in the integer representation.
-"""
-function getpauli(pstr::PauliString, index::Integer)
-    return getpauli(pstr.term, index)
-end
 
 """
     getpauli(pstr::PauliStringType, index::Integer)
