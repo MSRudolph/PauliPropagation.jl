@@ -86,15 +86,6 @@ function inttosymbol(pstr::PauliStringType, nqubits::Integer)
 end
 
 """
-    inttopstr(pstr::PauliStringType, nqubits::Integer)
-
-Maps an integer Pauli string to a `PauliString` object.
-"""
-function inttopstr(pstr::PauliStringType, nqubits::Integer)
-    return PauliString(nqubits, inttosymbol(pstr, nqubits), collect(1:nqubits))
-end
-
-"""
     symboltoint(pauli::Symbol)
 
 Maps a single symbol to its corresponding integer representation.
