@@ -14,6 +14,8 @@ using Random
     @test isa(createpaulisum(21), PauliSum)
     @test isa(addtopaulisum(65), PauliSum)
 
+    include("test_paulialgebra_utils.jl")
+
     Random.seed!(42)
     include("test_noisechannels.jl")
     @test paulinoise(8, 4, Inf, 0.0)
