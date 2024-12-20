@@ -124,8 +124,8 @@ export
 
 include("numericalcertificates.jl")
 export
-    estimateaverageerror,
-    estimateaverageerror!
+    estimatemse,
+    estimatemse!
 
 include("Surrogate/Surrogate.jl")
 export

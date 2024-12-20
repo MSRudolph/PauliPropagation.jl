@@ -17,11 +17,6 @@ Abstract type for wrapping coefficients and record custom path properties
 abstract type PathProperties end
 
 """
-Pretty print for PathProperties
-"""
-Base.show(io::IO, path::PathProperties) = print(io, "PathProperties($(typeof(path.coeff)), nsins=$(path.nsins), ncos=$(path.ncos), freq=$(path.freq))")
-
-"""
 PathProperties are expected to be immutable.
 """
 Base.copy(path::PathProperties) = path

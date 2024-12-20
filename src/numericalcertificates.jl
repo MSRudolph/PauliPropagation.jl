@@ -1,45 +1,47 @@
 using Statistics
 
 """
-    estimateaverageerror(circ, pstr::PauliString, n_mcsamples::Integer, thetas=π; stateoverlapfunc=overlapwithzero, circuit_is_reversed=false, kwargs...)
+    estimatemse(circ, pstr::PauliString, n_mcsamples::Integer, thetas=π; stateoverlapfunc=overlapwithzero, circuit_is_reversed=false, customtruncatefn=nothing)
 
-Function to estimate the average error of a truncated circuit simulation using Monte Carlo sampling.
+Function to estimate the mean square error of a truncated circuit simulation using Monte Carlo sampling.
 Returns the mean squared error of the truncated Pauli propagation simulation averaged over the `thetas`∈ [theta, theta] of the angle `theta` of each `PauliRotation`.
+Currently, the function only supports circuits with `PauliRotation` and `CliffordGate` gates.
 
 The length the `thetas` vector should be equal to the number of parametrized gates in the circuit. 
 Alternatively, `thetas` can be a single real number applicable for all parametrized gates.
 The default `thetas=π` or any other non-array values assume that the circuit consists only of `PauliRotation` -`CliffordGate`.
 For `PauliRotation`, the value should be the integration range of the parameters around zero.
-For other currently supported parametrized gates, potential splitting probabilities can be derived from the parameters (e.g., for `AmplitudeDampingNoise`). 
-We currently support no non-parametrized splitting gates. This may change in the future.
 
 An initial state overlap function `stateoverlapfunc` can be provided to calculate the overlap of the backpropagated Pauli strings with the initial state.
 Importantly, the `kwargs` can be used to set the truncation parameters of the Pauli propagation. Currently supported are `max_weight`, `max_freq`, and `max_sins`.
 Note that `min_abs_coeff` is not supported here, as we consider errors integrated over the angles. `max_freq` effectively truncates small coefficients below (1/2)^`max_freq` on average over `thetas ∈ [-π, π]`.
+A custom truncation function can be passed as `customtruncatefn` with the signature `customtruncatefn(pstr::PauliStringType, coefficient)::Bool`.
 """
-function estimateaverageerror(circ, pstr::PauliString, n_mcsamples::Integer, thetas=π; stateoverlapfunc=overlapwithzero, circuit_is_reversed=false, kwargs...)
+function estimatemse(circ, pstr::PauliString, n_mcsamples::Integer, thetas=π; stateoverlapfunc=overlapwithzero, circuit_is_reversed=false, kwargs...)
     # this function is only valid for ParametrizedGates and non-splitting non-parametrized gates (here only CliffordGates).
     # this will not not error for non-parametrized splitting gates, e.g. T-gates. 
-    if !all(g -> isa(g, ParametrizedGate) || isa(g, CliffordGate), circ)
-        throw("`circ` must contain only `ParametrizedGate`s and `CliffordGate`s.")
+    # TODO: Enable this for general parametrized gates. At least for PauliNoise.
+    if !all(g -> isa(g, PauliRotation) || isa(g, CliffordGate), circ)
+        throw("`circ` must contain only `PauliRotation`s and `CliffordGate`s.")
     end
 
     split_probabilities = _calculatesplitprobabilities(circ, thetas)
 
     error_array = zeros(n_mcsamples)
 
-    return estimateaverageerror!(circ, pstr, error_array, thetas, split_probabilities; stateoverlapfunc=stateoverlapfunc, circuit_is_reversed=circuit_is_reversed, kwargs...)
+    return estimatemse!(circ, pstr, error_array, thetas, split_probabilities; stateoverlapfunc, circuit_is_reversed, kwargs...)
 
 end
 
 """
-    estimateaverageerror!(circ, pstr::PauliString, error_array::AbstractVector, thetas, split_probabilities; stateoverlapfunc=overlapwithzero, circuit_is_reversed=false, kwargs...)
+    estimatemse!(circ, pstr::PauliString, error_array::AbstractVector, thetas, split_probabilities; stateoverlapfunc=overlapwithzero, circuit_is_reversed=false, kwargs...)
 
-In-place version of `estimateaverageerror`. This function takes an array `error_array` of length `n_mcsamples` as an argument and modifies it in-place. 
+In-place version of `estimatemse`. This function takes an array `error_array` of length `n_mcsamples` as an argument and modifies it in-place. 
 It further assumes that the `thetas` and `split_probabilities` are already correctly calculated and provided as arguments. 
 In general they will be vectors, but they can also be real numbers.
+A custom truncation function can be passed as `customtruncatefn` with the signature `customtruncatefn(pstr::PauliStringType, coefficient)::Bool`.
 """
-function estimateaverageerror!(circ, pstr::PauliString, error_array::AbstractVector, thetas, split_probabilities; stateoverlapfunc=overlapwithzero, circuit_is_reversed=false, kwargs...)
+function estimatemse!(circ, pstr::PauliString, error_array::AbstractVector, thetas, split_probabilities; stateoverlapfunc=overlapwithzero, circuit_is_reversed=false, kwargs...)
     # This function takes an error_array as an argument and modifies it in-place.
 
     # length(thetas) should be equal to the number of parametrized gates in the circuit
@@ -88,7 +90,7 @@ Perform a single Monte Carlo propagation of a Pauli string through an already re
 It further assumes that the `thetas` and `split_probabilities` are already correctly calculated and provided as arguments. 
 In general they will be vectors, but they can also be real numbers.
 """
-function montecarlopropagation(circ, pstr::PauliString, thetas, split_probabilities; max_weight=Inf, max_freq=Inf, max_sins=Inf)
+function montecarlopropagation(circ, pstr::PauliString, thetas, split_probabilities; max_weight=Inf, max_freq=Inf, max_sins=Inf, customtruncatefn=nothing)
 
     param_idx = length(thetas)
     prob_idx = length(split_probabilities)
@@ -101,8 +103,7 @@ function montecarlopropagation(circ, pstr::PauliString, thetas, split_probabilit
         pstr = mcapply(gate, pstr, _getelmt(thetas, param_idx), _getelmt(split_probabilities, prob_idx))
 
         # check if one would truncate the Pauli string
-        is_truncated = _checktruncation(pstr, max_weight, max_freq, max_sins)
-        # TODO: Custom truncation functions?
+        is_truncated = _checktruncation(pstr, max_weight, max_freq, max_sins; customtruncatefn)
 
         # decrement the parameter index if gate is parametrized
         if isa(gate, ParametrizedGate) && param_idx > 0
@@ -116,15 +117,16 @@ function montecarlopropagation(circ, pstr::PauliString, thetas, split_probabilit
 end
 
 
-function _checktruncation(pstr::PauliString, max_weight, max_freq, max_sins)
+function _checktruncation(pstr::PauliString, max_weight, max_freq, max_sins; customtruncatefn=nothing)
     # check truncations
-    # TODO: make this properly
     if truncateweight(pstr.term, max_weight)
         is_truncated = true
     elseif truncatefrequency(pstr.coeff, max_freq)
         is_truncated = true
     elseif truncatesins(pstr.coeff, max_sins)
         is_truncated = true
+    elseif !isnothing(customtruncatefn)
+        is_truncated = customtruncatefn(pstr.term, pstr.coeff)
     else
         is_truncated = false
     end
@@ -210,7 +212,7 @@ end
 _incrementcosandfreq(val::Number) = val
 _incrementsinandfreq(val::Number) = val
 
-## Utilities for `estimateaverageerror()`
+## Utilities for `estimatemse()`
 """
 Function that automatically calculates the vector of splitting probabilities of the gates in the circuit based on a vector of thetas.
 For Pauli gates, the theta value is interpreted as the limits of the integration [-theta, theta].
