@@ -52,9 +52,9 @@ Returns two pairs of (pstr, coeff) as one tuple.
 Currently `kwargs` are passed to `applycos` and `applysin` for the Surrogate.
 """
 function splitapply(gate::MaskedPauliRotation, pstr::PauliStringType, coeff, theta; kwargs...)
-    coeff1 = _applycos(coeff, theta; kwargs...)
+    coeff1 = coeff * cos(theta)
     new_pstr, sign = getnewpaulistring(gate, pstr)
-    coeff2 = _applysin(coeff, theta; sign=sign, kwargs...)
+    coeff2 = coeff * sin(theta) * sign
 
     return pstr, coeff1, new_pstr, coeff2
 end
@@ -68,33 +68,6 @@ as well as the corresponding ±1 coefficient.
 function getnewpaulistring(gate::MaskedPauliRotation, pstr::PauliStringType)
     sign, new_pstr = pauliprod(gate.generator_mask, pstr, gate.qinds)
     return new_pstr, real(1im * sign)
-end
-
-# TODO: Move this over to PathProperties
-"""
-    _applysin(old_coeff::Number, theta; sign=1, kwargs...)
-
-Multiply a numerical coefficient with sin(theta) * sign.
-"""
-function _applysin(old_coeff::Number, theta; sign=1, kwargs...)
-    return old_coeff * sin(theta) * sign
-end
-
-"""
-    _applycos(old_coeff::Number, theta; sign=1, kwargs...)
-
-Multiply a numerical coefficient with cos(theta) * sign.
-"""
-function _applycos(old_coeff::Number, theta; sign=1, kwargs...)
-    return old_coeff * cos(theta) * sign
-end
-
-function _incrementcosandfreq(coeff::Number)
-    return coeff
-end
-
-function _incrementsinandfreq(coeff::Number)
-    return coeff
 end
 
 

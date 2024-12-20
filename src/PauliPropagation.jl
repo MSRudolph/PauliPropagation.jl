@@ -41,12 +41,6 @@ export
     getinttype
 
 
-include("pathproperties.jl")
-export
-    PathProperties,
-    NumericPathProperties,
-    wrapcoefficients
-
 include("Gates/Gates.jl")
 export
     Gate,
@@ -87,6 +81,12 @@ export
     appendSU4!,
     ibmeagletopology
 
+include("PathProperties/PathProperties.jl")
+export
+    PathProperties,
+    PauliFreqTracker,
+    wrapcoefficients
+
 include("truncations.jl")
 export
     truncatedampingcoeff
@@ -124,10 +124,8 @@ export
 
 include("numericalcertificates.jl")
 export
-    estimateaverageerror,
-    estimateaverageerror!,
-    montecarlopropagation,
-    mcapply
+    estimatemse,
+    estimatemse!
 
 include("Surrogate/Surrogate.jl")
 export
