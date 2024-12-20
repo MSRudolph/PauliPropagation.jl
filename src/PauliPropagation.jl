@@ -125,9 +125,7 @@ export
 include("numericalcertificates.jl")
 export
     estimateaverageerror,
-    estimateaverageerror!,
-    montecarlopropagation,
-    mcapply
+    estimateaverageerror!
 
 include("Surrogate/Surrogate.jl")
 export

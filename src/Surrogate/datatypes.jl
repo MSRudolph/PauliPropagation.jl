@@ -59,6 +59,11 @@ struct NodePathProperties <: PathProperties
 end
 
 """
+Pretty print for PauliFreqTracker
+"""
+Base.show(io::IO, pth::NodePathProperties) = print(io, "NodePathProperties($(typeof(pth.coeff)), nsins=$(pth.nsins), ncos=$(pth.ncos), freq=$(pth.freq))")
+
+"""
     NodePathProperties(coeff::CircuitNode)
 
 One-argument constructor for `NodePathProperties`. Initializes `nsins`, `ncos`, and `freq` to 0.

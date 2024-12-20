@@ -1,4 +1,4 @@
-### PauliFreqTracker.jl
+### paulifreqtracker.jl
 ##
 # PauliFreqTracker type and methods.
 # It records the behavior at PauliRotation gates, i.e., the number of times it received a sin or cos factor, and the total number of branchings/splits.
@@ -29,7 +29,6 @@ Initializes `nsins`, `ncos`, and `freq` to zero.
 """
 PauliFreqTracker(coeff::Number) = PauliFreqTracker(float(coeff), 0, 0, 0)
 
-# TODO: More general show method for general fields.
 """
 Pretty print for PauliFreqTracker
 """
@@ -53,7 +52,6 @@ function splitapply(gate::MaskedPauliRotation, pstr::PauliStringType, coeff::Pau
     return pstr, coeff1, new_pstr, coeff2
 end
 
-## Utilities for Pauli Gates
 # These also work for other PathProperties types that use these function
 """
     _applysin(pth::PathProperties, theta; sign=1, kwargs...)
@@ -64,7 +62,7 @@ Increments the `nsins` and `freq` fields by 1 if applicable.
 function _applysin(pth::PProp, theta, sign=1; kwargs...) where {PProp<:PathProperties}
     fields = fieldnames(PProp)
 
-    @inline function updateval(val, field)
+    function updateval(val, field)
         if field == :coeff
             # apply sin to the `coeff` field
             # TODO: Should we even recursively call _applysin and _applycos?
@@ -89,7 +87,7 @@ Increments the `ncos` and `freq` fields by 1 if applicable.
 function _applycos(pth::PProp, theta, sign=1; kwargs...) where {PProp<:PathProperties}
     fields = fieldnames(PProp)
 
-    @inline function updateval(val, field)
+    function updateval(val, field)
         if field == :coeff
             # apply cos to the `coeff` field
             return _applycos(val, theta, sign; kwargs...)
@@ -104,37 +102,5 @@ function _applycos(pth::PProp, theta, sign=1; kwargs...) where {PProp<:PathPrope
     return PProp((updateval(getfield(pth, field), field) for field in fields)...)
 end
 
-function _incrementcosandfreq(pth::PProp) where {PProp<:PathProperties}
-    fields = fieldnames(PProp)
-    @inline function updateval(val, field)
-        if field == :ncos
-            return val + 1
-        elseif field == :freq
-            return val + 1
-        else
-            return val
-        end
-    end
-    return PProp((updateval(getfield(pth, field), field) for field in fields)...)
-end
-
-function _incrementsinandfreq(pth::PProp) where {PProp<:PathProperties}
-    fields = fieldnames(PProp)
-    @inline function updateval(val, field)
-        if field == :nsins
-            return val + 1
-        elseif field == :freq
-            return val + 1
-        else
-            return val
-        end
-    end
-    return PProp((updateval(getfield(pth, field), field) for field in fields)...)
-end
-
-# We need these functions because we defensively call them in the numerical certificate
-# TODO: modularize numericalcertificate.jl to avoid this
 _applycos(val::Number, theta, sign=1; kwargs...) = val * cos(theta) * sign
 _applysin(val::Number, theta, sign=1; kwargs...) = val * sin(theta) * sign
-_incrementcosandfreq(val::Number) = val
-_incrementsinandfreq(val::Number) = val
