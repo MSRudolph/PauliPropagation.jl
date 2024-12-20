@@ -27,6 +27,7 @@ export
     inttosymbol,
     symboltoint,
     inttostring,
+    inttopstr,
     getpauli,
     setpauli,
     show,
