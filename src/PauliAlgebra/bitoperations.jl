@@ -216,36 +216,6 @@ function _setpaulibits(pstr::PauliStringType, target_pauli::PauliType, index::In
 end
 
 """
-    _setpaulibits(
-        pstr::PauliStringType, 
-        target_pauli::PauliType, 
-        indices::Vector{Int}
-    )
-
-Sets multiple Paulis at `indices` in `pstr` to `target_pauli`.
-"""
-function _setpaulibits(
-    pstr::PauliStringType,
-    target_pauli::PauliType,
-    indices::Vector{Int}
-)
-    # set multiple Paulis at once
-    for (ii, index) in enumerate(indices)
-        bitindex = 2 * (index - 1)
-
-        # read bits of the pauli
-        pauli = _getpaulibits(target_pauli, ii)
-        b1 = _getbit(pauli, 0)
-        b2 = _getbit(pauli, 1)
-
-        # insert them into the pstr
-        pstr = _setbit(pstr, b1, bitindex)
-        pstr = _setbit(pstr, b2, bitindex + 1)
-    end
-    return pstr
-end
-
-"""
     _setbit(pstr::PauliStringType, target_bit::Integer, bitindex::Integer)
 
 Sets a bit at index `bitindex` in the integer Pauli string to the value of `target_bit`.

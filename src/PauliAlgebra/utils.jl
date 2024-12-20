@@ -134,35 +134,14 @@ end
 Gets the Paulis on indices `qinds` of a `pstr` in the integer representation.
 """
 function getpauli(pstr::PauliStringType, qinds)
-
+    new_pstr = zero(pstr)
     # Get the Paulis on the indices `qinds`
-    paulis = [getpauli(pstr, index) for index in qinds]
-    return symboltoint(typeof(pstr), paulis, collect(1:length(qinds)))
+    for (ii, qind) in enumerate(qinds)
+        pauli = getpauli(pstr, qind)
+        new_pstr = setpauli(new_pstr, pauli, ii)
+    end
+    return new_pstr
 
-end
-
-"""
-    getpauli(pstr::PauliString, qinds::Vector{Integer})
-
-Gets the Paulis on indices `qinds` of a PauliString `pstr`.
-"""
-function getpauli(pstr::PauliString, qinds)
-    new_pauli = getpauli(pstr.term, qinds)
-    return inttopstr(new_pauli, length(qinds))
-end
-
-"""
-    setpauli(pstr::PauliString, target_pauli::T, index::Integer) where {T<:Union{Symbol,PauliType}}
-
-Sets the Pauli on index `index` of an integer `PauliString` to `target_pauli`. 
-That Pauli can be provided as integer (0, 1, 2, 3) or as a symbol (:I, :X, :Y, :Z).
-"""
-function setpauli(
-    pstr::PauliString,
-    target_pauli::T,
-    index::Integer,
-) where {T<:Union{Symbol,PauliType}}
-    return PauliString(pstr.nqubits, setpauli(pstr.term, target_pauli, index), pstr.coeff)
 end
 
 """
@@ -190,14 +169,17 @@ end
 """
     setpauli(
         pstr::PauliStringType, 
-        target_paulis::PauliType, 
+        target_paulis::PauliStringType, 
         qinds::Vector{Integer}
     )
 
 Set the Paulis `qinds` of an integer Pauli string `pstr` to `target_paulis`.
 """
-function setpauli(pstr::PauliStringType, target_paulis::PauliType, qinds)
-    return _setpaulibits(pstr, target_paulis, qinds)
+function setpauli(pstr::PauliStringType, target_paulis::PauliStringType, qinds)
+    for (ii, qind) in enumerate(qinds)
+        pstr = setpauli(pstr, getpauli(target_paulis, ii), qind)
+    end
+    return pstr
 end
 
 """
@@ -211,21 +193,10 @@ Set the Paulis `qinds` of an integer Pauli string `pstr` to `target_paulis`.
 `target_paulis` is a vector of symbols.
 """
 function setpauli(pstr::PauliStringType, target_paulis, qinds)
-    return setpauli(pstr, symboltoint(target_paulis), qinds)
-end
-
-"""
-    setpauli(
-        pstr::PauliString, 
-        target_paulis::Union{PauliType, Vector{Symbol}}, 
-        qinds::Vector{Integer}
-    )
-
-Set the Paulis `qinds` of a `pstr` to `target_paulis`.
-"""
-function setpauli(pstr::PauliString, target_paulis, qinds)
-    new_pstr = setpauli(pstr.term, target_paulis, qinds)
-    return inttopstr(new_pstr, pstr.nqubits)
+    for (ii, qind) in enumerate(qinds)
+        pstr = setpauli(pstr, symboltoint(target_paulis[ii]), qind)
+    end
+    return pstr
 end
 
 ## Helper functions for pretty printing
@@ -239,7 +210,7 @@ inttostring(pstr::PauliType, nqubits::Integer) = prod("$(inttosymbol(getpauli(ps
 """
 Pretty string function.
 """
-function _getprettystr(psum::Dict, nqubits::Int; max_lines = 20)
+function _getprettystr(psum::Dict, nqubits::Int; max_lines=20)
     str = ""
     header = length(psum) == 1 ? "1 Pauli term: \n" : "$(length(psum)) Pauli terms:\n"
     str *= header
@@ -255,7 +226,7 @@ function _getprettystr(psum::Dict, nqubits::Int; max_lines = 20)
             pauli_string = pauli_string[1:20] * "..."
         end
         if isa(coeff, Number)
-            coeff_str = round(coeff, sigdigits = 5)
+            coeff_str = round(coeff, sigdigits=5)
         elseif isa(coeff, PathProperties)
             if isa(coeff.coeff, Number)
                 coeff_str = "PathProperty($(round(coeff.coeff, sigdigits=5)))"
