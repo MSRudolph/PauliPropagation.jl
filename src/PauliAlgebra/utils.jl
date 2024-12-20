@@ -78,8 +78,8 @@ end
 Maps an integer Pauli string to a vector of symbols.
 """
 function inttosymbol(pstr::PauliStringType, nqubits::Integer)
-    converted_pstr = [:I for _ = 1:nqubits]
-    for ii = 1:nqubits
+    converted_pstr = [:I for _ in 1:nqubits]
+    for ii in 1:nqubits
         converted_pstr[ii] = inttosymbol(getpauli(pstr, ii))
     end
     return converted_pstr
@@ -238,8 +238,7 @@ end
 
 Returns a string representation of an integer Pauli string `pstr` on `nqubits` qubits.
 """
-inttostring(pstr::PauliType, nqubits::Integer) =
-    prod("$(inttosymbol(getpauli(pstr, ii)))" for ii = 1:nqubits)
+inttostring(pstr::PauliType, nqubits::Integer) = prod("$(inttosymbol(getpauli(pstr, ii)))" for ii = 1:nqubits)
 
 """
 Pretty string function.

@@ -2,12 +2,12 @@
 
 using Test
 
-const symbols = [:I, :X, :Y, :Z]
+import PauliPropagation: pauli_symbols
 
 @testset "Int to Symbol" begin
 
     # Test the conversion from integer to symbol
-    for (i, symbol) in enumerate(symbols)
+    for (i, symbol) in enumerate(pauli_symbols)
         @test inttosymbol(i-1) == symbol # i-1 because integers are 0-indexed
     end
 
