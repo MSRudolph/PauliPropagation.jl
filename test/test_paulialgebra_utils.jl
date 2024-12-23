@@ -49,7 +49,7 @@ end
     @test getpauli(pstr.term, 2) == 1
 
 end
-# TODO: adapt tests from here on
+
 @testset "Get Paulis" begin
 
     # Test consistency with integer representation
@@ -65,6 +65,7 @@ end
     @test getpauli(pstr.term, inds) == 0
     inds = [1, 2]
     @test getpauli(pstr.term, inds) == 4
+    
     # if the indices are not sorted, `getpauli` will reutrn a pauli
     # integer representation according to the unsorted indices
     inds = [2, 1]
@@ -95,12 +96,11 @@ end
     @test setpauli(pstr.term, :Z, 1) == expected_pstr.term
 
     # Test target_pauli as integer
-    # @test setpauli(pstr, 3, 1) == expected_pstr
     @test setpauli(pstr.term, 3, 1) == expected_pstr.term
 
 end
 
-@testset "Set Paulis" begin
+@testset "Set Pauli for `PauliString` type" begin
 
     # nqubits = 4
     # pstr = PauliString(nqubits, [:X, :Z], [1, 4])
