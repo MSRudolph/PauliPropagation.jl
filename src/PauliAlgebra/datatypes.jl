@@ -10,10 +10,10 @@ import Base: -
 Commonly `term` is an unsigned Integer. 
 See the other `PauliString` constructors for higher-level usage. 
 """
-struct PauliString{TT<:PauliStringType,CoeffType}
+struct PauliString{TT<:PauliStringType,CT}
     nqubits::Int
     term::TT
-    coeff::CoeffType
+    coeff::CT
 end
 
 """
@@ -124,11 +124,11 @@ end
 
 Constructor for a `PauliSum` on `nqubits` qubits from a dictionary of {Vector{Symbols} => coefficients}.
 """
-function PauliSum(nqubits::Int, psum::Dict{Vector{Symbol},CoeffType}) where {CoeffType}
+function PauliSum(nqubits::Int, psum::Dict{Vector{Symbol},CT}) where {CT}
 
     _checknumberofqubits.(nqubits, keys(psum))
-
-    int_dict = Dict(symboltoint(k) => _convertcoefficients(v) for (k, v) in psum)
+    TT = getinttype(nqubits)
+    int_dict = Dict{TT,CT}(symboltoint(k) => _convertcoefficients(v) for (k, v) in psum)
 
     return PauliSum(nqubits, int_dict)
 end
@@ -292,10 +292,10 @@ Requires that the integer Pauli string in `pstr` is the same type as the integer
 """
 function getcoeff(psum::PauliSum{TT,CT1}, pstr::PauliString{TT,CT2}) where {TT,CT1,CT2}
     # TODO: This is not yet compatible with `PathProperties`
-    if CoeffType <: PathProperties
+    if CT1 <: PathProperties
         throw(ArgumentError("This function is not yet compatible with PathProperties."))
     end
-    return get(psum.terms, pstr.term, CoeffType(0))
+    return get(psum.terms, pstr.term, CT1(0))
 end
 
 
