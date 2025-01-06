@@ -6,8 +6,9 @@ import Base: -
 """
     PauliString(nqubits::Int, term::TermType, coeff::CoeffType)
 
-`PauliString` is a struct that represents a Pauli string on `nqubits` qubits.
-Commonly `term` is an unsigned Integer. See the other `PauliString` constructors for details. 
+`PauliString` is a `struct` that represents a Pauli string on `nqubits` qubits.
+Commonly `term` is an unsigned Integer. 
+See the other `PauliString` constructors for higher-level usage. 
 """
 struct PauliString{TT<:PauliStringType,CoeffType}
     nqubits::Int
@@ -17,22 +18,14 @@ end
 
 """
     PauliString(nqubits::Int, pauli::Symbol, qind::Integer, coeff=1.0)
+    PauliString(nqubits::Int, paulis::Vector{Symbol}, qinds::Vector{Integer}, coeff=1.0)
 
-Constructor for a `PauliString` on `nqubits` qubits from a Symbol (:X, :Y, :Z) representing a single non-identity Pauli on qubit `qind` with coefficient `coeff`.
+Constructor for a `PauliString` on `nqubits` qubits from a `Symbol` (:I, :X, :Y, :Z) or `Vector{Symbol}`.
+Provide the index or indices for those symbols as `qind` or `qinds`.
+The coefficient of the Pauli string in the Pauli sum defaults to 1.0.
 """
-function PauliString(nqubits::Int, pauli::Symbol, qind::Integer, coeff=1.0)
-    pauli = symboltoint(nqubits, pauli, qind)
-    coeff = _convertcoefficients(coeff)
-    return PauliString(nqubits, pauli, coeff)
-end
-
-"""
-    PauliString(nqubits, pstr, qinds, coeff=1.0)
-
-Constructor for a `PauliString` on `nqubits` qubits from a list of Symbols representing non-identity Paulis on qubits `qinds` with coefficient `coeff`.
-"""
-function PauliString(nqubits::Int, pstr::Vector{Symbol}, qinds, coeff=1.0)
-    pauli = symboltoint(nqubits, pstr, qinds)
+function PauliString(nqubits::Int, paulis::Union{Symbol,Vector{Symbol}}, qinds, coeff=1.0)
+    pauli = symboltoint(nqubits, paulis, qinds)
     coeff = _convertcoefficients(coeff)
     return PauliString(nqubits, pauli, coeff)
 end
@@ -101,7 +94,7 @@ end
 """
     PauliSum(nqubits::Int, terms::Dict)
 
-`PauliSum`` is a struct that represents a sum of Pauli strings acting on `nqubits` qubits.
+`PauliSum` is a `struct` that represents a sum of Pauli strings acting on `nqubits` qubits.
 It is a wrapper around a dictionary Dict(Pauli string => coefficient}, where the Pauli strings are typically unsigned Integers for efficiency reasons.
 """
 struct PauliSum{TT,CT}
@@ -117,11 +110,11 @@ Contructor for an empty `PauliSum` on `nqubits` qubits. Element type defaults fo
 PauliSum(nqubits::Int) = PauliSum(nqubits, Float64)
 
 """
-    PauliSum(nq::Int, COEFFTYPE::T) where {T<:DataType}
+    PauliSum(nq::Int, COEFFTYPE)
 
-Contructor for an empty `PauliSum` on `nqubits` qubits. Element type can be provided.
+Contructor for an empty `PauliSum` on `nqubits` qubits. The type of the coefficients can be provided.
 """
-function PauliSum(nq::Int, COEFFTYPE::Type{CT}) where {CT}
+function PauliSum(nq::Int, ::Type{CT}) where {CT}
     TT = getinttype(nq)
     return PauliSum(nq, Dict{TT,CT}())
 end
@@ -209,7 +202,7 @@ end
 Get the Pauli integer type of a `PauliSum`.
 """
 function paulitype(psum::PauliSum)
-    return keytype(psum.terms)
+    return paulitype(psum.terms)
 end
 
 """
@@ -227,13 +220,13 @@ end
 Get the coefficient type of a `PauliSum`.
 """
 function coefftype(psum::PauliSum)
-    return valtype(psum.terms)
+    return coefftype(psum.terms)
 end
 
 """
     coefftype(psum::Dict)
 
-Get the coefficient type of a `PauliSum`.
+Get the coefficient type of a Pauli sum dict.
 """
 function coefftype(psum::Dict)
     return valtype(psum)
@@ -487,36 +480,36 @@ end
 """
     -(pstr1::PauliString{TermType,CoeffType}, pstr2::PauliString{TermType,CoeffType})
 
-Subtraction of two `PauliString`s. Returns a PauliSum.
+Subtract two `PauliString`s. Returns a PauliSum.
 """
 function -(pstr1::PauliString{TT,CT}, pstr2::PauliString{TT,CT}) where {TT,CT}
     _checknumberofqubits(pstr1, pstr2)
     psum = PauliSum(pstr1)
-    subtract!(psum, pstr2)
+    add!(psum, pstr2.term, -pstr2.coeff)
     return psum
 end
 
 """
     -(psum::PauliSum{TermType,CoeffType}, pstr::PauliString{TermType,CoeffType})
 
-Subtraction of a `PauliString` to a `PauliSum`. Returns a `PauliSum`.
+Subtract a `PauliString` to a `PauliSum`. Returns a `PauliSum`.
 """
 function -(psum::PauliSum{TT,CT}, pstr::PauliString{TT,CT}) where {TT,CT}
     _checknumberofqubits(psum, pstr)
     psum = deepcopy(psum)
-    subtract!(psum, pstr)
+    add!(psum, pstr.term, -pstr.coeff)
     return psum
 end
 
 """
     -(psum1::PauliSum{TermType,CoeffType}, psum2::PauliSum{TermType,CoeffType})
 
-Subtract of two `PauliSum`s. Returns a `PauliSum`.
+Subtract two `PauliSum`s. Returns a `PauliSum`.
 """
 function -(psum1::PauliSum{TT,CT}, psum2::PauliSum{TT,CT}) where {TT,CT}
     _checknumberofqubits(psum1, psum2)
     psum1 = deepcopy(psum1)
-    subtract!(psum1, psum2)
+    add!(psum1, -1 * psum2)
     return psum1
 end
 
@@ -542,7 +535,8 @@ end
     add!(psum::PauliSum, paulis::Vector{Symbol}, qinds::Vector{Integer}, coeff=1.0)
 
 Add a Pauli string to a `PauliSum` `psum`. Changes `psum` in-place.
-Provide the Pauli string as a `Symbol` or `Vector{Symbol}` acting on qubits `qinds`.
+Provide the Pauli string as a `Symbol` (:I, :X, :Y, :Z) or `Vector{Symbol}`.
+Provide the index or indices for those symbols as `qind` or `qinds`.
 The coefficient of the Pauli string in the Pauli sum defaults to 1.0.
 """
 function add!(psum::PauliSum, paulis::Union{Symbol,Vector{Symbol}}, qinds::Union{T,Vector{T}}, coeff=1.0) where {T<:Integer}

@@ -25,17 +25,20 @@ function symboltoint(pstr)
 end
 
 """
-    symboltoint(nqubits::Integer, pstr::Vector{Symbol}, qinds::Vector{Int})
+    symboltoint(nqubits::Integer, paulis::Vector{Symbol}, qinds::Vector{Int})
 
 Maps a vector of symbols `pstr` acting on the indices `qinds` to an integer Pauli string. Other sites are set to the identity.
 `qinds` can be any iterable.
 """
-function symboltoint(nqubits::Integer, pstr, qinds)
+function symboltoint(nqubits::Integer, paulis, qinds)
+    if length(paulis) != length(qinds)
+        throw(ArgumentError("Length of `paulis=$(length(paulis))` and `qinds`=$(length(qinds)) should be the same."))
+    end
     if nqubits < maximum(qinds)
         throw(ArgumentError("Indices in `qinds`=$qinds acts on more qubits than `nqubits`=$nqubits."))
     end
-    inttype = getinttype(nqubits)
-    return symboltoint(inttype, pstr, qinds)
+    TT = getinttype(nqubits)
+    return symboltoint(TT, paulis, qinds)
 end
 
 """
@@ -61,15 +64,15 @@ function symboltoint(::Type{TT}, pauli::Symbol, qind::Integer) where {TT<:PauliS
 end
 
 """
-    symboltoint(::TermType, pstr, qinds)
+    symboltoint(::TermType, paulis, qinds)
 
-Maps a vector of symbols `pstr` acting on the indices `qinds` to an integer Pauli string with type `TermType`.
+Maps a vector of symbols `paulis` acting on the indices `qinds` to an integer Pauli string with type `TermType`.
 Other sites are set to the identity.
 `qinds` can be any iterable.
 """
-function symboltoint(::Type{TT}, pstr, qinds) where {TT<:PauliStringType}
+function symboltoint(::Type{TT}, paulis, qinds) where {TT<:PauliStringType}
     converted_pstr = zero(TT)
-    for (qind, pauli) in zip(qinds, pstr)
+    for (qind, pauli) in zip(qinds, paulis)
         converted_pstr = setpauli(converted_pstr, pauli, qind)
     end
     return converted_pstr
