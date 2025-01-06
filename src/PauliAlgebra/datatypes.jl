@@ -86,10 +86,11 @@ function show(io::IO, pstr::PauliString)
     if isa(pstr.coeff, Number)
         coeff_str = round(pstr.coeff, sigdigits=5)
     elseif isa(pstr.coeff, PathProperties)
-        if isa(pstr.coeff, Number)
-            coeff_str = "PathProperty($(round(pstr.coeff, sigdigits=5)))"
+        PProp = string(typeof(pstr.coeff).name.name)
+        if isa(pstr.coeff.coeff, Number)
+            coeff_str = "$PProp($(round(pstr.coeff.coeff, sigdigits=5)))"
         else
-            coeff_str = "PathProperty($(typeof(pstr.coeff)))"
+            coeff_str = "$PProp($(typeof(pstr.coeff.coeff)))"
         end
     else
         coeff_str = "($(typeof(pstr.coeff)))"

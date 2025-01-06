@@ -169,10 +169,11 @@ function _getprettystr(psum::Dict, nqubits::Int; max_lines=20)
         if isa(coeff, Number)
             coeff_str = round(coeff, sigdigits=5)
         elseif isa(coeff, PathProperties)
+            PProp = string(typeof(coeff).name.name)
             if isa(coeff.coeff, Number)
-                coeff_str = "PathProperty($(round(coeff.coeff, sigdigits=5)))"
+                coeff_str = "$PProp($(round(coeff.coeff, sigdigits=5)))"
             else
-                coeff_str = "PathProperty($(typeof(coeff.coeff)))"
+                coeff_str = "$PProp($(typeof(coeff.coeff)))"
             end
         else
             coeff_str = "($(typeof(coeff)))"
