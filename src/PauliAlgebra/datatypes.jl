@@ -495,9 +495,22 @@ function +(psum1::PauliSum{TT,CT}, psum2::PauliSum{TT,CT}) where {TT,CT}
 end
 
 """
-    add!(psum::PauliSum{TermType,CoeffType}, pstr::PauliString{TermType,CoeffType})
+    add!(psum::PauliSum, pauli::Symbol, qind::Integer, coeff=1.0)
+    add!(psum::PauliSum, paulis::Vector{Symbol}, qinds::Vector{Integer}, coeff=1.0)
 
-Addition of a `PauliString` to a `PauliSum`. Changes the `PauliSum` in-place.
+Add a Pauli string to a `PauliSum` `psum`. Changes `psum` in-place.
+Provide the Pauli string as a `Symbol` or `Vector{Symbol}` acting on qubits `qinds`.
+The coefficient of the Pauli string in the Pauli sum defaults to 1.0.
+"""
+function add!(psum::PauliSum, paulis::Union{Symbol,Vector{Symbol}}, qinds::Union{T,Vector{T}}, coeff=1.0) where {T<:Integer}
+    return add!(psum, PauliString(psum.nqubits, paulis, qinds, coeff))
+end
+
+"""
+    add!(psum::PauliSum, pstr::PauliString)
+
+Add a `PauliString` `pstr` to a `PauliSum` `psum`. Changes `psum` in-place.
+`psum` and `pstr` need to be defined on the same number of qubits and have the same coefficient type.
 """
 function add!(psum::PauliSum{TT,CT}, pstr::PauliString{TT,CT}) where {TT,CT}
     _checknumberofqubits(psum, pstr)
@@ -506,9 +519,10 @@ function add!(psum::PauliSum{TT,CT}, pstr::PauliString{TT,CT}) where {TT,CT}
 end
 
 """
-    add!(psum1::PauliSum{TermType,CoeffType}, psum2::PauliSum{TermType,CoeffType})
+    add!(psum1::PauliSum, psum2::PauliSum)
 
-Addition of two `PauliSum`s. Changes the first `PauliSum` in-place.
+Add two `PauliSum`s `psum1` and `psum2`. Changes `psum1` in-place.
+`psum1` and `psum2` need to be defined on the same number of qubits and have the same coefficient type.
 """
 function add!(psum1::PauliSum{TT,CT}, psum2::PauliSum{TT,CT}) where {TT,CT}
     _checknumberofqubits(psum1, psum2)
@@ -517,33 +531,27 @@ function add!(psum1::PauliSum{TT,CT}, psum2::PauliSum{TT,CT}) where {TT,CT}
 end
 
 """
-    add!(psum1::Dict{TermType,CoeffType}, psum2::Dict{TermType,CoeffType})
-
-Addition of two Pauli sum dicts. Changes the first pauli sum in-place.
-"""
-function add!(psum1::Dict{TT,CT}, psum2::Dict{TT,CT}) where {TT,CT}
-    for (pstr, coeff) in psum2
-        add!(psum1, pstr, coeff)
-    end
-    return psum1
-end
-
-"""
     add!(psum::PauliSum{TermType, CoeffType}, pstr::TermType, coeff::CoeffType)
 
-In-place addition of a Pauli string `pstr` with coefficient `coeff` to a `PauliSum`.
+Add a Pauli string `pstr` with coefficient `coeff` to a `PauliSum` `psum`. This changes `psum` in-place.
+`pstr` needs to have the same type as `paulitype(psum)`, and `coeff` needs to have the same type as `coefftype(psum)`.
 """
 function add!(psum::PauliSum{TT,CT}, pstr::TT, coeff::CT) where {TT,CT}
     add!(psum.terms, pstr, coeff)
     return psum
 end
 
-"""
-    add!(psum::Dict{TermType, CoeffType}, pstr::TermType, coeff::CoeffType)
+function add!(psum1::Dict{TT,CT}, psum2::Dict{TT,CT}) where {TT,CT}
+    ## Lower level addition of two Pauli sum dictionaries
+    for (pstr, coeff) in psum2
+        add!(psum1, pstr, coeff)
+    end
+    return psum1
+end
 
-In-place addition of a Pauli string `pstr` with coefficient `coeff` to a Pauli sum dictionary.
-"""
 function add!(psum::Dict{TT,CT}, pstr::TT, coeff::CT) where {TT,CT}
+    ## Lower level addition of a Pauli string to a Pauli sum dictionary
+
     # don't add if the coefficient is 0
     if tonumber(coeff) == 0
         return psum
@@ -563,15 +571,6 @@ function add!(psum::Dict{TT,CT}, pstr::TT, coeff::CT) where {TT,CT}
     return psum
 end
 
-"""
-    add!(psum::PauliSum, pauli::Union{Symbol, Vector{Symbol}}, qind::Union{Integer, Vector{Integer}}, coeff=1.0)
-
-In-place addition a Pauli string to `PauliSum` by providing the Pauli string as a Symbol or a vector of symbols acting on qubits `qinds`.
-Coefficient defaults to 1.0.
-"""
-function add!(psum::PauliSum, paulis::Union{Symbol,Vector{Symbol}}, qinds::Union{T,Vector{T}}, coeff=1.0) where {T<:Integer}
-    return add!(psum, PauliString(psum.nqubits, paulis, qinds, coeff))
-end
 
 ## Substraction
 """
