@@ -415,18 +415,8 @@ function ==(psum1::PauliSum, psum2::PauliSum)
     return psum1.terms == psum2.terms
 end
 
-"""
-    mult!(psum::PauliSum, c::Number)
-
-Multiply a `PauliSum` by a scalar `c` in-place.
-"""
-function mult!(psum::PauliSum, c::Number)
-    # multiply in-place
-    for (k, v) in psum.terms
-        psum.terms[k] *= c
-    end
-    return psum
-end
+## Arithmetic operations
+# They all deepcopy
 
 """
     *(psum::PauliSum, c::Number)
@@ -493,6 +483,59 @@ function +(psum1::PauliSum{TT,CT}, psum2::PauliSum{TT,CT}) where {TT,CT}
     add!(psum1, psum2)
     return psum1
 end
+
+"""
+    -(pstr1::PauliString{TermType,CoeffType}, pstr2::PauliString{TermType,CoeffType})
+
+Subtraction of two `PauliString`s. Returns a PauliSum.
+"""
+function -(pstr1::PauliString{TT,CT}, pstr2::PauliString{TT,CT}) where {TT,CT}
+    _checknumberofqubits(pstr1, pstr2)
+    psum = PauliSum(pstr1)
+    subtract!(psum, pstr2)
+    return psum
+end
+
+"""
+    -(psum::PauliSum{TermType,CoeffType}, pstr::PauliString{TermType,CoeffType})
+
+Subtraction of a `PauliString` to a `PauliSum`. Returns a `PauliSum`.
+"""
+function -(psum::PauliSum{TT,CT}, pstr::PauliString{TT,CT}) where {TT,CT}
+    _checknumberofqubits(psum, pstr)
+    psum = deepcopy(psum)
+    subtract!(psum, pstr)
+    return psum
+end
+
+"""
+    -(psum1::PauliSum{TermType,CoeffType}, psum2::PauliSum{TermType,CoeffType})
+
+Subtract of two `PauliSum`s. Returns a `PauliSum`.
+"""
+function -(psum1::PauliSum{TT,CT}, psum2::PauliSum{TT,CT}) where {TT,CT}
+    _checknumberofqubits(psum1, psum2)
+    psum1 = deepcopy(psum1)
+    subtract!(psum1, psum2)
+    return psum1
+end
+
+## In-place Multiplication
+
+"""
+    mult!(psum::PauliSum, c::Number)
+
+Multiply a `PauliSum` by a scalar `c` in-place.
+"""
+function mult!(psum::PauliSum, c::Number)
+    # multiply in-place
+    for (k, v) in psum.terms
+        psum.terms[k] *= c
+    end
+    return psum
+end
+
+## In-place Addition
 
 """
     add!(psum::PauliSum, pauli::Symbol, qind::Integer, coeff=1.0)
@@ -571,114 +614,6 @@ function add!(psum::Dict{TT,CT}, pstr::TT, coeff::CT) where {TT,CT}
     return psum
 end
 
-
-## Substraction
-"""
-    -(pstr1::PauliString{TermType,CoeffType}, pstr2::PauliString{TermType,CoeffType})
-
-Subtraction of two `PauliString`s. Returns a PauliSum.
-"""
-function -(pstr1::PauliString{TT,CT}, pstr2::PauliString{TT,CT}) where {TT,CT}
-    _checknumberofqubits(pstr1, pstr2)
-    psum = PauliSum(pstr1)
-    subtract!(psum, pstr2)
-    return psum
-end
-
-"""
-    -(psum::PauliSum{TermType,CoeffType}, pstr::PauliString{TermType,CoeffType})
-
-Subtraction of a `PauliString` to a `PauliSum`. Returns a `PauliSum`.
-"""
-function -(psum::PauliSum{TT,CT}, pstr::PauliString{TT,CT}) where {TT,CT}
-    _checknumberofqubits(psum, pstr)
-    psum = deepcopy(psum)
-    subtract!(psum, pstr)
-    return psum
-end
-
-"""
-    -(psum1::PauliSum{TermType,CoeffType}, psum2::PauliSum{TermType,CoeffType})
-
-Subtract of two `PauliSum`s. Returns a `PauliSum`.
-"""
-function -(psum1::PauliSum{TT,CT}, psum2::PauliSum{TT,CT}) where {TT,CT}
-    _checknumberofqubits(psum1, psum2)
-    psum1 = deepcopy(psum1)
-    subtract!(psum1, psum2)
-    return psum1
-end
-
-"""
-    subtract!(psum::PauliSum{TermType,CoeffType}, pstr::PauliString{TermType,CoeffType})
-
-In-place subtraction a `PauliString` from a `PauliSum`. 
-"""
-function subtract!(psum::PauliSum{TT,CT}, pstr::PauliString{TT,CT}) where {TT,CT}
-    _checknumberofqubits(psum, pstr)
-    add!(psum.terms, pstr.term, -pstr.coeff)
-    return psum
-end
-
-"""
-    subtract!(psum1::PauliSum, psum2::PauliSum)
-
-In-place subtraction a `PauliSum` from a `PauliSum`.
-"""
-function subtract!(psum1::PauliSum{TT,CT}, psum2::PauliSum{TT,CT}) where {TT,CT}
-    _checknumberofqubits(psum1, psum2)
-    subtract!(psum1.terms, psum2.terms)
-    return psum1
-end
-
-"""
-    subtract!(psum1::Dict{TermType,CoeffType}, psum2::Dict{TermType,CoeffType})
-
-In-place subtraction a Pauli sum dict a Pauli sum dict.
-"""
-function subtract!(psum1::Dict{TT,CT}, psum2::Dict{TT,CT}) where {TT,CT}
-    for (pstr, coeff) in psum2
-        add!(psum1, pstr, -coeff)
-    end
-    return psum1
-end
-
-"""
-    subtract!(psum::PauliSum{TermType, CoeffType}, pstr::TermType, coeff::CoeffType)
-
-In-place subtraction of a Pauli string `pstr` with coefficient `coeff` to a `PauliSum`.
-"""
-function subtract!(psum::PauliSum{TT,CT}, pstr::TT, coeff::CT) where {TT,CT}
-    subtract!(psum.terms, pstr, coeff)
-    return psum
-end
-
-"""
-    subtract!(psum::Dict{TermType, CoeffType}, pstr::TermType, coeff::CoeffType)
-
-In-place subtraction of a Pauli string `pstr` with coefficient `coeff` to a Pauli sum dictionary.
-"""
-function subtract!(psum::Dict{TT,CT}, pstr::TT, coeff::CT) where {TT,CT}
-    # don't add if the coefficient is 0
-    if tonumber(coeff) == 0
-        return psum
-    end
-
-    if haskey(psum, pstr)
-        # if the new coefficient is exactly 0, delete the key
-        new_coeff = psum[pstr] - coeff
-        if tonumber(new_coeff) == 0
-            delete!(psum, pstr)
-        else
-            psum[pstr] = new_coeff
-        end
-
-    else
-        psum[pstr] = coeff
-    end
-
-    return psum
-end
 
 ## Set in Pauli sum
 """
