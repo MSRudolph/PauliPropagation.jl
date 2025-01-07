@@ -2,10 +2,9 @@
 ##
 # PathProperties abstract type and methods.
 # Subtype PathProperties to wrap coefficients and record custom path properties.
-# Properties to track could for example be the number of times a path branched at a PauliRotation gate.
-# Another could be the so-called path weight, which is the sum of Pauli weights of the operator after each gate.
-# It is important for subtyping structs to have the `coeff` field as the first field where current numerical coefficient is stored.
-# If the struct is parametrized, the first parameter should be the type of the coefficient.
+# It is important for subtyping structs to have the `coeff` field where current numerical coefficient is stored.
+# Additionally, it is assumed that, when paths are merged, the `coeff` fields are added 
+# and the other fields are taken as the minimum between the respective fields on the two paths.
 # This behavior can be changed but then more methods need to be defined.
 ##
 ###
@@ -21,6 +20,23 @@ PathProperties are expected to be immutable.
 """
 Base.copy(path::PathProperties) = path
 
+"""
+Pretty print for PathProperties
+"""
+function Base.show(io::IO, pth::PProp) where {PProp<:PathProperties}
+    print_string = "$PProp("
+    for (i, field) in enumerate(fieldnames(PProp))
+        print_string *= "$(field)=$(getfield(pth, field))"
+        if i < length(fieldnames(PProp))
+            print_string *= ", "
+        end
+    end
+    print_string *= ")"
+
+    print(io, print_string)
+
+end
+
 import Base: *
 """
 Multiplication of the `coeff` field in a `PathProperties` object with a number.
@@ -29,7 +45,16 @@ Requires that the `PathProperties` object has a `coeff` field as the first field
 function *(path::PProp, val::Number) where {PProp<:PathProperties}
     # multiply the coefficient on the `coeff` field with the value and leave the rest unchanged.
     fields = fieldnames(PProp)
-    return PProp(getfield(path, :coeff) * val, (getfield(path, fields[ii]) for ii in 2:length(fields))...)
+
+    # update the `coeff` only
+    function updateval(fval, fname)
+        if fname == :coeff
+            fval *= val
+        end
+        return fval
+    end
+
+    return PProp((updateval(getfield(path, fname), fname) for fname in fields)...)
 end
 
 """
@@ -48,7 +73,17 @@ Requires that the `PathProperties` object has a `coeff` field as the first field
 """
 function +(path1::PProp, path2::PProp) where {PProp<:PathProperties}
     fields = fieldnames(PProp)
-    return PProp(getfield(path1, :coeff) + getfield(path2, :coeff), (min(getfield(path1, fields[ii]), getfield(path2, fields[ii])) for ii in 2:length(fields))...)
+
+    # add `coeff` fields and take the minimum of the other fields
+    function updateval(fval1, fval2, fname)
+        if fname == :coeff
+            return fval1 + fval2
+        else
+            return min(fval1, fval2)
+        end
+    end
+
+    return PProp((updateval(getfield(path1, fname), getfield(path2, fname), fname) for fname in fields)...)
 end
 
 """
@@ -100,7 +135,10 @@ function wrapcoefficients(pstr::PauliString, ::Type{PProp}) where {PProp<:PathPr
     pprop = try
         PProp(pstr.coeff)
     catch MethodError
-        throw("The constructor `$(PProp)(coeff)` is not defined for the $(PProp) type.")
+        throw(
+            "The constructor `$(PProp)(coeff)` is not defined for the $(PProp) type. " *
+            "Either construct a PauliString with wrapped coefficient or define the `$(PProp)(coeff)` constructor."
+        )
     end
 
     return PauliString(pstr.nqubits, pstr.term, pprop)
@@ -122,7 +160,9 @@ function wrapcoefficients(psum::PauliSum, ::Type{PProp}) where {PProp<:PathPrope
         _, dummy_coeff = first(psum.terms)
         PProp(dummy_coeff)
     catch MethodError
-        throw("The constructor `$(PProp)(coeff)` is not defined for the $(PProp) type.")
+        throw(
+            "The constructor `$(PProp)(coeff)` is not defined for the $(PProp) type. " *
+            "Either construct a PauliSum with wrapped coefficient or define the `$(PProp)(coeff)` constructor.")
     end
 
     return PauliSum(psum.nqubits, Dict(pstr => PProp(coeff) for (pstr, coeff) in psum.terms))

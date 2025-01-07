@@ -29,12 +29,6 @@ Initializes `nsins`, `ncos`, and `freq` to zero.
 """
 PauliFreqTracker(coeff::Number) = PauliFreqTracker(float(coeff), 0, 0, 0)
 
-"""
-Pretty print for PauliFreqTracker
-"""
-Base.show(io::IO, pth::PauliFreqTracker) = print(io, "PauliFreqTracker($(pth.coeff), nsins=$(pth.nsins), ncos=$(pth.ncos), freq=$(pth.freq))")
-
-
 ### Specializations for PauliRotations that incremet the nsins, ncos, and freq
 """
     splitapply(gate::MaskedPauliRotation, pstr::PauliStringType, coeff, theta; kwargs...)
