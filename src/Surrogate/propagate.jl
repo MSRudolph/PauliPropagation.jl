@@ -113,3 +113,10 @@ function _multiplysign(eval_endnode::EvalEndNode, sign; kwargs...)
     eval_endnode.coefficient *= sign
     return eval_endnode
 end
+
+## Truncation functions
+
+# don't truncate on coefficients
+function truncatemincoeff(path::NodePathProperties, min_abs_coeff::Real)
+    return false
+end

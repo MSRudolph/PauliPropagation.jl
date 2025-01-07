@@ -64,36 +64,28 @@ Pretty print for PauliFreqTracker
 Base.show(io::IO, pth::NodePathProperties) = print(io, "NodePathProperties($(typeof(pth.coeff)), nsins=$(pth.nsins), ncos=$(pth.ncos), freq=$(pth.freq))")
 
 """
-    NodePathProperties(coeff::CircuitNode)
+    NodePathProperties(node::CircuitNode)
 
 One-argument constructor for `NodePathProperties`. Initializes `nsins`, `ncos`, and `freq` to 0.
 """
-NodePathProperties(coeff::CircuitNode) = NodePathProperties(coeff, 0, 0, 0)
+NodePathProperties(node::CircuitNode) = NodePathProperties(node, 0, 0, 0)
 
 """
-    numcoefftype(node::NodePathProperties)
+    numcoefftype(path::NodePathProperties)
 
 Get the type of the numerical coefficient of a `NodePathProperties` object.
 Returns the type of the `cummulative_value` field of the stored `CircuitNode`.
 """
-numcoefftype(node::NodePathProperties) = typeof(tonumber(node))
-
-"""
-    numcoefftype(::Type{NodePathProperties})
-
-Currently returns `Float64` as the type of the `cummulative_value` in `CircuitNode`s.
-"""
-numcoefftype(::Type{NodePathProperties}) = Float64
-
+numcoefftype(path::NodePathProperties) = typeof(tonumber(path))
 
 
 """
-    tonumber(val::NodePathProperties)
+    tonumber(path::NodePathProperties)
 
 Get the cummulative coefficient of a `NodePathProperties` node.
 This assumes that the surrogate has already been evaluated.
 """
-tonumber(node::NodePathProperties) = node.coeff.cummulative_value
+tonumber(path::NodePathProperties) = path.coeff.cummulative_value
 
 
 """
@@ -112,7 +104,7 @@ end
 Wrap the coefficients of a `PauliSum` into `NodePathProperties`.
 """
 function wrapcoefficients(psum::PauliSum, ::Type{NodePathProperties})
-    return PauliSum(psum.nqubits, Dict(op => NodePathProperties(EvalEndNode(op, coeff, 0.0, false)) for (op, coeff) in psum.terms))
+    return PauliSum(psum.nqubits, Dict(pstr => NodePathProperties(EvalEndNode(pstr, coeff, 0.0, false)) for (pstr, coeff) in psum.terms))
 end
 
 
@@ -132,13 +124,13 @@ function setcummulativevalue(node::CircuitNode, val)
 end
 
 """
-    set!(psum::Dict{TermType, NodePathProperties}, pstr::TermType, coeff::NodePathProperties)
+    set!(psum::Dict{TermType, NodePathProperties}, pstr::TermType, path::NodePathProperties)
 
 In-place setting the coefficient of a Pauli string in a Pauli sum dictionary.
 The type of the Pauli string needs to be the keytype=`TermType` of the dictionary, and the coefficient `coeff` needs to be the valuetype=`NodePathProperties`.
 If the coefficient is 0, the Pauli string is removed from the dictionary.
 """
-function set!(psum::Dict{TT,NodePathProperties}, pstr::TT, coeff::NodePathProperties) where {TT}
-    psum[pstr] = coeff
+function set!(psum::Dict{TT,NodePathProperties}, pstr::TT, path::NodePathProperties) where {TT}
+    psum[pstr] = path
     return psum
 end
