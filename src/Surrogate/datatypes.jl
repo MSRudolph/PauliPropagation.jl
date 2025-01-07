@@ -47,7 +47,7 @@ Base.show(io::IO, node::EvalEndNode) = print(io, "$(typeof(node))(Pauli string=$
 
 ## PathProperties Type
 """
-    NodePathProperties(nd::CircuitNode, nsins::Int, ncos::Int, freq::Int)
+    NodePathProperties(node::CircuitNode, nsins::Int, ncos::Int, freq::Int)
 
 Surrogate `PathProperties` type. Carries `CircuitNode`s instead of numerical coefficients.
 """
@@ -62,6 +62,7 @@ end
 Pretty print for PauliFreqTracker
 """
 Base.show(io::IO, pth::NodePathProperties) = print(io, "NodePathProperties($(typeof(pth.node)), nsins=$(pth.nsins), ncos=$(pth.ncos), freq=$(pth.freq))")
+
 
 """
     NodePathProperties(node::CircuitNode)

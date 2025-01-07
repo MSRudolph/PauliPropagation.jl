@@ -252,6 +252,7 @@ A custom truncation function can be passed as `customtruncatefn` with the signat
     elseif truncatefrequency(coeff, max_freq)
         is_truncated = true
     elseif truncatesins(coeff, max_sins)
+        print("In")
         is_truncated = true
     elseif !isnothing(customtruncatefn) && customtruncatefn(pstr, coeff)
         is_truncated = true
