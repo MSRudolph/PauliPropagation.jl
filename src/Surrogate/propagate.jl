@@ -62,7 +62,7 @@ function _checksurrogationconditions(circ)
 end
 
 
-## For Pauli Gates
+## For Pauli Rotations
 
 function splitapply(gate::MaskedPauliRotation, pstr::PauliStringType, coeff::NodePathProperties, theta; kwargs...)
     coeff1 = _applycos(coeff, theta; kwargs...)
@@ -91,8 +91,8 @@ end
 function merge(pth1::NodePathProperties, pth2::NodePathProperties)
     return NodePathProperties(
         merge(pth1.node, pth2.node),
-        min(pth1.ncos, pth2.ncos),
         min(pth1.nsins, pth2.nsins),
+        min(pth1.ncos, pth2.ncos),
         min(pth1.freq, pth2.freq)
     )
 end
