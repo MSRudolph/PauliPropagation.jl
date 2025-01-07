@@ -47,12 +47,12 @@ Base.show(io::IO, node::EvalEndNode) = print(io, "$(typeof(node))(Pauli string=$
 
 ## PathProperties Type
 """
-    NodePathProperties(coeff::CircuitNode, nsins::Int, ncos::Int, freq::Int)
+    NodePathProperties(nd::CircuitNode, nsins::Int, ncos::Int, freq::Int)
 
 Surrogate `PathProperties` type. Carries `CircuitNode`s instead of numerical coefficients.
 """
 struct NodePathProperties <: PathProperties
-    coeff::Union{EvalEndNode,PauliRotationNode}
+    node::Union{EvalEndNode,PauliRotationNode}
     nsins::Int
     ncos::Int
     freq::Int
@@ -61,7 +61,7 @@ end
 """
 Pretty print for PauliFreqTracker
 """
-Base.show(io::IO, pth::NodePathProperties) = print(io, "NodePathProperties($(typeof(pth.coeff)), nsins=$(pth.nsins), ncos=$(pth.ncos), freq=$(pth.freq))")
+Base.show(io::IO, pth::NodePathProperties) = print(io, "NodePathProperties($(typeof(pth.node)), nsins=$(pth.nsins), ncos=$(pth.ncos), freq=$(pth.freq))")
 
 """
     NodePathProperties(node::CircuitNode)
@@ -85,7 +85,7 @@ numcoefftype(path::NodePathProperties) = typeof(tonumber(path))
 Get the cummulative coefficient of a `NodePathProperties` node.
 This assumes that the surrogate has already been evaluated.
 """
-tonumber(path::NodePathProperties) = path.coeff.cummulative_value
+tonumber(path::NodePathProperties) = path.node.cummulative_value
 
 
 """

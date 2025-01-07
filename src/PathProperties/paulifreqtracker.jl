@@ -46,7 +46,7 @@ function splitapply(gate::MaskedPauliRotation, pstr::PauliStringType, coeff::Pau
     return pstr, coeff1, new_pstr, coeff2
 end
 
-# These also work for other PathProperties types that use these function
+# These also work for other PathProperties types that have a `coeff` field defined
 """
     _applysin(pth::PathProperties, theta; sign=1, kwargs...)
 
@@ -56,19 +56,28 @@ Increments the `nsins` and `freq` fields by 1 if applicable.
 function _applysin(pth::PProp, theta, sign=1; kwargs...) where {PProp<:PathProperties}
     fields = fieldnames(PProp)
 
+    if :coeff ∉ fields
+        throw(
+            "The $(PProp) object does not have a field `coeff` to use the `_applysin` operation. " *
+            "Consider defining _applysin(pth::$(PProp), theta, sign; kwargs...)"
+        )
+    end
+
     function updateval(val, field)
         if field == :coeff
             # apply sin to the `coeff` field
-            # TODO: Should we even recursively call _applysin and _applycos?
-            return _applysin(val, theta, sign; kwargs...)
+            return val * sin(theta) * sign
         elseif field == :nsins
+            # increment the `nsins` field
             return val + 1
         elseif field == :freq
+            # increment the `freq` field
             return val + 1
         else
             return val
         end
     end
+
     return PProp((updateval(getfield(pth, field), field) for field in fields)...)
 end
 
@@ -81,20 +90,27 @@ Increments the `ncos` and `freq` fields by 1 if applicable.
 function _applycos(pth::PProp, theta, sign=1; kwargs...) where {PProp<:PathProperties}
     fields = fieldnames(PProp)
 
+    if :coeff ∉ fields
+        throw(
+            "The $(PProp) object does not have a field `coeff` to use the `_applysin` operation. " *
+            "Consider defining _applycos(pth::$(PProp), theta, sign; kwargs...)"
+        )
+    end
+
     function updateval(val, field)
         if field == :coeff
             # apply cos to the `coeff` field
-            return _applycos(val, theta, sign; kwargs...)
+            return val * cos(theta) * sign
         elseif field == :ncos
+            # increment the `ncos` field
             return val + 1
         elseif field == :freq
+            # increment the `freq` field
             return val + 1
         else
             return val
         end
     end
+
     return PProp((updateval(getfield(pth, field), field) for field in fields)...)
 end
-
-_applycos(val::Number, theta, sign=1; kwargs...) = val * cos(theta) * sign
-_applysin(val::Number, theta, sign=1; kwargs...) = val * sin(theta) * sign
