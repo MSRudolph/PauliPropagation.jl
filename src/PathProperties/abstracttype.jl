@@ -16,11 +16,6 @@ Abstract type for wrapping coefficients and record custom path properties
 abstract type PathProperties end
 
 """
-PathProperties are expected to be immutable.
-"""
-Base.copy(path::PathProperties) = path
-
-"""
 Pretty print for PathProperties
 """
 function Base.show(io::IO, pth::PProp) where {PProp<:PathProperties}
@@ -98,22 +93,8 @@ end
 Return the type of the coefficient `coeff` in a `PathProperties` object if applicable.
 """
 function numcoefftype(path::PProp) where {PProp<:PathProperties}
-    return coefftype(path)
+    return typeof(tonumber(path))
 end
-
-"""
-    coefftype(path::PathProperties)
-
-Return the type of the coefficient `coeff` in a `PathProperties` object if applicable.
-"""
-function coefftype(path::PProp) where {PProp<:PathProperties}
-    if !hasfield(PProp, :coeff)
-        throw("The $(PProp) object does not have a field `coeff` to determine the numerical coefficient type.
-        Consider defining a `coefftype(path::$(PProp))` method.")
-    end
-    return typeof(path.coeff)
-end
-
 
 """
     tonumber(val::PathProperties)
@@ -122,8 +103,8 @@ Get the numerical coefficient of a `PathProperties` wrapper.
 """
 function tonumber(path::PProp) where {PProp<:PathProperties}
     if !hasfield(PProp, :coeff)
-        throw("The $(PProp) object does not have a field `coeff` to determine the numerical coefficient type.
-        Consider defining a `coefftype(path::$(PProp))` method.")
+        throw("The $(PProp) object does not have a field `coeff`.
+        Consider defining a `tonumber(path::$(PProp))` method.")
     end
     return path.coeff
 end
