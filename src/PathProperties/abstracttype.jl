@@ -24,16 +24,14 @@ Base.copy(path::PathProperties) = path
 Pretty print for PathProperties
 """
 function Base.show(io::IO, pth::PProp) where {PProp<:PathProperties}
-    print_string = "$PProp("
+    print(io, "$PProp(")
     for (i, field) in enumerate(fieldnames(PProp))
-        print_string *= "$(field)=$(getfield(pth, field))"
+        print(io, "$(field)=$(getfield(pth, field))")
         if i < length(fieldnames(PProp))
-            print_string *= ", "
+            print(io, ", ")
         end
     end
-    print_string *= ")"
-
-    print(io, print_string)
+    print(io, ")")
 
 end
 
