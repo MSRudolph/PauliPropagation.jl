@@ -44,6 +44,10 @@ function *(path::PProp, val::Number) where {PProp<:PathProperties}
     # multiply the coefficient on the `coeff` field with the value and leave the rest unchanged.
     fields = fieldnames(PProp)
 
+    if :coeff ∉ fields
+        throw("The $(PProp) object does not have a field `coeff` to use the `*` operation.")
+    end
+
     # update the `coeff` only
     function updateval(fval, fname)
         if fname == :coeff
@@ -71,6 +75,10 @@ Requires that the `PathProperties` object has a `coeff` field as the first field
 """
 function +(path1::PProp, path2::PProp) where {PProp<:PathProperties}
     fields = fieldnames(PProp)
+
+    if :coeff ∉ fields
+        throw("The $(PProp) object does not have a field `coeff` to use the `+` operation.")
+    end
 
     # add `coeff` fields and take the minimum of the other fields
     function updateval(fval1, fval2, fname)
