@@ -73,7 +73,7 @@ function estimatemse!(circ, pstr::PauliString, error_array::AbstractVector, thet
         # multiply the coefficient of the backpropagated Pauli with the overlap with the initial state
         # and then multply with `is_truncated` to get the final error.
         # if truncated, then the error is coeff * initial_state_func(final_pstr), if not truncated, then the error is 0
-        error_array[ii] = tonumber(final_pstr.coeff)^2 * stateoverlapfunc(term(final_pstr))^2 * is_truncated
+        error_array[ii] = tonumber(final_pstr.coeff)^2 * stateoverlapfunc(final_pstr.term)^2 * is_truncated
     end
 
     return mean(error_array)

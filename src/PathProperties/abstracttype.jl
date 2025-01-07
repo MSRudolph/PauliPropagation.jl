@@ -61,15 +61,6 @@ function numcoefftype(path::PProp) where {PProp<:PathProperties}
 end
 
 """
-    numcoefftype(::Type{PathProperties})
-
-Return the first parameter in a in a parametrized `PathProperties` object if applicable.
-"""
-function numcoefftype(::Type{PProp}) where {PProp<:PathProperties}
-    return coefftype(PProp)
-end
-
-"""
     coefftype(path::PathProperties)
 
 Return the type of the coefficient `coeff` in a `PathProperties` object if applicable.
@@ -82,27 +73,6 @@ function coefftype(path::PProp) where {PProp<:PathProperties}
     return typeof(path.coeff)
 end
 
-"""
-    coefftype(::Type{PathProperties})
-
-Return the first parameter in a in a parametrized `PathProperties` object if applicable.
-"""
-function coefftype(::Type{PProp}) where {PProp<:PathProperties}
-    if length(PProp.parameters) == 0
-        throw("The $(PProp) type is not parametrized to determine the numerical coefficient type." *
-              "Consider defining a `coefftype(path::Type{$(PProp)})` method.")
-    end
-
-    CT = PProp.parameters[1]
-
-    if CT <: Number
-        return CT
-    else
-        throw("The first parameter of the $(PProp) type is $CT and not a number type." *
-              "Consider defining a `coefftype(path::Type{$(PProp)})` method.")
-    end
-
-end
 
 """
     tonumber(val::PathProperties)
@@ -119,7 +89,7 @@ end
 
 
 """
-    wrapcoefficients(pstr::PauliString, PathPropertiesType::Type{PP}) where {PP<:PathProperties}
+    wrapcoefficients(pstr::PauliString, PathPropertiesType<:PathProperties)
 
 Wrap the coefficient of a `PauliString` into a custom `PathProperties` type.
 For anything that is not natively supported by the library, you can subtype `PathProperties`.
@@ -127,16 +97,33 @@ A one-argument constructor of the custom `PathProperties` type from a coefficien
 """
 function wrapcoefficients(pstr::PauliString, ::Type{PProp}) where {PProp<:PathProperties}
     # the one-argument constructor of your PathProperties type must be defined
-    return PauliString(pstr.nqubits, pstr.term, PProp(pstr.coeff))
+    pprop = try
+        PProp(pstr.coeff)
+    catch MethodError
+        throw("The constructor `$(PProp)(coeff)` is not defined for the $(PProp) type.")
+    end
+
+    return PauliString(pstr.nqubits, pstr.term, pprop)
 end
 
 """
-    wrapcoefficients(psum::PauliSum, PathPropertiesType::Type{PP}) where {PP<:PathProperties}
+    wrapcoefficients(psum::PauliSum, PathPropertiesType<:PathProperties)
 
 Wrap the coefficients of a `PauliSum` into a custom `PathProperties` type.
 For anything that is not natively supported by the library, you can subtype `PathProperties`.
 A one-argument constructor of the custom `PathProperties` type from a coefficient must be defined.
 """
 function wrapcoefficients(psum::PauliSum, ::Type{PProp}) where {PProp<:PathProperties}
+    if length(psum) == 0
+        throw("The PauliSum is empty.")
+    end
+
+    try
+        _, dummy_coeff = first(psum.terms)
+        PProp(dummy_coeff)
+    catch MethodError
+        throw("The constructor `$(PProp)(coeff)` is not defined for the $(PProp) type.")
+    end
+
     return PauliSum(psum.nqubits, Dict(pstr => PProp(coeff) for (pstr, coeff) in psum.terms))
 end

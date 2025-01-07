@@ -9,7 +9,6 @@ export
     PauliType,
     PauliSum,
     PauliString,
-    term,
     paulis,
     coefficients,
     norm,
