@@ -38,7 +38,7 @@ end
 import Base: *
 """
 Multiplication of the `coeff` field in a `PathProperties` object with a number.
-Requires that the `PathProperties` object has a `coeff` field as the first field.
+Requires that the `PathProperties` object has a `coeff` field defined which will be multiplied.
 """
 function *(path::PProp, val::Number) where {PProp<:PathProperties}
     # multiply the coefficient on the `coeff` field with the value and leave the rest unchanged.
@@ -61,7 +61,7 @@ end
 
 """
 Multiplication of a `PathProperties` object with a number.
-Requires that the `PathProperties` object has a `coeff` field as the first field which will be multiplied.
+Requires that the `PathProperties` object has a `coeff` field defined which will be multiplied.
 """
 function *(val::Number, path::PProp) where {PProp<:PathProperties}
     return path * val
@@ -71,7 +71,7 @@ import Base: +
 """
 Addition of two `PathProperties` objects of equal concrete type.
 Adds the `coeff` fields and takes the minimum of the other fields.
-Requires that the `PathProperties` object has a `coeff` field as the first field.
+Requires that the `PathProperties` object has a `coeff` field defined.
 """
 function +(path1::PProp, path2::PProp) where {PProp<:PathProperties}
     fields = fieldnames(PProp)
