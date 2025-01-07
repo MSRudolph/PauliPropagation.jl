@@ -152,6 +152,7 @@ inttostring(pstr::PauliType, nqubits::Integer) = prod("$(inttosymbol(getpauli(ps
 Pretty string function.
 """
 function _getprettystr(psum::Dict, nqubits::Int; max_lines=20)
+    # TODO: rework this pretty print to not build the string but keep streaming via show(io, ...)
     str = ""
     header = length(psum) == 1 ? "1 Pauli term: \n" : "$(length(psum)) Pauli terms:\n"
     str *= header
@@ -168,7 +169,7 @@ function _getprettystr(psum::Dict, nqubits::Int; max_lines=20)
         end
         if isa(coeff, Number)
             coeff_str = round(coeff, sigdigits=5)
-        elseif isa(coeff, PathProperties)
+        elseif isa(coeff, PathProperties) && hasfield(typeof(coeff), :coeff)
             PProp = string(typeof(coeff).name.name)
             if isa(coeff.coeff, Number)
                 coeff_str = "$PProp($(round(coeff.coeff, sigdigits=5)))"
@@ -176,7 +177,7 @@ function _getprettystr(psum::Dict, nqubits::Int; max_lines=20)
                 coeff_str = "$PProp($(typeof(coeff.coeff)))"
             end
         else
-            coeff_str = "($(typeof(coeff)))"
+            coeff_str = "$(typeof(coeff))"
         end
         new_str = " $(coeff_str) * $(pauli_string)\n"
         str *= new_str
