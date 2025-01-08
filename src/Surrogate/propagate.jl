@@ -62,21 +62,37 @@ function _checksurrogationconditions(circ)
 end
 
 
-## For Pauli Gates
+## For Pauli Rotations
 
-function _applycos(node::CircuitNode, theta; sign=1, param_idx=0, kwargs...)
+function splitapply(gate::MaskedPauliRotation, pstr::PauliStringType, coeff::NodePathProperties, theta; kwargs...)
+    coeff1 = _applycos(coeff, theta; kwargs...)
+    new_pstr, sign = getnewpaulistring(gate, pstr)
+    coeff2 = _applysin(coeff, theta, sign; kwargs...)
+
+    return pstr, coeff1, new_pstr, coeff2
+end
+
+function _applycos(path::NodePathProperties, theta, sign=1; param_idx=0, kwargs...)
+    return NodePathProperties(_applycos(path.node, theta, sign; param_idx=param_idx), path.nsins, path.ncos + 1, path.freq + 1)
+end
+
+function _applycos(node::CircuitNode, theta, sign=1; param_idx=0, kwargs...)
     return PauliRotationNode(parents=[node], trig_inds=[1], signs=[sign], param_idx=param_idx)
 end
 
-function _applysin(node::CircuitNode, theta; sign=1, param_idx=0, kwargs...)
+function _applysin(path::NodePathProperties, theta, sign=1; param_idx=0, kwargs...)
+    return NodePathProperties(_applysin(path.node, theta, sign; param_idx=param_idx), path.nsins + 1, path.ncos, path.freq + 1)
+end
+
+function _applysin(node::CircuitNode, theta, sign=1; param_idx=0, kwargs...)
     return PauliRotationNode(parents=[node], trig_inds=[-1], signs=[sign], param_idx=param_idx)
 end
 
 function merge(pth1::NodePathProperties, pth2::NodePathProperties)
     return NodePathProperties(
-        merge(pth1.coeff, pth2.coeff),
-        min(pth1.ncos, pth2.ncos),
+        merge(pth1.node, pth2.node),
         min(pth1.nsins, pth2.nsins),
+        min(pth1.ncos, pth2.ncos),
         min(pth1.freq, pth2.freq)
     )
 end
@@ -91,7 +107,7 @@ end
 ## For Clifford Gates
 
 function _multiplysign(pth::NodePathProperties, sign; kwargs...)
-    return NodePathProperties(_multiplysign(pth.coeff, sign), pth.nsins, pth.ncos, pth.freq)
+    return NodePathProperties(_multiplysign(pth.node, sign), pth.nsins, pth.ncos, pth.freq)
 end
 
 function _multiplysign(pauli_node::PauliRotationNode, sign; kwargs...)
@@ -104,4 +120,11 @@ end
 function _multiplysign(eval_endnode::EvalEndNode, sign; kwargs...)
     eval_endnode.coefficient *= sign
     return eval_endnode
+end
+
+## Truncation functions
+
+# don't truncate on coefficients
+function truncatemincoeff(path::NodePathProperties, min_abs_coeff::Real)
+    return false
 end

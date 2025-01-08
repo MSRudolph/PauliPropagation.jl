@@ -74,14 +74,14 @@ end
 
 
 """
-    applymergetruncate!(gate, psum, aux_psum, thetas, param_idx, args...; kwargs...)
+    applymergetruncate!(gate, psum, aux_psum, thetas, param_idx; kwargs...)
 
 1st-level function below `propagate!` that applies one gate to all Pauli strings in `psum`, potentially using `aux_psum` in the process,
 and merges everything back into `psum`. Truncations are checked here after merging.
 This function can be overwritten for a custom gate if the lower-level functions `applytoall!`, `applyandadd!`, and `apply` are not sufficient.
 A custom truncation function can be passed as `customtruncatefn` with the signature customtruncatefn(pstr::PauliStringType, coefficient)::Bool.
 """
-function applymergetruncate!(gate, psum, aux_psum, thetas, param_idx, args...; kwargs...)
+function applymergetruncate!(gate, psum, aux_psum, thetas, param_idx; kwargs...)
 
     # Pick out the next theta if gate is a ParametrizedGate.
     # Else set the paramter to nothing for clarity that theta is not used.
@@ -108,7 +108,7 @@ function applymergetruncate!(gate, psum, aux_psum, thetas, param_idx, args...; k
 end
 
 """
-    applytoall!(gate, theta psum, output_psum, args...; kwargs...)
+    applytoall!(gate, theta psum, output_psum; kwargs...)
 
 2nd-level function below `applymergetruncate!` that applies one gate to all Pauli strings in `psum`, moving results into `output_psum` by default.
 After this functions, Pauli strings in remaining in `psum` and `output_psum` are merged.
@@ -116,7 +116,7 @@ This function can be overwritten for a custom gate if the lower-level functions 
 In particular, this function can be used to manipulate both `psum` and `output_psum` at the same time to reduce memory movement.
 Note that manipulating `psum` on anything other than the current Pauli string will likely lead to errors.
 """
-function applytoall!(gate, theta, psum, output_psum, args...; kwargs...)
+function applytoall!(gate, theta, psum, output_psum; kwargs...)
 
     # Loop over all Pauli strings in psum and apply the gate to them.
     for (pstr, coeff) in psum
@@ -131,14 +131,14 @@ function applytoall!(gate, theta, psum, output_psum, args...; kwargs...)
 end
 
 """
-    applyandadd!(gate, pstr, coefficient, theta, output_psum, args...; kwargs...)
+    applyandadd!(gate, pstr, coefficient, theta, output_psum; kwargs...)
 
 3rd-level function below `applymergetruncate!` that applies one gate to one Pauli string in `psum`, moving results into `output_psum` by default.
 This function can be overwritten for a custom gate if the lower-level function `apply` is not sufficient. 
 This is likely the the case if `apply` is not type-stable because it does not return a unique number of outputs. 
 E.g., a Pauli gate returns 1 or 2 (pstr, coefficient) outputs.
 """
-@inline function applyandadd!(gate, pstr, coeff, theta, output_psum, args...; kwargs...)
+@inline function applyandadd!(gate, pstr, coeff, theta, output_psum; kwargs...)
 
     # Get the (potentially new) pauli strings and their coefficients like (pstr1, coeff1, pstr2, coeff2, ...)
     pstrs_and_coeffs = apply(gate, pstr, coeff, theta; kwargs...)

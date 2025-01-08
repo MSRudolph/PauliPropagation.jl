@@ -10,13 +10,13 @@
 
 ### PAULI GATES
 """
-    applytoall!(gate::PauliRotation, theta, psum, aux_psum, args...; kwargs...)
+    applytoall!(gate::PauliRotation, theta, psum, aux_psum; kwargs...)
 
 Overload of `applytoall!` for `PauliRotation` gates. 
 It fixes the type-instability of the `apply()` function and reduces moving Pauli strings between `psum` and `aux_psum`.
 `psum` and `aux_psum` are merged later.
 """
-function applytoall!(gate::PauliRotation, theta, psum, aux_psum, args...; kwargs...)
+function applytoall!(gate::PauliRotation, theta, psum, aux_psum; kwargs...)
     # turn the (potentially) PauliRotation gate into a MaskedPauliRotation gate
     # this allows for faster operations
     gate = _tomaskedpaulirotation(gate, paulitype(psum))
@@ -52,9 +52,9 @@ Returns two pairs of (pstr, coeff) as one tuple.
 Currently `kwargs` are passed to `applycos` and `applysin` for the Surrogate.
 """
 function splitapply(gate::MaskedPauliRotation, pstr::PauliStringType, coeff, theta; kwargs...)
-    coeff1 = _applycos(coeff, theta; kwargs...)
+    coeff1 = coeff * cos(theta)
     new_pstr, sign = getnewpaulistring(gate, pstr)
-    coeff2 = _applysin(coeff, theta; sign=sign, kwargs...)
+    coeff2 = coeff * sin(theta) * sign
 
     return pstr, coeff1, new_pstr, coeff2
 end
@@ -70,43 +70,16 @@ function getnewpaulistring(gate::MaskedPauliRotation, pstr::PauliStringType)
     return new_pstr, real(1im * sign)
 end
 
-# TODO: Move this over to PathProperties
-"""
-    _applysin(old_coeff::Number, theta; sign=1, kwargs...)
-
-Multiply a numerical coefficient with sin(theta) * sign.
-"""
-function _applysin(old_coeff::Number, theta; sign=1, kwargs...)
-    return old_coeff * sin(theta) * sign
-end
-
-"""
-    _applycos(old_coeff::Number, theta; sign=1, kwargs...)
-
-Multiply a numerical coefficient with cos(theta) * sign.
-"""
-function _applycos(old_coeff::Number, theta; sign=1, kwargs...)
-    return old_coeff * cos(theta) * sign
-end
-
-function _incrementcosandfreq(coeff::Number)
-    return coeff
-end
-
-function _incrementsinandfreq(coeff::Number)
-    return coeff
-end
-
 
 ### Clifford gates
 """
-    applyandadd!(gate::CliffordGate, pstr, coeff, theta, output_psum, args...; kwargs...)
+    applyandadd!(gate::CliffordGate, pstr, coeff, theta, output_psum; kwargs...)
 
 Overload of `applyandadd!` for `CliffordGate` gates.
 Use `set!()` instead of `add!()` because Clifford gates create non-overlapping Pauli strings.
 `applytoall!` does not need to be adapted.
 """
-@inline function applyandadd!(gate::CliffordGate, pstr, coeff, theta, output_psum, args...; kwargs...)
+@inline function applyandadd!(gate::CliffordGate, pstr, coeff, theta, output_psum; kwargs...)
 
     # TODO: test whether it is significantly faster to get the map_array in applytoall! and pass it here
     new_pstr, new_coeff = apply(gate, pstr, coeff; kwargs...)
@@ -165,12 +138,12 @@ end
 
 ### Pauli Noise
 """
-    applytoall!(gate::PauliNoise, p, psum, aux_psum, args...; kwargs...)
+    applytoall!(gate::PauliNoise, p, psum, aux_psum; kwargs...)
 
 Overload of `applytoall!` for `PauliNoise` gates with noise strength `p`. 
 It changes the coefficients in-place and does not require the `aux_psum`, which stays empty.
 """
-function applytoall!(gate::PauliNoise, p, psum, aux_psum, args...; kwargs...)
+function applytoall!(gate::PauliNoise, p, psum, aux_psum; kwargs...)
 
     # loop over all Pauli strings and their coefficients in the Pauli sum
     for (pstr, coeff) in psum
@@ -209,13 +182,13 @@ end
 
 ### Amplitude Damping Noise
 """
-    applytoall!(gate::AmplitudeDampingNoise, theta, psum, aux_psum, args...; kwargs...)
+    applytoall!(gate::AmplitudeDampingNoise, theta, psum, aux_psum; kwargs...)
 
 Overload of `applytoall!` for `AmplitudeDampingNoise` gates. 
 It fixes the type-instability of the apply() function and reduces moving Pauli strings between psum and aux_psum.
 `psum` and `aux_psum` are merged later.
 """
-function applytoall!(gate::AmplitudeDampingNoise, theta, psum, aux_psum, args...; kwargs...)
+function applytoall!(gate::AmplitudeDampingNoise, theta, psum, aux_psum; kwargs...)
 
     # loop over all Pauli strings and their coefficients in the Pauli sum
     for (pstr, coeff) in psum
@@ -290,12 +263,23 @@ function splitapply(gate::AmplitudeDampingNoise, pstr::PauliStringType, coeff, g
     return pstr, (1 - gamma) * coeff, new_pstr, gamma * coeff
 end
 
+## T Gate
+"""
+    applytoall!(gate::TGate, thetas, psum, aux_psum; kwargs...)
+
+Overload of `applytoall!()` for `TGate(qind)`.
+Redirects to a `PauliRotation(:Z, qind)` with angle π/4.
+"""
+function applytoall!(gate::TGate, thetas, psum, aux_psum; kwargs...)
+    return applytoall!(PauliRotation(:Z, gate.qind), π / 4, psum, aux_psum; kwargs...)
+end
+
 ### Frozen Gates
 """
-    applytoall!(gate::FrozenGate, thetas, psum, aux_psum, args...; kwargs...)
+    applytoall!(gate::FrozenGate, thetas, psum, aux_psum; kwargs...)
 
 Overload of `applytoall!` for `FrozenGate`s. Re-directs to `applytoall!` for the wrapped `FrozenGate.gate` with the frozen parameter.
 """
-function applytoall!(gate::FrozenGate, theta, psum, aux_psum, args...; kwargs...)
-    return applytoall!(gate.gate, gate.parameter, psum, aux_psum, args...; kwargs...)
+function applytoall!(gate::FrozenGate, theta, psum, aux_psum; kwargs...)
+    return applytoall!(gate.gate, gate.parameter, psum, aux_psum; kwargs...)
 end

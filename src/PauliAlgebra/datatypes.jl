@@ -31,14 +31,6 @@ function PauliString(nqubits::Int, paulis::Union{Symbol,Vector{Symbol}}, qinds, 
 end
 
 """
-    term(pstr::PauliString)
-
-Get the lower-level representation of a `PauliString`.
-This returns the `term` field of the `PauliString`. 
-"""
-term(pstr::PauliString) = pstr.term
-
-"""
     paulitype(pstr::PauliString)
 
 Get the Pauli integer type of a `PauliString`.
@@ -78,14 +70,15 @@ function show(io::IO, pstr::PauliString)
     end
     if isa(pstr.coeff, Number)
         coeff_str = round(pstr.coeff, sigdigits=5)
-    elseif isa(pstr.coeff, PathProperties)
-        if isa(pstr.coeff, Number)
-            coeff_str = "PathProperty($(round(pstr.coeff, sigdigits=5)))"
+    elseif isa(pstr.coeff, PathProperties) && hasfield(typeof(pstr.coeff), :coeff)
+        PProp = string(typeof(pstr.coeff).name.name)
+        if isa(pstr.coeff.coeff, Number)
+            coeff_str = "$PProp($(round(pstr.coeff.coeff, sigdigits=5)))"
         else
-            coeff_str = "PathProperty($(typeof(pstr.coeff)))"
+            coeff_str = "$PProp($(typeof(pstr.coeff.coeff)))"
         end
     else
-        coeff_str = "($(typeof(pstr.coeff)))"
+        coeff_str = "$(typeof(pstr.coeff))"
     end
     print(io, "PauliString(nqubits: $(pstr.nqubits), $(coeff_str) * $(pauli_string))")
 end
@@ -169,14 +162,6 @@ function PauliSum(pstrs::Union{AbstractArray,Tuple,Base.Generator})
 end
 
 """
-    terms(psum::PauliSum)
-
-Returns the data structure of the `PauliSum` containing the Pauli strings and their coefficients.
-Currently a dictionary.
-"""
-terms(psum::PauliSum) = psum.terms
-
-"""
     paulis(psum::PauliSum)
 
 Returns an iterator over the integer pauli strings of a `PauliSum`.
@@ -217,41 +202,29 @@ end
 """
     numcoefftype(psum::PauliSum)
 
-Get the type of the numerical coefficient of a `PauliSum`. 
-Will get the type of the `coeff` field of a potential PathProperties type.
+Get the type of the numerical coefficient of a `PauliSum` by calling `numcoefftype()` on the coefficients.
+If the `PauliSum` is empty, an error is thrown because the type cannot be inferred.
 """
 function numcoefftype(psum::PauliSum)
-    return numcoefftype(psum.terms)
-end
-
-"""
-    numcoefftype(psum::Dict)
-
-Get the type of the numerical coefficient of a pauli sum dict. 
-Will get the type of the `coeff` field of a potential PathProperties type.
-"""
-function numcoefftype(psum::Dict)
-    return numcoefftype(valtype(psum))
+    if length(psum) == 0
+        throw(
+            "Numeric coefficient type cannot be inferred from an empty PauliSum." *
+            "Consider defining a `numcoefftype(psum::$(typeof(psum)))` method.")
+    end
+    return numcoefftype(first(coefficients(psum)))
 end
 
 """
     numcoefftype(::Number)
 
 Get the type of the number.
+Can be overloaded for custom wrapper types like `PathProperties`.
 """
 function numcoefftype(::T) where {T<:Number}
     return T
 end
 
-"""
-    numcoefftype(::Type{Number})
-
-Return the input type if it is a Number type.
-"""
-function numcoefftype(::Type{T}) where {T<:Number}
-    return T
-end
-
+# TODO: rename to get() and clean up
 """
     getcoeff(psum::PauliSum{PauliStringType,CoeffType}, pstr::PauliStringType)
 
