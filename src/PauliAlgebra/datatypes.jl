@@ -202,16 +202,7 @@ end
 Get the Pauli integer type of a `PauliSum`.
 """
 function paulitype(psum::PauliSum)
-    return paulitype(psum.terms)
-end
-
-"""
-    paulitype(psum::Dict)
-
-Get the Pauli integer type of a Pauli sum dict.
-"""
-function paulitype(psum::Dict)
-    return keytype(psum)
+    return keytype(psum.terms)
 end
 
 """
@@ -220,16 +211,7 @@ end
 Get the coefficient type of a `PauliSum`.
 """
 function coefftype(psum::PauliSum)
-    return coefftype(psum.terms)
-end
-
-"""
-    coefftype(psum::Dict)
-
-Get the coefficient type of a Pauli sum dict.
-"""
-function coefftype(psum::Dict)
-    return valtype(psum)
+    return valtype(psum.terms)
 end
 
 """
