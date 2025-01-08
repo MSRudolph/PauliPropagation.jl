@@ -163,6 +163,7 @@ end
     )
 
 Set the Paulis `qinds` of an integer Pauli string `pstr` to `target_paulis`.
+Use Tuples for `qinds` in performance critical functions because they are immutable.
 """
 function setpauli(pstr::PauliStringType, target_paulis::PauliStringType, qinds)
     for (ii, qind) in enumerate(qinds)
@@ -180,6 +181,7 @@ end
 
 Set the Paulis `qinds` of an integer Pauli string `pstr` to `target_paulis`.
 `target_paulis` is a vector of symbols.
+Use tuples in performance critical functions because they are immutable.
 """
 function setpauli(pstr::PauliStringType, target_paulis, qinds)
     for (ii, qind) in enumerate(qinds)
