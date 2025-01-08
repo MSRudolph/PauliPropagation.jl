@@ -77,7 +77,7 @@ function show(io::IO, pstr::PauliString)
     end
     if isa(pstr.coeff, Number)
         coeff_str = round(pstr.coeff, sigdigits=5)
-    elseif isa(pstr.coeff, PathProperties)
+    elseif isa(pstr.coeff, PathProperties) && hasfield(typeof(pstr.coeff), :coeff)
         PProp = string(typeof(pstr.coeff).name.name)
         if isa(pstr.coeff.coeff, Number)
             coeff_str = "$PProp($(round(pstr.coeff.coeff, sigdigits=5)))"
@@ -85,7 +85,7 @@ function show(io::IO, pstr::PauliString)
             coeff_str = "$PProp($(typeof(pstr.coeff.coeff)))"
         end
     else
-        coeff_str = "($(typeof(pstr.coeff)))"
+        coeff_str = "$(typeof(pstr.coeff))"
     end
     print(io, "PauliString(nqubits: $(pstr.nqubits), $(coeff_str) * $(pauli_string))")
 end
