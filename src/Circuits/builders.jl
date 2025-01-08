@@ -39,14 +39,14 @@ function tfitrottercircuit(nqubits::Integer, nlayers::Integer; topology=nothing,
 end
 
 """
-    tiltedtfitrottercircuit(n_qubits, n_layers; topology=nothing)
+    tiltedtfitrottercircuit(nqubits, n_layers; topology=nothing)
 
 Returns a Trottterized circuit for the tilted transverse field Ising model.
 H = Sum_{(i, i+1) in topology} Z_i Z_{i+1} 
-  + Sum_{i=1}^{n_qubits} Z_i + Sum_{i=1}^{n_qubits} X_i
+  + Sum_{i=1}^{nqubits} Z_i + Sum_{i=1}^{nqubits} X_i
 
 # Arguments
-- `n_qubits::Integer`: The number of qubits in the circuit.
+- `nqubits::Integer`: The number of qubits in the circuit.
 - `n_layers::Integer`: The number of Trotter steps to perform.
 - `topology=nothing`: The topology of the qubits in the circuit. 
     Default (nothing): A linear chain.
@@ -65,8 +65,8 @@ function tiltedtfitrottercircuit(nqubits::Integer, layers::Integer; topology=not
 
     for _ in 1:layers
         rzzlayer!(circuit, topology)
-        rzlayer!(circuit, n_qubits)
-        rxlayer!(circuit, n_qubits)
+        rzlayer!(circuit, nqubits)
+        rxlayer!(circuit, nqubits)
     end
 
     return circuit

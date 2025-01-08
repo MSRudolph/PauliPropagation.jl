@@ -63,6 +63,7 @@ export
 include("Circuits/Circuits.jl")
 export
     countparameters,
+    getparameterindices,
     bricklayertopology,
     staircasetopology,
     rectangletopology,
