@@ -287,14 +287,11 @@ function getcoeff(psum::PauliSum, pstr::Vector{Symbol})
     return getcoeff(psum, symboltoint(pstr))
 end
 
-
-# TODO tonumber() for PauliSum and PauliString
-
-
 """
     tonumber(val::Number)
 
 Trivial function returning a numerical value of a number.
+Will be overloaded for custom wrapper types like `PathProperties`.
 """
 function tonumber(val::Number)
     return val
@@ -577,13 +574,9 @@ function set!(psum::PauliSum{TT,CT}, pstr::TT, coeff::CT) where {TT,CT}
     return psum
 end
 
-"""
-    set!(psum::Dict{TermType, CoeffType}, pstr::TermType, coeff::CoeffType)
-
-In-place setting the coefficient of a Pauli string in a Pauli sum dictionary.
-The type of the Pauli string needs to be the keytype=`TermType` of the dictionary, and the coefficient `coeff` needs to be the valuetype=`CoeffType`.
-"""
 function set!(psum::Dict{TT,CT}, pstr::TT, coeff::CT) where {TT,CT}
+    # lower-level set!() for Pauli sum dict
+
     # delete if the coefficient would be set to 0
     if tonumber(coeff) == 0
         delete!(psum, pstr)
@@ -613,7 +606,13 @@ Empty the `PauliSum` by emptying the dictionary on the `terms` fields.
 Base.empty!(psum::PauliSum) = empty!(psum.terms)
 
 ## Helper functions
-function similar(psum::PauliSum{TT,CT}) where {TT,CT}
+"""
+    similar(psum::PauliSum)
+
+Create a new `PauliSum` with the same number of qubits and coefficient type as `psum`.
+Calls `sizehint!()` with `length(psum)` on the dictionary of the new `PauliSum`. 
+"""
+function similar(psum::PauliSum)
     return PauliSum(psum.nqubits, similar(psum.terms))
 end
 
