@@ -21,6 +21,9 @@ function applytoall!(gate::PauliRotation, theta, psum, aux_psum; kwargs...)
     # this allows for faster operations
     gate = _tomaskedpaulirotation(gate, paulitype(psum))
 
+    # pre-compute the sine and cosine values because the are used for every Pauli string that does not commute with the gate
+    cos_val = cos(theta)
+    sin_val = sin(theta)
     # loop over all Pauli strings and their coefficients in the Pauli sum
     for (pstr, coeff) in psum
 
@@ -30,7 +33,9 @@ function applytoall!(gate::PauliRotation, theta, psum, aux_psum; kwargs...)
         end
 
         # else we know the gate will split th Pauli string into two
-        pstr, coeff1, new_pstr, coeff2 = splitapply(gate, pstr, coeff, theta; kwargs...)
+        coeff1 = coeff * cos_val
+        new_pstr, sign = getnewpaulistring(gate, pstr)
+        coeff2 = coeff * sin_val * sign
 
         # set the coefficient of the original Pauli string
         set!(psum, pstr, coeff1)
@@ -41,22 +46,6 @@ function applytoall!(gate::PauliRotation, theta, psum, aux_psum; kwargs...)
     end
 
     return
-end
-
-"""
-    splitapply(gate::MaskedPauliRotation, pstr::PauliStringType, coeff, theta; kwargs...)
-
-Apply a `MaskedPauliRotation` with an angle `theta` and a coefficient `coeff` to an integer Pauli string,
-assuming that the gate does not commute with the Pauli string.
-Returns two pairs of (pstr, coeff) as one tuple.
-Currently `kwargs` are passed to `applycos` and `applysin` for the Surrogate.
-"""
-function splitapply(gate::MaskedPauliRotation, pstr::PauliStringType, coeff, theta; kwargs...)
-    coeff1 = coeff * cos(theta)
-    new_pstr, sign = getnewpaulistring(gate, pstr)
-    coeff2 = coeff * sin(theta) * sign
-
-    return pstr, coeff1, new_pstr, coeff2
 end
 
 """
@@ -107,7 +96,7 @@ using the a `map_array` corresponding to the `CliffordGate`.
 """
 function applywithmap(gate::CliffordGate, pstr::PauliStringType, coeff, map_array; kwargs...)
     qinds = gate.qinds
-
+    # TODO: rework and simplify this function. 
     lookup_int = _extractlookupop(pstr, qinds)
     sign, partial_pstr = map_array[lookup_int+1]  # +1 because Julia is 1-indexed and lookup_int is 0-indexed
     pstr = _insertnewpaulis!(pstr, partial_pstr, qinds)
