@@ -60,3 +60,46 @@ function surrogatePP(nq, nl, W, max_freq)
 
     return overlapwithzero(dsym)
 end
+
+@testset begin
+    nq = 6
+    nl = 3
+
+    topology = rectangletopology(2, 3; periodic=true)
+    circ = efficientsu2circuit(nq, nl; topology=topology)
+
+    nparams = countparameters(circ)
+
+    for max_weight in (1, 3, 6)
+        thetas = randn(nparams)
+
+        pstr = PauliString(nq, rand([:I, :X, :Y, :Z]), rand(1:nq))
+        dnum = propagate(circ, pstr, thetas; min_abs_coeff=0, max_weight=max_weight)
+
+        wrapped_pstr = wrapcoefficients(pstr, PauliFreqTracker)
+        dhyb = propagate(circ, wrapped_pstr, thetas; min_abs_coeff=0, max_weight=max_weight)
+
+        surrogate_pstr = wrapcoefficients(pstr, NodePathProperties)
+        dsym = propagate(circ, surrogate_pstr; max_weight=max_weight)
+        evaluate!(dsym, thetas)
+
+        @test overlapwithzero(dnum) ≈ overlapwithzero(dhyb) ≈ overlapwithzero(dsym)
+        @test overlapwithplus(dnum) ≈ overlapwithplus(dhyb) ≈ overlapwithplus(dsym)
+    end
+
+
+    nl = 5
+    circ = efficientsu2circuit(nq, nl; topology=topology)
+    nparams = countparameters(circ)
+    thetas = randn(nparams)
+
+    pstr = PauliString(nq, rand([:X, :Y, :Z]), rand(1:nq))
+    dnum = propagate(circ, pstr, thetas; min_abs_coeff=1e-3)
+
+    wrapped_pstr = wrapcoefficients(pstr, PauliFreqTracker)
+    dhyb = propagate(circ, wrapped_pstr, thetas; min_abs_coeff=1e-3)
+
+    @test overlapwithzero(dnum) ≈ overlapwithzero(dhyb)
+    @test overlapwithplus(dnum) ≈ overlapwithplus(dhyb)
+
+end

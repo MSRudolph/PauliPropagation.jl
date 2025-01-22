@@ -81,48 +81,27 @@ end
 """
     apply(gate::CliffordGate, pstr::PauliStringType, coeff)
 
-Apply a `CliffordGate` to an integer Pauli string and an optional coefficient. 
+Apply a `CliffordGate` to an integer Pauli string and its coefficient. 
 """
 function apply(gate::CliffordGate, pstr::PauliStringType, coeff; kwargs...)
+    # this array carries the new Paulis + sign for every occuring old Pauli combination
     map_array = clifford_map[gate.symbol]
-    return applywithmap(gate, pstr, coeff, map_array)
-end
 
-"""
-    applywithmap(gate::CliffordGate, pstr::PauliStringType, coefficient, map_array)
-
-Apply a `CliffordGate` to an integer Pauli string and a coefficient 
-using the a `map_array` corresponding to the `CliffordGate`.
-"""
-function applywithmap(gate::CliffordGate, pstr::PauliStringType, coeff, map_array; kwargs...)
     qinds = gate.qinds
-    # TODO: rework and simplify this function. 
-    lookup_int = _extractlookupop(pstr, qinds)
-    sign, partial_pstr = map_array[lookup_int+1]  # +1 because Julia is 1-indexed and lookup_int is 0-indexed
-    pstr = _insertnewpaulis!(pstr, partial_pstr, qinds)
 
-    coeff = _multiplysign(coeff, sign)
+    # this integer carries the active Paulis on its bits
+    lookup_int = getpauli(pstr, qinds)
+
+    # this integer can be used to index into the array returning the new Paulis
+    # +1 because Julia is 1-indexed and lookup_int is 0-indexed
+    sign, partial_pstr = map_array[lookup_int+1]
+
+    # insert the bits of the new Pauli into the old Pauli
+    pstr = setpauli(pstr, partial_pstr, qinds)
+
+    coeff *= sign
+
     return pstr, coeff
-end
-
-function _extractlookupop(lookup_int::PauliStringType, qinds)
-    partial_pstr = identitylike(lookup_int)
-    for ii in eachindex(qinds)
-        partial_pstr = setpauli(partial_pstr, getpauli(lookup_int, qinds[ii]), ii)
-    end
-    return partial_pstr
-end
-
-function _insertnewpaulis!(pstr::PauliStringType, partial_pstr::PauliStringType, qinds)
-    for ii in eachindex(qinds)
-        pstr = setpauli(pstr, getpauli(partial_pstr, ii), qinds[ii])
-    end
-    return pstr
-end
-
-# This is left general because it is overloaded in the Surrogate
-function _multiplysign(coefficient, sign)
-    return coefficient * sign
 end
 
 ### Pauli Noise

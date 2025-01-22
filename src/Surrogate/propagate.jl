@@ -142,6 +142,32 @@ end
 
 ## For Clifford Gates
 
+"""
+    apply(gate::CliffordGate, pstr::PauliStringType, coeff::NodePathProperties)
+
+Apply a `CliffordGate` to an integer Pauli string and `NodePathProperties` coefficient. 
+"""
+function apply(gate::CliffordGate, pstr::PauliStringType, coeff::NodePathProperties; kwargs...)
+    # this array carries the new Paulis + sign for every occuring old Pauli combination
+    map_array = clifford_map[gate.symbol]
+
+    qinds = gate.qinds
+
+    # this integer carries the active Paulis on its bits
+    lookup_int = getpauli(pstr, qinds)
+
+    # this integer can be used to index into the array returning the new Paulis
+    # +1 because Julia is 1-indexed and lookup_int is 0-indexed
+    sign, partial_pstr = map_array[lookup_int+1]
+
+    # insert the bits of the new Pauli into the old Pauli
+    pstr = setpauli(pstr, partial_pstr, qinds)
+
+    coeff = _multiplysign(coeff, sign)
+
+    return pstr, coeff
+end
+
 function _multiplysign(pth::NodePathProperties, sign; kwargs...)
     return NodePathProperties(_multiplysign(pth.node, sign), pth.nsins, pth.ncos, pth.freq)
 end
