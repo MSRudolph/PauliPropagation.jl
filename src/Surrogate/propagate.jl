@@ -158,7 +158,7 @@ function apply(gate::CliffordGate, pstr::PauliStringType, coeff::NodePathPropert
 
     # this integer can be used to index into the array returning the new Paulis
     # +1 because Julia is 1-indexed and lookup_int is 0-indexed
-    sign, partial_pstr = map_array[lookup_int+1]
+    partial_pstr, sign = map_array[lookup_int+1]
 
     # insert the bits of the new Pauli into the old Pauli
     pstr = setpauli(pstr, partial_pstr, qinds)
