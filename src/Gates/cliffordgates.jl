@@ -34,8 +34,11 @@ const _default_clifford_map = Dict(
     :X => [(1, 0x00), (1, 0x01), (-1, 0x02), (-1, 0x03)],
     :Y => [(1, 0x00), (-1, 0x01), (1, 0x02), (1, 0x03)],
     :Z => [(1, 0x00), (-1, 0x01), (-1, 0x02), (1, 0x03)],
+    :SX => [(1, 0x00), (1, 0x01), (-1, 0x03), (1, 0x02)],
+    :SY => [(1, 0x00), (1, 0x03), (1, 0x02), (-1, 0x01)],
     :S => [(1, 0x00), (-1, 0x02), (1, 0x01), (1, 0x03)],
     :CNOT => [(1, 0x00), (1, 0x05), (1, 0x06), (1, 0x03), (1, 0x04), (1, 0x01), (1, 0x02), (1, 0x07), (1, 0x0b), (1, 0x0e), (-1, 0x0d), (1, 0x08), (1, 0x0f), (-1, 0x0a), (1, 0x09), (1, 0x0c)],
+    :CZ => [(1, 0x00), (1, 0x0d), (1, 0x0e), (1, 0x03), (1, 0x07), (1, 0x0a), (-1, 0x09), (1, 0x04), (1, 0x0b), (-1, 0x06), (1, 0x05), (1, 0x08), (1, 0x0c), (1, 0x01), (1, 0x02), (1, 0x0f)],
     :ZZpihalf => [(1, 0x00), (1, 0x0e), (-1, 0x0d), (1, 0x03), (1, 0x0b), (1, 0x05), (1, 0x06), (1, 0x08), (-1, 0x07), (1, 0x09), (1, 0x0a), (-1, 0x04), (1, 0x0c), (1, 0x02), (-1, 0x01), (1, 0x0f)],
     :SWAP => [
         (1, 0x00), (1, 0x04), (1, 0x08), (1, 0x0c), (1, 0x01), (1, 0x05),
@@ -66,6 +69,18 @@ function reset_clifford_map!()
     )
     global clifford_map = deepcopy(_default_clifford_map)
     return
+end
+
+"""
+    transposecliffordmap(map_array::Vector{Tuple{Int64, UInt8}})
+
+Transpose the Clifford gate `maparray` so that the output map is the inverse of the input map.
+For example, `transposecliffordmap(clifford_map[:H])` returns the map for the inverse of the Hadamard gate, which is the same map.
+"""
+function transposecliffordmap(map_array::Vector{Tuple{Int64,UInt8}})
+    original_paulis = [pauli for (_, pauli) in map_array]
+    perm_inds = sortperm(original_paulis)
+    return [(s, UInt8(ii - 1)) for (ii, (s, _)) in enumerate(map_array)][perm_inds]
 end
 
 """
@@ -100,4 +115,40 @@ function createcliffordmap(gate_relations::Dict)
     end
 
     return mapped_gate
+end
+
+
+"""
+    concatenatecliffordmaps(circuit::Vector{CliffordGate})
+
+Concatenate a circuit of Clifford gates into a single Clifford map.
+The length of the map is `4^nq`` where `nq` is the maximum qubit index in the circuit.
+The resulting clifford map can be added to the global `clifford_map` with a custom Clifford gate name.
+The maximum number of qubits is 4 due to current restrictions of `UInt8`.
+Even if all gates only act on one qubit, that qubit index will determine the dimensionality of the map.
+"""
+function concatenatecliffordmaps(circuit)
+    if !(all([isa(gate, CliffordGate) for gate in circuit]))
+        throw(ArgumentError("All gates in the circuit must be Clifford gates."))
+    end
+
+    max_nq = maximum(maximum(gate.qinds) for gate in circuit)
+
+    if max_nq > 4
+        throw(ArgumentError("Number of qubits must be 4 or less due current to UInt8 type restrictions."))
+    end
+
+    # max integer to feed into the circuit
+    max_integer = 4^max_nq - 1
+
+    psums = [propagate(circuit, PauliString(max_nq, ii, 1.0)) for ii in 0:max_integer]
+    if any(length(psum) > 1 for psum in psums)
+        throw(ArgumentError("The circuit does not implement a 1 to 1 map of Pauli strings."))
+    end
+    # pairs of pstr => sign
+    pairs = [first(ps) for ps in psums]
+
+    # Convert into a Vector{Int, UInt8} like other clifford maps
+    return [(Int(pair[2]), UInt8(pair[1])) for pair in pairs]
+
 end

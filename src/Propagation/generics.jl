@@ -75,6 +75,8 @@ function propagate!(circ, psum, thetas=nothing; max_weight=Inf, min_abs_coeff=1e
     for gate in reverse(circ)
         psum, aux_psum, param_idx = applymergetruncate!(gate, psum, aux_psum, thetas, param_idx; max_weight, min_abs_coeff, max_freq, max_sins, customtruncfunc, kwargs...)
     end
+    # TODO: potential bug: If there are Clifford gates in the circuit, merging may swap the psums.
+    #                      Thi smeans that the original psum is not the one that is returned, and that the original psum is empty.
     return psum
 end
 
