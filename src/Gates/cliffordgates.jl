@@ -118,15 +118,15 @@ end
 
 
 """
-    concatenatecliffordmaps(circuit::Vector{CliffordGate})
+    composecliffordmaps(circuit::Vector{CliffordGate})
 
-Concatenate a circuit of Clifford gates into a single Clifford map.
+Compose a circuit of Clifford gates into a single Clifford map.
 The length of the map is `4^nq`` where `nq` is the maximum qubit index in the circuit.
 The resulting clifford map can be added to the global `clifford_map` with a custom Clifford gate name.
 The maximum number of qubits is 4 due to current restrictions of `UInt8`.
 Even if all gates only act on one qubit, that qubit index will determine the dimensionality of the map.
 """
-function concatenatecliffordmaps(circuit)
+function composecliffordmaps(circuit)
     if !(all([isa(gate, CliffordGate) for gate in circuit]))
         throw(ArgumentError("All gates in the circuit must be Clifford gates."))
     end

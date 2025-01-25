@@ -51,7 +51,7 @@ export
     transposecliffordmap,
     reset_clifford_map!,
     createcliffordmap,
-    concatenatecliffordmaps,
+    composecliffordmaps,
     ParametrizedNoiseChannel,
     PauliNoise,
     DepolarizingNoise,

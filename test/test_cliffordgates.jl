@@ -50,20 +50,20 @@ end
 end
 
 
-@testset "Test concatenating Clifford maps" begin
+@testset "Test composing Clifford maps" begin
     circuit = [CliffordGate(:H, [2]), CliffordGate(:CNOT, [1, 2]), CliffordGate(:H, [2])]
-    @test concatenatecliffordmaps(circuit) == clifford_map[:CZ]
+    @test composecliffordmaps(circuit) == clifford_map[:CZ]
 
     circuit = [CliffordGate(:H, [2]), CliffordGate(:CZ, [1, 2]), CliffordGate(:H, [2])]
-    @test concatenatecliffordmaps(circuit) == clifford_map[:CNOT]
+    @test composecliffordmaps(circuit) == clifford_map[:CNOT]
 
     circuit = [CliffordGate(:H, [1]), CliffordGate(:Z, [1]), CliffordGate(:H, [1])]
-    @test concatenatecliffordmaps(circuit) == clifford_map[:X]
+    @test composecliffordmaps(circuit) == clifford_map[:X]
 
     circuit = [CliffordGate(:SX, [1]), CliffordGate(:SX, [1])]
-    @test concatenatecliffordmaps(circuit) == clifford_map[:X]
+    @test composecliffordmaps(circuit) == clifford_map[:X]
 
     circuit = [CliffordGate(:S, [1]), CliffordGate(:S, [1])]
-    @test concatenatecliffordmaps(circuit) == clifford_map[:Z]
+    @test composecliffordmaps(circuit) == clifford_map[:Z]
 
 end
