@@ -101,6 +101,7 @@ function apply(gate::CliffordGate, pstr::PauliStringType, coeff; kwargs...)
 
     coeff *= sign
 
+    # usually return format would be ((pstr, coeff), ), but we also overload applyandadd!() to accept this
     return pstr, coeff
 end
 
