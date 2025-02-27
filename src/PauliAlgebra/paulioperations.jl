@@ -27,12 +27,7 @@ function countweight(psum::PauliSum)
     return countweight(psum.terms)
 end
 
-"""
-    countweight(psum::Dict)
-
-Function to count the weight Pauli strings in a Pauli sum in the form of a `Dict`. Returns an array of weights.
-"""
-function countweight(psum::Dict)
+function countweight(psum::AbstractDict)
     return [countweight(pstr) for pstr in keys(psum)]
 end
 
@@ -63,12 +58,7 @@ function countxy(psum::PauliSum)
     return countxy(psum.terms)
 end
 
-"""
-    countxy(psum::Dict)
-
-Function to count the number of X and Y Paulis in a Pauli sum in the form of a `Dict`. Returns an array of counts.
-"""
-function countxy(psum::Dict)
+function countxy(psum::AbstractDict)
     return [countxy(pstr) for pstr in keys(psum)]
 end
 
@@ -99,12 +89,7 @@ function countyz(psum::PauliSum)
     return countyz(psum.terms)
 end
 
-"""
-    countyz(psum::Dict)
-
-Function to count the number of Y and Z Paulis in a Pauli sum in the form of a `Dict`. Returns an array of counts.
-"""
-function countyz(psum::Dict)
+function countyz(psum::AbstractDict)
     return [countyz(pstr) for pstr in keys(psum)]
 end
 
@@ -166,11 +151,6 @@ function commutes(psum1::PauliSum, psum2::PauliSum)
     return isempty(comm)
 end
 
-"""
-    function commutes(psum1::Dict{TermType,CoeffType1}, psum2::Dict{TermType,CoeffType2})
-
-Check if two Pauli sums of type `PauliSum` commute.
-"""
 function commutes(psum1::Dict{TT,CT1}, psum2::Dict{TT,CT2}) where {TT,CT1,CT2}
     comm = commutator(psum1, psum2)
     return isempty(comm)
@@ -178,6 +158,7 @@ end
 
 """
     commutes(pauli1::Symbol, pauli2::PauliType)
+    commutes(pauli1::PauliType, pauli2::Symbol)
 
 Check if two Paulis commute where one is a `Symbol` and the other is in the integer representation.
 """
@@ -185,11 +166,6 @@ function commutes(pauli1::Symbol, pauli2::PauliType)
     return commutes(pauli1, inttosymbol(pauli2))
 end
 
-"""
-    commutes(pauli1::PauliType, pauli2::Symbol)
-
-Check if two Paulis commute where one is in the integer representation and the other is a `Symbol`.
-"""
 function commutes(pauli1::PauliType, pauli2::Symbol)
     return commutes(pauli2, pauli1)
 end
@@ -228,18 +204,15 @@ function commutator(pstr1::PauliString, pstr2::PauliString)
     return PauliString(pstr1.nqubits, new_pstr, new_coeff)
 end
 
+# TODO: specialize for the commutator between PauliSum and PauliString
+# this one can then be used in the general commutator function between PauliSum and PauliSum
 """
     commutator(psum::PauliSum, pstr::PauliString)
+    commutator(pstr::PauliString, psum::PauliSum)
 
 Calculate the commutator of a `PauliSum` and a `PauliString`.
 """
 commutator(psum::PauliSum, pstr::PauliString) = commutator(psum, PauliSum(pstr))
-
-"""
-    commutator(pstr::PauliString, psum::PauliSum)
-
-Calculate the commutator of a `PauliString` and a `PauliSum`.
-"""
 commutator(pstr::PauliString, psum::PauliSum) = commutator(PauliSum(pstr), psum)
 
 """
@@ -262,11 +235,7 @@ function commutator(pstr1::PauliStringType, pstr2::PauliStringType)
 end
 
 
-"""
-    commutator(psum1::Dict{TermType,CoeffType1}, psum2::Dict{TermType,CoeffType2})
-
-Calculate the commutator of two Pauli sums in the form of a `Dict`.
-"""
+# TODO: modernize commutator
 function commutator(psum1::Dict{TT,CT1}, psum2::Dict{TT,CT2}) where {TT,CT1,CT2}
     # different types of coefficients are allowed but not different types of Pauli strings
 
@@ -291,6 +260,7 @@ function commutator(psum1::Dict{TT,CT1}, psum2::Dict{TT,CT2}) where {TT,CT1,CT2}
 end
 
 ## Pauli product
+# TODO: Pauli product is not yet implemented for PauliSum
 """
     pauliprod(pstr1::PauliString, pstr2::PauliString)
 

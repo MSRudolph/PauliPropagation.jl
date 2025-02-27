@@ -80,3 +80,4 @@ using Test
 end
 
 # TODO: Tests for PauliSum
+# TODO: Test for commutator
