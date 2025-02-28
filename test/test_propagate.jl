@@ -149,3 +149,24 @@ end
     end
 
 end
+
+@testset "Test improper truncations" begin
+
+    pstr = PauliString(4, :Z, 2)
+    gate = PauliRotation(:X, 2, randn())
+
+    @test_throws ArgumentError propagate(gate, pstr; max_freq=rand(1:10))
+    @test_throws ArgumentError propagate(gate, pstr; max_sins=rand(1:10))
+    @test_throws ArgumentError propagate(gate, pstr; max_freq=rand(1:10), max_sins=rand(1:10))
+
+    # a PathProperties type that does not track freq or sins
+    struct MyPathProperties <: PathProperties
+        coeff::Float64
+    end
+
+    wpstr = wrapcoefficients(pstr, MyPathProperties)
+    @test_throws ArgumentError propagate(gate, wpstr; max_freq=rand(1:10))
+    @test_throws ArgumentError propagate(gate, wpstr; max_sins=rand(1:10))
+    @test_throws ArgumentError propagate(gate, wpstr; max_freq=rand(1:10), max_sins=rand(1:10))
+
+end

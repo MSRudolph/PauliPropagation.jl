@@ -54,6 +54,9 @@ Further `kwargs` are passed to the lower-level functions `applymergetruncate!`, 
 """
 function propagate!(circ, psum, thetas=nothing; max_weight=Inf, min_abs_coeff=1e-10, max_freq=Inf, max_sins=Inf, customtruncfunc=nothing, kwargs...)
 
+    # check that max_freq and max_sins are only used a PathProperties type tracking them
+    _checkfreqandsinfields(psum, max_freq, max_sins)
+
     # if circ is actually a single gate, promote it to a list [gate]
     # similarly the theta if it is a single number
     circ, thetas = _promotecircandthetas(circ, thetas)
@@ -272,6 +275,33 @@ end
 
 
 ## Further utilities here
+
+# check that max_freq and max_sins are only used a PathProperties type tracking them
+function _checkfreqandsinfields(psum, max_freq, max_sins)
+
+    CT = coefftype(psum)
+
+    if !(CT <: PathProperties) && (max_freq != Inf || max_sins != Inf)
+        throw(ArgumentError(
+            "The `max_freq` and `max_sins` truncations can only be used with coefficients wrapped in `PathProperties` types.\n" *
+            "Consider using `wrapcoefficients() with the `PauliFreqTracker` type.")
+        )
+    end
+
+    if max_freq != Inf && !hasfield(CT, :freq)
+        throw(ArgumentError(
+            "The `max_freq` truncation is used, but the PathProperties type $CT does not have a `freq` field.")
+        )
+    end
+
+    if max_sins != Inf && !hasfield(CT, :nsins)
+        throw(ArgumentError(
+            "The `max_sins` truncation is used, but the PathProperties type $CT does not have a `nsins` field.")
+        )
+    end
+
+    return
+end
 
 function _promotecircandthetas(circ, thetas)
     # if users pass a gate, we assume that thetas also requires a `[]` around it

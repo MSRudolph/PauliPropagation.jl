@@ -87,9 +87,33 @@ function +(path1::PProp, path2::PProp) where {PProp<:PathProperties}
     return PProp((updateval(getfield(path1, fname), getfield(path2, fname), fname) for fname in fields)...)
 end
 
+import Base: float
+"""
+    float(path::PathProperties)
+
+Returns an equivalent `PathProperties` object where float() is applied to the `coeff` field.
+"""
+function float(path::PProp) where {PProp<:PathProperties}
+    fields = fieldnames(PProp)
+
+    if :coeff ∉ fields
+        throw("The $(PProp) object does not have a field `coeff` to use the `float` operation.")
+    end
+
+    # update the `coeff` only
+    function updateval(fval, fname)
+        if fname == :coeff
+            fval = float(fval)
+        end
+        return fval
+    end
+
+    return PProp((updateval(getfield(path, fname), fname) for fname in fields)...)
+end
+
 
 """
-    tonumber(val::PathProperties)
+    tonumber(path::PathProperties)
 
 Get the numerical coefficient of a `PathProperties` wrapper.
 """
