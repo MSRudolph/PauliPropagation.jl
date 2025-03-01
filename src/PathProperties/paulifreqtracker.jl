@@ -34,10 +34,8 @@ PauliFreqTracker(coeff::Number) = PauliFreqTracker(float(coeff), 0, 0, 0)
     applytoall!(gate::PauliRotation, theta, psum, aux_psum; kwargs...)
 
 Overload of `applytoall!` for `PauliRotation` gates acting onto Pauli sums with `PathProperties` coefficients. 
-It fixes the type-instability of the `apply()` function and reduces moving Pauli strings between `psum` and `aux_psum`.
-`psum` and `aux_psum` are merged later.
 """
-function applytoall!(gate::PauliRotation, theta, psum::PauliSum{TT,PP}, aux_psum; kwargs...) where {TT<:PauliStringType,PP<:PathProperties}
+function applytoall!(gate::PauliRotation, theta, psum::PauliSum{TT,PProp}, aux_psum; kwargs...) where {TT<:PauliStringType,PProp<:PathProperties}
     # turn the (potentially) PauliRotation gate into a MaskedPauliRotation gate
     # this allows for faster operations
     gate = _tomaskedpaulirotation(gate, paulitype(psum))
@@ -64,29 +62,21 @@ function applytoall!(gate::PauliRotation, theta, psum::PauliSum{TT,PP}, aux_psum
     return
 end
 
-"""
-    splitapply(gate::MaskedPauliRotation, pstr::PauliStringType, coeff, theta; kwargs...)
-
-Apply a `MaskedPauliRotation` with an angle `theta` and a coefficient `coeff` to an integer Pauli string,
-assuming that the gate does not commute with the Pauli string.
-Returns two pairs of (pstr, coeff) as one tuple.
-Currently `kwargs` are passed to `applycos` and `applysin` for the Surrogate.
-"""
-function splitapply(gate::MaskedPauliRotation, pstr::PauliStringType, coeff::PauliFreqTracker, theta; kwargs...)
+## Specializations for PauliRotations that increment the nsins, ncos, and freq
+# can be used by all PathProperties types that have the necessary fields `ncos`, `nsins`, and `freq`
+function splitapply(gate::MaskedPauliRotation, pstr::PauliStringType, coeff::PProp, theta; kwargs...) where {PProp<:PathProperties}
+    # increments ncos and freq field if applicable
     coeff1 = _applycos(coeff, theta; kwargs...)
     new_pstr, sign = getnewpaulistring(gate, pstr)
+    # increments nsins and freq field if applicable
     coeff2 = _applysin(coeff, theta, sign; kwargs...)
 
     return pstr, coeff1, new_pstr, coeff2
 end
 
 # These also work for other PathProperties types that have a `coeff` field defined
-"""
-    _applysin(pth::PathProperties, theta; sign=1, kwargs...)
-
-Multiply sin(theta) * sign to the `coeff` field of a `PathProperties` object.
-Increments the `nsins` and `freq` fields by 1 if applicable.
-"""
+# Multiply sin(theta) * sign to the `coeff` field of a `PathProperties` object.
+# Increments the `nsins` and `freq` fields by 1 if applicable.
 function _applysin(pth::PProp, theta, sign=1; kwargs...) where {PProp<:PathProperties}
     fields = fieldnames(PProp)
 
@@ -115,12 +105,9 @@ function _applysin(pth::PProp, theta, sign=1; kwargs...) where {PProp<:PathPrope
     return PProp((updateval(getfield(pth, field), field) for field in fields)...)
 end
 
-"""
-    _applycos(pth::PathProperties, theta; sign=1, kwargs...)
 
-Multiply cos(theta) * sign to the `coeff` field of a `PathProperties` object.
-Increments the `ncos` and `freq` fields by 1 if applicable.
-"""
+# Multiply cos(theta) * sign to the `coeff` field of a `PathProperties` object.
+# Increments the `ncos` and `freq` fields by 1 if applicable.
 function _applycos(pth::PProp, theta, sign=1; kwargs...) where {PProp<:PathProperties}
     fields = fieldnames(PProp)
 

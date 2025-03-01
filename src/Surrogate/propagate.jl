@@ -66,14 +66,7 @@ end
 
 
 ## For Pauli Rotations
-function splitapply(gate::MaskedPauliRotation, pstr::PauliStringType, coeff::NodePathProperties, theta; kwargs...)
-    coeff1 = _applycos(coeff, theta; kwargs...)
-    new_pstr, sign = getnewpaulistring(gate, pstr)
-    coeff2 = _applysin(coeff, theta, sign; kwargs...)
-
-    return pstr, coeff1, new_pstr, coeff2
-end
-
+# overloads for _applycos and _applysins defined in PathProperties/paulifreqtracker.jl
 function _applycos(path::NodePathProperties, theta, sign=1; param_idx=0, kwargs...)
     return NodePathProperties(_applycos(path.node, theta, sign; param_idx=param_idx), path.nsins, path.ncos + 1, path.freq + 1)
 end
