@@ -72,7 +72,8 @@ end
     gate = PauliRotation(:X, 2)
     theta = 0.3
     # get the PTmap on qubit 1 but apply on qubit 2
-    ptmap = totransfermap(1, PauliRotation(:X, 1), theta)
+    pauli_rotation = PauliRotation(:X, 1)
+    ptmap = totransfermap(1, pauli_rotation, theta)
 
     g = TransferMapGate(ptmap, 2)
     for symb in [:I, :X, :Y, :Z]
@@ -81,6 +82,18 @@ end
         psum2 = propagate(gate, pstr, theta)
         @test psum1 == psum2
     end
+
+    # test the matrix constructors
+    U = tomatrix(pauli_rotation, theta)
+    ptm = calculateptm(U)
+    gU = TransferMapGate(U, 2)
+    gptm = TransferMapGate(ptm, 2)
+    # equality check
+    @test all((t1[1] == t2[1]) && (t1[2] ≈ t2[2]) for (v1, v2) in zip(g.transfer_map, gU.transfer_map) for (t1, t2) in zip(v1, v2))
+    @test all((t1[1] == t2[1]) && (t1[2] ≈ t2[2]) for (v1, v2) in zip(g.transfer_map, gptm.transfer_map) for (t1, t2) in zip(v1, v2))
+    @test gU.qinds == g.qinds
+    @test gptm.qinds == g.qinds
+
 
 
     nq = 2

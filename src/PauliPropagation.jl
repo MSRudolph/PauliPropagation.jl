@@ -43,7 +43,6 @@ export
 
 include("PauliTransferMatrix/PauliTransferMatrix.jl")
 export
-    getpaulibasis,
     calculateptm,
     totransfermap
 
