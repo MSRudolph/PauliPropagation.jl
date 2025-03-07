@@ -1,14 +1,21 @@
 """
-    evaluate!(eval_list::PauliSum{TermType,NodePathProperties}, thetas)
+    evaluate!(psum::PauliSum{TermType,NodePathProperties}, thetas)
 
 Evaluate the expectation value of a Surrogate by evaluating all involved circuit nodes in the correct order.
 `eval_list` can be attained as the output of `gettraceevalorder()`
 """
 function evaluate!(psum::PauliSum{TT,NodePathProperties}, thetas) where {TT}
-    reset!(psum)
-    @sync for (_, pth) in psum
-        @spawn _traceevalorder(pth.node, thetas)
+    # collect the final paths first for better multi-threaded iteration
+    paths = collect(coefficients(psum))
+
+    # set all is_evaluated flags to false
+    reset!(paths)
+
+    # eval recursively
+    @threads for pth in paths
+        PauliPropagation._traceevalorder(pth.node, thetas)
     end
+
     return psum
 end
 
@@ -20,8 +27,15 @@ end
 Reset the nodes in a the Surrogate. Needs to be done in-between evaluatios with different parameters.
 """
 function reset!(psum::PauliSum{TT,CT}) where {TT,CT<:NodePathProperties}
-    @sync for (_, pth) in psum
-        @spawn reset!(pth.node)
+    paths = collect(coefficients(psum))
+    reset!(paths)
+    return
+end
+
+# a version passing a list of nodes
+function reset!(paths::AbstractVector{CT}) where {CT<:NodePathProperties}
+    @threads for pth in paths
+        reset!(pth.node)
     end
     return
 end
