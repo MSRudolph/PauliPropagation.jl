@@ -266,7 +266,7 @@ function getcoeff(psum::PauliSum{TT,CT1}, pstr::PauliString{TT,CT2}) where {TT,C
     if CT1 <: PathProperties
         throw(ArgumentError(
             "This function is not yet compatible with PathProperties. " *
-            "Try psum.term[pstr.term]."
+            "Try psum.terms[pstr.term]."
         ))
     end
     return getcoeff(psum, pstr.term)
