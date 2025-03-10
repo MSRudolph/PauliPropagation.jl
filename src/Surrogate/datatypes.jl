@@ -43,7 +43,7 @@ Base.show(io::IO, node::CircuitNode) = print(io, "$(typeof(node))($(length(node.
 """
 Pretty print for `EvalEndNode`
 """
-Base.show(io::IO, node::EvalEndNode) = print(io, "$(typeof(node))(Pauli string=$(inttostring(node.pstr)), coefficient=$(node.coefficient))")
+Base.show(io::IO, node::EvalEndNode) = print(io, "$(typeof(node))(Pauli string=$(node.pstr), coefficient=$(node.coefficient))")
 
 ## PathProperties Type
 """
