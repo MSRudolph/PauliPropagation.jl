@@ -76,7 +76,7 @@ function isdamped(::DephasingNoise, pauli::PauliType)
     return pauli == 1 || pauli == 2
 end
 
-### Individual Pauli noise channels
+### Individual Pauli noise damping
 
 struct PauliXDamping <: PauliNoise
     qind::Int
@@ -84,8 +84,8 @@ struct PauliXDamping <: PauliNoise
     @doc """
         PauliXDamping(qind::Int)
 
-    A Pauli-X noise channel acting on the qubit at index `qind`.
-    Will damp X Paulis by a factor of `1-p`.
+    A Pauli-X noise damping acting on the qubit at index `qind`.
+    Will damp X Paulis by a factor of `1-p`. This alone is not a valid quantum channel.
     """
     PauliXDamping(qind::Int) = (_qinds_check(qind); new(qind))
 end
@@ -93,8 +93,8 @@ end
 """
     PauliXDamping(qind::Int, p::Real)
 
-A frozen Pauli-X noise channel acting on the qubit at index `qind` with noise strength `p`.
-Will damp X Paulis by a factor of `1-p`.
+A frozen Pauli-X noise damping acting on the qubit at index `qind` with noise strength `p`.
+Will damp X Paulis by a factor of `1-p`. This alone is not a valid quantum channel.
 """
 function PauliXDamping(qind::Int, p::Real)
     _check_noise_strength(PauliXDamping, p)
@@ -113,8 +113,8 @@ struct PauliYDamping <: PauliNoise
     @doc """
         PauliYDamping(qind::Int)
 
-    A Pauli-Y noise channel acting on the qubit at index `qind`.
-    Will damp Y Paulis by a factor of `1-p`.
+    A Pauli-Y noise damping acting on the qubit at index `qind`.
+    Will damp Y Paulis by a factor of `1-p`. This alone is not a valid quantum channel.
     """
     PauliYDamping(qind::Int) = (_qinds_check(qind); new(qind))
 end
@@ -122,8 +122,8 @@ end
 """
     PauliYDamping(qind::Int, p::Real)
 
-A frozen Pauli-Y noise channel acting on the qubit at index `qind` with noise strength `p`.
-Will damp Y Paulis by a factor of `1-p`.
+A frozen Pauli-Y damping acting on the qubit at index `qind` with noise strength `p`.
+Will damp Y Paulis by a factor of `1-p`. This alone is not a valid quantum channel.
 """
 function PauliYDamping(qind::Int, p::Real)
     _check_noise_strength(PauliYDamping, p)
@@ -142,8 +142,8 @@ struct PauliZDamping <: PauliNoise
     @doc """
         PauliZDamping(qind::Int)
 
-    A Pauli-Z noise channel acting on the qubit at index `qind`.
-    Will damp Z Paulis by a factor of `1-p`.
+    A Pauli-Z noise damping acting on the qubit at index `qind`.
+    Will damp Z Paulis by a factor of `1-p`. This alone is not a valid quantum channel.
     """
     PauliZDamping(qind::Int) = (_qinds_check(qind); new(qind))
 end
@@ -151,8 +151,8 @@ end
 """
     PauliZDamping(qind::Int, p::Real)
 
-A frozen Pauli-Z noise channel acting on the qubit at index `qind` with noise strength `p`.
-Will damp Z Paulis by a factor of `1-p`.
+A frozen Pauli-Z noise damping acting on the qubit at index `qind` with noise strength `p`.
+Will damp Z Paulis by a factor of `1-p`. This alone is not a valid quantum channel.
 """
 function PauliZDamping(qind::Int, p::Real)
     _check_noise_strength(PauliZDamping, p)
