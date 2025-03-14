@@ -21,9 +21,9 @@ using Test
     q_ind = opind
     noise_p = rand() * 0.2
     insert!(depolarizing_circ, where_ind, DepolarizingNoise(q_ind))
-    insert!(pauli_circ, where_ind, PauliZNoise(q_ind))
-    insert!(pauli_circ, where_ind, PauliYNoise(q_ind))
-    insert!(pauli_circ, where_ind, PauliXNoise(q_ind))
+    insert!(pauli_circ, where_ind, PauliPropagation.PauliZDamping(q_ind))
+    insert!(pauli_circ, where_ind, PauliPropagation.PauliYDamping(q_ind))
+    insert!(pauli_circ, where_ind, PauliPropagation.PauliXDamping(q_ind))
 
     Random.seed!(42)
     thetas1 = randn(m)
@@ -62,8 +62,8 @@ end
     q_ind = opind
     noise_p = rand() * 0.2
     insert!(dephasing_circ, where_ind, DephasingNoise(q_ind))
-    insert!(pauli_circ, where_ind, PauliYNoise(q_ind))
-    insert!(pauli_circ, where_ind, PauliXNoise(q_ind))
+    insert!(pauli_circ, where_ind, PauliPropagation.PauliYDamping(q_ind))
+    insert!(pauli_circ, where_ind, PauliPropagation.PauliXDamping(q_ind))
 
     Random.seed!(42)
     thetas1 = randn(m)
