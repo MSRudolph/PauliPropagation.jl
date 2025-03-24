@@ -48,35 +48,129 @@ function isdamped(::DepolarizingNoise, pauli::PauliType)
 end
 
 
-struct DephasingNoise <: PauliNoise
+
+## The other Pauli noise channels
+# Pauli-X noise channel
+struct PauliXNoise <: PauliNoise
     qind::Int
 
     @doc """
-        DephasingNoise(qind::Int)
+        PauliXNoise(qind::Int)
 
-    A dephasing noise channel acting on the qubit at index `qind`.
-    Will damp X and Y Paulis equally by a factor of `1-p`.
+    A Pauli-X noise channel acting on the qubit at index `qind`.
+    Will damp Y and Z Paulis equally by a factor of `1-p`.
     """
-    DephasingNoise(qind::Int) = (_qinds_check(qind); new(qind))
+    PauliXNoise(qind::Int) = (_qinds_check(qind); new(qind))
 end
 
-"""
-    DephasingNoise(qind::Int, p::Real)
 
-A frozen dephasing noise channel acting on the qubit at index `qind` with noise strength `p`.
-Will damp X and Y Paulis equally by a factor of `1-p`.
 """
-function DephasingNoise(qind::Int, p::Real)
+    PauliXNoise(qind::Int, p::Real)
+
+A frozen Pauli-X noise channel acting on the qubit at index `qind` with noise strength `p`.
+Will damp Y and Z Paulis equally by a factor of `1-p`.
+"""
+function PauliXNoise(qind::Int, p::Real)
     _check_noise_strength(DephasingNoise, p)
 
-    return FrozenGate(DephasingNoise(qind), p)
+    return FrozenGate(PauliXNoise(qind), p)
 end
 
-function isdamped(::DephasingNoise, pauli::PauliType)
+
+function isdamped(::PauliXNoise, pauli::PauliType)
+    return pauli == 2 || pauli == 3
+end
+
+
+# Pauli-Y noise channel
+struct PauliYNoise <: PauliNoise
+    qind::Int
+
+    @doc """
+        PauliYNoise(qind::Int)
+
+    A Pauli-Y noise channel acting on the qubit at index `qind`.
+    Will damp X and Z Paulis equally by a factor of `1-p`.
+    """
+    PauliYNoise(qind::Int) = (_qinds_check(qind); new(qind))
+end
+
+
+"""
+    PauliYNoise(qind::Int, p::Real)
+
+A frozen Pauli-Y noise channel acting on the qubit at index `qind` with noise strength `p`.
+Will damp X and Z Paulis equally by a factor of `1-p`.
+"""
+function PauliYNoise(qind::Int, p::Real)
+    _check_noise_strength(DephasingNoise, p)
+
+    return FrozenGate(PauliYNoise(qind), p)
+end
+
+
+function isdamped(::PauliYNoise, pauli::PauliType)
+    return pauli == 1 || pauli == 3
+end
+
+
+# Pauli-Z noise channel
+struct PauliZNoise <: PauliNoise
+    qind::Int
+
+    @doc """
+        PauliZNoise(qind::Int)
+
+    A Pauli-Z noise channel acting on the qubit at index `qind`.
+    Will damp X and Y Paulis equally by a factor of `1-p`.
+    """
+    PauliZNoise(qind::Int) = (_qinds_check(qind); new(qind))
+end
+
+"""
+    PauliZNoise(qind::Int, p::Real)
+
+A frozen Pauli-Z noise channel acting on the qubit at index `qind` with noise strength `p`.
+Will damp X and Y Paulis equally by a factor of `1-p`.
+"""
+function PauliZNoise(qind::Int, p::Real)
+    _check_noise_strength(DephasingNoise, p)
+
+    return FrozenGate(PauliZNoise(qind), p)
+end
+
+
+function isdamped(::PauliZNoise, pauli::PauliType)
     return pauli == 1 || pauli == 2
 end
 
+## DepolarizingNoise is an alias for PauliZNoise
+"""
+    DephasingNoise(qind::Int)
+    DephasingNoise(qind::Int, p::Real)
+
+This is an alias for `PauliZNoise`.
+A dephasing noise channel acting on the qubit at index `qind`.
+Will damp X and Y Paulis equally by a factor of `1-p`.
+If `p` is provided, this returns a frozen gate with that noise strength.
+"""
+const DephasingNoise = PauliZNoise
+
+# """
+#     DephasingNoise(qind::Int, p::Real)
+
+# A frozen dephasing noise channel acting on the qubit at index `qind` with noise strength `p`.
+# Will damp X and Y Paulis equally by a factor of `1-p`.
+# """
+# function DephasingNoise(qind::Int, p::Real)
+#     _check_noise_strength(DephasingNoise, p)
+
+#     return FrozenGate(DephasingNoise(qind), p)
+# end
+
+
 ### Individual Pauli noise damping
+# these are not exported because they are not valid quantum channels
 
 struct PauliXDamping <: PauliNoise
     qind::Int
