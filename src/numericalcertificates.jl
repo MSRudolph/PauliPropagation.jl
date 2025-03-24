@@ -1,4 +1,4 @@
-using Statistics
+using StatsBase
 
 """
     estimatemse(circ, pstr::PauliString, n_mcsamples::Integer, thetas=π; stateoverlapfunc=overlapwithzero, circuit_is_reversed=false, customtruncfunc=nothing)
