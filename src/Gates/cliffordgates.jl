@@ -79,11 +79,11 @@ const clifford_map = deepcopy(_default_clifford_map)
 Reset global `clifford_map` to the CLifford gate implemented by default.
 """
 function reset_clifford_map!()
-    println(
-        "Resetting the global clifford_map to the default Clifford gates.\n
-        The warning may be ignored."
-    )
-    global clifford_map = deepcopy(_default_clifford_map)
+    # empty and set again because the global mutable dict needs to remain the same object for compiler safety
+    empty!(clifford_map)
+    for (k, v) in _default_clifford_map
+        clifford_map[k] = deepcopy(v)
+    end
     return
 end
 
