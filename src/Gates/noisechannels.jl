@@ -59,6 +59,7 @@ struct PauliXNoise <: PauliNoise
 
     A Pauli-X noise channel acting on the qubit at index `qind`.
     Will damp Y and Z Paulis equally by a factor of `1-p`.
+    This corresponds to inserting a random Pauli X operator into the circuit with probability `p/2`.
     """
     PauliXNoise(qind::Int) = (_qinds_check(qind); new(qind))
 end
@@ -69,6 +70,7 @@ end
 
 A frozen Pauli-X noise channel acting on the qubit at index `qind` with noise strength `p`.
 Will damp Y and Z Paulis equally by a factor of `1-p`.
+This corresponds to inserting a random Pauli X operator into the circuit with probability `p/2`.
 """
 function PauliXNoise(qind::Int, p::Real)
     _check_noise_strength(DephasingNoise, p)
@@ -91,6 +93,7 @@ struct PauliYNoise <: PauliNoise
 
     A Pauli-Y noise channel acting on the qubit at index `qind`.
     Will damp X and Z Paulis equally by a factor of `1-p`.
+    This corresponds to inserting a random Pauli Y operator into the circuit with probability `p/2`.
     """
     PauliYNoise(qind::Int) = (_qinds_check(qind); new(qind))
 end
@@ -101,6 +104,7 @@ end
 
 A frozen Pauli-Y noise channel acting on the qubit at index `qind` with noise strength `p`.
 Will damp X and Z Paulis equally by a factor of `1-p`.
+This corresponds to inserting a random Pauli Y operator into the circuit with probability `p/2`.
 """
 function PauliYNoise(qind::Int, p::Real)
     _check_noise_strength(DephasingNoise, p)
@@ -123,6 +127,7 @@ struct PauliZNoise <: PauliNoise
 
     A Pauli-Z noise channel acting on the qubit at index `qind`.
     Will damp X and Y Paulis equally by a factor of `1-p`.
+    This corresponds to inserting a random Pauli Z operator with probability `p/2`.
     """
     PauliZNoise(qind::Int) = (_qinds_check(qind); new(qind))
 end
@@ -132,6 +137,7 @@ end
 
 A frozen Pauli-Z noise channel acting on the qubit at index `qind` with noise strength `p`.
 Will damp X and Y Paulis equally by a factor of `1-p`.
+This corresponds to inserting a random Pauli Z operator into the circuit with probability `p/2`.
 """
 function PauliZNoise(qind::Int, p::Real)
     _check_noise_strength(DephasingNoise, p)
@@ -155,18 +161,6 @@ Will damp X and Y Paulis equally by a factor of `1-p`.
 If `p` is provided, this returns a frozen gate with that noise strength.
 """
 const DephasingNoise = PauliZNoise
-
-# """
-#     DephasingNoise(qind::Int, p::Real)
-
-# A frozen dephasing noise channel acting on the qubit at index `qind` with noise strength `p`.
-# Will damp X and Y Paulis equally by a factor of `1-p`.
-# """
-# function DephasingNoise(qind::Int, p::Real)
-#     _check_noise_strength(DephasingNoise, p)
-
-#     return FrozenGate(DephasingNoise(qind), p)
-# end
 
 
 ### Individual Pauli noise damping
