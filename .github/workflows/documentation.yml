@@ -68,6 +68,9 @@ jobs:
     name: Tidy documentation
     runs-on: ubuntu-latest
 
+    # perform this after doc regen
+    needs: build-doc
+
     steps:
 
       - name: Checkout gh-pages branch
