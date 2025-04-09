@@ -39,7 +39,7 @@ jobs:
 
     steps:
 
-      # generate doc using files from thr triggering branch
+      # generate doc using files from the triggering branch
       - name: Obtain PP
         uses: actions/checkout@v4
     
