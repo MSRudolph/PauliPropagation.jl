@@ -13,5 +13,10 @@ makedocs(
 
 # enables doc site deployment to Github Pages
 deploydocs(
+    devbranch = "doc-ci",
     repo = "github.com/MSRudolph/PauliPropagation.jl.git",
 )
+
+
+# TODO!
+# change "doc-ci" above to "main" before merging PR to main

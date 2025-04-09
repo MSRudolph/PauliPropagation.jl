@@ -5,13 +5,17 @@
 name: Documentation
 
 
-# Regenerate doc whenever the below branch is updated, or
+# Regenerate doc whenever the below main is updated, or
 # the workflow is manually triggered from the Actions tab
 on:
   push:
     branches:
       - doc-ci
   workflow_dispatch:
+
+
+# TODO!
+# change "doc-ci" above to "main" before merging PR to main
 
 
 # prevent concurrent doc gen
