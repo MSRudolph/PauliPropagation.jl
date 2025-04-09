@@ -10,12 +10,8 @@ name: Documentation
 on:
   push:
     branches:
-      - doc-ci
+      - main
   workflow_dispatch:
-
-
-# TODO!
-# change "doc-ci" above to "main" before merging PR to main
 
 
 # prevent concurrent doc gen
@@ -43,15 +39,9 @@ jobs:
 
     steps:
 
-      # TODO!
-      # change 'ref' below from 'doc-'ci to 'main'
-      # before merging this PR to main!
-      # ... (retrigger coz Manuel interrupted CI hehe)
-
+      # generate doc using files from thr triggering branch
       - name: Obtain PP
         uses: actions/checkout@v4
-        with:
-          ref: 'doc-ci'
     
       - name: Setup Julia
         uses: julia-actions/setup-julia@v2
