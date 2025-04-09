@@ -42,8 +42,15 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+
+      # TODO!
+      # change 'ref' below from 'doc-'ci to 'main'
+      # before merging this PR to main!
+
       - name: Obtain PP
         uses: actions/checkout@v4
+        with:
+          ref: 'doc-ci'
     
       - name: Setup Julia
         uses: julia-actions/setup-julia@v2

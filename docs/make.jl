@@ -13,8 +13,8 @@ makedocs(
 
 # enables doc site deployment to Github Pages
 deploydocs(
-    devbranch = "doc-ci",
-    repo = "github.com/MSRudolph/PauliPropagation.jl.git",
+    devbranch="doc-ci",
+    repo="github.com/MSRudolph/PauliPropagation.jl.git",
 )
 
 
