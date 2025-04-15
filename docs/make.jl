@@ -4,10 +4,21 @@ using Documenter, PauliPropagation
 makedocs(
     sitename="Pauli Propagation",
     pages=[
-        "introduction.md",
+        "index.md",
         "installation.md",
         "tutorials.md",
-        "index.md",
+        "API" => [
+            "api/Circuits.md",
+            "api/Gates.md",
+            "api/PathProperties.md",
+            "api/PauliAlgebra.md",
+            "api/PauliTransferMatrix.md",
+            "api/Propagation.md",
+            "api/Surrogate.md",
+            "api/NumericalCertificates.md",
+            "api/StateOverlap.md",
+            "api/Truncations.md"
+        ]
     ]
 )
 
