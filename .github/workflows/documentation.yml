@@ -1,17 +1,23 @@
 # Generates the package documentation via Documenter.jl,
 # and deploys it to Github Pages, as per the hosting guide
-# at https://documenter.juliadocs.org/stable/man/hosting/
+# at https://documenter.juliadocs.org/stable/man/hosting/.
+# See /docs/make.jl for more information about generation.
 
 name: Documentation
 
 
-# Regenerate doc whenever the below main is updated, or
-# the workflow is manually triggered from the Actions tab
+# Regenerate doc (updating Github Pages site) whenever...
 on:
+  # main is updated (updates root site with new release)
   push:
     branches:
       - main
-      - doc-fix
+  # a PR is opened to the below branches (updates /previews/PR#)
+  pull_request:
+    branches:
+      - main
+      - dev
+  # the workflow is manually triggered from the Actions tab (updates /dev/)
   workflow_dispatch:
 
 
