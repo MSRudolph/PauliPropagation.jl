@@ -26,6 +26,11 @@ makedocs(
 deploydocs(
     repo="github.com/MSRudolph/PauliPropagation.jl.git",
 
+    # do not place in-development doc under a /dev/ sub-domain,
+    # since we'll instead preview doc straight from PRs (as below)
+    # and do not wish to encourage distributing the wrong URL
+    devurl="",
+
     # enable generation of doc from PRs, under a /previews/PR## sub-domain
     push_preview=true,
 

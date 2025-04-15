@@ -1,3 +1,5 @@
+IF YOU SEE THIS, DOCUMENTER.JL CONSULTED doc-fix BRANCH
+
 # PauliPropagation.jl
 `PauliPropagation.jl` is a Julia package for Pauli propagation simulation of quantum circuits and quantum systems.
 
