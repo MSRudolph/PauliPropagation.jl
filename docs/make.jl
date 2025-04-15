@@ -25,4 +25,5 @@ makedocs(
 # enables doc site deployment to Github Pages
 deploydocs(
     repo="github.com/MSRudolph/PauliPropagation.jl.git",
+    devbranch="dev"
 )
