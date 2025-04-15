@@ -1,3 +1,5 @@
+(testing whether this is visible in CI doc)
+
 # PauliPropagation.jl
 `PauliPropagation.jl` is a Julia package for Pauli propagation simulation of quantum circuits and quantum systems.
 
