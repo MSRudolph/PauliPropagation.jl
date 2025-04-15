@@ -32,5 +32,11 @@ deploydocs(
     devurl="",
 
     # enable generation of doc from PRs, under a /previews/PR## sub-domain
-    push_preview=true
+    push_preview=true,
+
+    # DEBUG
+    # this forces deploydocs to upload to gh-pages when the invoking branch is
+    # not "main" (the default). Otherwise, despite push_preview=true, the upload
+    # is cancelled because ENV["GITHUB_REF"] does not match devbranch="main". Bug??
+    devbranch="doc-fix"
 )
