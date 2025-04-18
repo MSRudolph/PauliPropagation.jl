@@ -170,3 +170,39 @@ function wrapcoefficients(psum::PauliSum, ::Type{PProp}) where {PProp<:PathPrope
 
     return PauliSum(psum.nqubits, Dict(pstr => PProp(coeff) for (pstr, coeff) in psum.terms))
 end
+
+
+"""
+    unwrapcoefficients(pstr::PauliString)
+
+Unwrap the coefficient of a `PauliString` from a `PathProperties` type.
+Returns a `PauliString` with the `coeff` field of the `PathProperties` object.
+"""
+function unwrapcoefficients(pstr::PauliString{TT,CT}) where {TT,CT}
+    if !(CT <: PathProperties)
+        throw("The PauliString does not have a `PathProperties` coefficient type.")
+    end
+
+    # return the PauliString with the numerical coefficient
+    return PauliString(pstr.nqubits, pstr.term, pstr.coeff.coeff)
+end
+
+"""
+    unwrapcoefficients(psum::PauliSum)
+
+Unwrap the coefficients of a `PauliSum` from a `PathProperties` type.
+Returns a `PauliSum` with coefficients being the `coeff` field of the `PathProperties` objects.
+"""
+function unwrapcoefficients(psum::PauliSum{TT,CT}) where {TT,CT}
+    if !(CT <: PathProperties)
+        throw("The PauliSum does not have a `PathProperties` coefficient type.")
+    end
+
+    # TODO: should this perhaps not error if coefficients are not PathProperties?
+    # could simply other parts of the code
+
+    # get the numerical coefficients
+    terms = Dict(pstr => coeff.coeff for (pstr, coeff) in psum)
+
+    return PauliSum(psum.nqubits, terms)
+end

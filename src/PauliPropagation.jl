@@ -101,7 +101,8 @@ include("PathProperties/PathProperties.jl")
 export
     PathProperties,
     PauliFreqTracker,
-    wrapcoefficients
+    wrapcoefficients,
+    unwrapcoefficients
 
 include("truncations.jl")
 export

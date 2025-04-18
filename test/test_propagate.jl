@@ -155,9 +155,9 @@ end
     pstr = PauliString(4, :Z, 2)
     gate = PauliRotation(:X, 2, randn())
 
-    @test_throws ArgumentError propagate(gate, pstr; max_freq=rand(1:10))
-    @test_throws ArgumentError propagate(gate, pstr; max_sins=rand(1:10))
-    @test_throws ArgumentError propagate(gate, pstr; max_freq=rand(1:10), max_sins=rand(1:10))
+    @test_throws ArgumentError propagate!(gate, pstr; max_freq=rand(1:10))
+    @test_throws ArgumentError propagate!(gate, pstr; max_sins=rand(1:10))
+    @test_throws ArgumentError propagate!(gate, pstr; max_freq=rand(1:10), max_sins=rand(1:10))
 
     # a PathProperties type that does not track freq or sins
     struct MyPathProperties <: PathProperties
@@ -168,5 +168,31 @@ end
     @test_throws ArgumentError propagate(gate, wpstr; max_freq=rand(1:10))
     @test_throws ArgumentError propagate(gate, wpstr; max_sins=rand(1:10))
     @test_throws ArgumentError propagate(gate, wpstr; max_freq=rand(1:10), max_sins=rand(1:10))
+
+end
+
+@testset "Test automatic conversion" begin
+    # when `max_freq` or `max_sins` are specified and the coefficients are not PathProperties
+    # then we automatically convert the coefficients to PauliFreqTracker
+    # this should yield the same results as the manual conversion
+
+    nq = 4
+    nl = 4
+    pstr = PauliString(nq, :Z, 2)
+    circuit = tfitrottercircuit(nq, nl)
+    thetas = randn(countparameters(circuit))
+
+    out_psum = propagate(circuit, pstr, thetas; max_freq=4, max_sins=2)
+
+    # convert to PathProperties
+    wpstr = wrapcoefficients(pstr, PauliFreqTracker)
+    out_psum2 = propagate(circuit, wpstr, thetas; max_freq=4, max_sins=2)
+    upwraped_psum = unwrapcoefficients(out_psum2)
+    @test out_psum ≈ upwraped_psum
+
+    # same with initial PauliSum
+    psum = PauliSum(pstr)
+    out_psum3 = propagate(circuit, psum, thetas; max_freq=4, max_sins=2)
+    @test out_psum3 ≈ upwraped_psum
 
 end
