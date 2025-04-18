@@ -12,12 +12,12 @@ This means that the circuit is applied to the Pauli string in reverse order, and
 Parameters for the parametrized gates in `circ` are given by `thetas`, and need to be passed as if the circuit was applied as written in the Schrödinger picture.
 If thetas are not passed, the circuit must contain only non-parametrized `StaticGates`.
 Default truncations are `max_weight`, `min_abs_coeff`, `max_freq`, and `max_sins`.
-`max_freq`, and `max_sins` can only be used with `PauliFreqTracker` coefficients.
+`max_freq`, and `max_sins` will lead to automatic conversion if the coefficients are not already wrapped in suitable `PathProperties` objects.
 A custom truncation function can be passed as `customtruncfunc` with the signature customtruncfunc(pstr::PauliStringType, coefficient)::Bool.
 Further `kwargs` are passed to the lower-level functions `applymergetruncate!`, `applytoall!`, `applyandadd!`, and `apply`.
 """
 function propagate(circ, pstr::PauliString, thetas=nothing; max_weight=Inf, min_abs_coeff=1e-10, max_freq=Inf, max_sins=Inf, customtruncfunc=nothing, kwargs...)
-    psum = PauliSum(pstr.nqubits, pstr)
+    psum = PauliSum(pstr)
     return propagate(circ, psum, thetas; max_weight, min_abs_coeff, max_freq, max_sins, customtruncfunc, kwargs...)
 end
 
@@ -29,12 +29,23 @@ This means that the circuit is applied to the Pauli sum in reverse order, and th
 Parameters for the parametrized gates in `circ` are given by `thetas`, and need to be passed as if the circuit was applied as written in the Schrödinger picture.
 If thetas are not passed, the circuit must contain only non-parametrized `StaticGates`.
 Default truncations are `max_weight`, `min_abs_coeff`, `max_freq`, and `max_sins`.
-`max_freq`, and `max_sins` can only be used with `PauliFreqTracker` coefficients.
+`max_freq`, and `max_sins` will lead to automatic conversion if the coefficients are not already wrapped in suitable `PathProperties` objects.
 A custom truncation function can be passed as `customtruncfunc` with the signature customtruncfunc(pstr::PauliStringType, coefficient)::Bool.
 Further `kwargs` are passed to the lower-level functions `applymergetruncate!`, `applytoall!`, `applyandadd!`, and `apply`.
 """
 function propagate(circ, psum, thetas=nothing; max_weight=Inf, min_abs_coeff=1e-10, max_freq=Inf, max_sins=Inf, customtruncfunc=nothing, kwargs...)
+
+    # if max_freq and max_sins are used, automatically wrap the coefficients in `PauliFreqTracker` 
+    psum, was_converted = _check_wrapping_into_paulifreqtracker(psum, max_freq, max_sins)
+
+    # run the in-place propagation function on a deepcopy of the input psum
     psum = propagate!(circ, deepcopy(psum), thetas; max_weight, min_abs_coeff, max_freq, max_sins, customtruncfunc, kwargs...)
+
+    # if the input psum was not a `PauliFreqTracker`, and the corresponding truncations were set,we need to unwrap the coefficients
+    if was_converted
+        psum = unwrapcoefficients(psum)
+    end
+
     return psum
 end
 
@@ -48,7 +59,7 @@ The input `psum` will be modified.
 Parameters for the parametrized gates in `circ` are given by `thetas`, and need to be passed as if the circuit was applied as written in the Schrödinger picture.
 If thetas are not passed, the circuit must contain only non-parametrized `StaticGates`.
 Default truncations are `max_weight`, `min_abs_coeff`, `max_freq`, and `max_sins`.
-`max_freq`, and `max_sins` can only be used with `PauliFreqTracker` coefficients.
+`max_freq`, and `max_sins` can only be used with suitable `PathProperties` coefficients like `PauliFreqTracker`.
 A custom truncation function can be passed as `customtruncfunc` with the signature customtruncfunc(pstr::PauliStringType, coefficient)::Bool.
 Further `kwargs` are passed to the lower-level functions `applymergetruncate!`, `applytoall!`, `applyandadd!`, and `apply`.
 """
@@ -276,6 +287,21 @@ end
 
 ## Further utilities here
 
+# wrap the coefficients in `PauliFreqTracker` if max_freq or max_sins are used
+function _check_wrapping_into_paulifreqtracker(psum, max_freq, max_sins)
+
+    # if max_freq or max_sins are used, we wrap the coefficients in `PauliFreqTracker`
+    if !(coefftype(psum) <: PathProperties) && (max_freq != Inf || max_sins != Inf)
+        psum = wrapcoefficients(psum, PauliFreqTracker)
+        return psum, true
+    end
+
+    # otherwise just return the original psum
+    return psum, false
+
+end
+
+
 # check that max_freq and max_sins are only used a PathProperties type tracking them
 function _checkfreqandsinfields(psum, max_freq, max_sins)
 
@@ -284,7 +310,8 @@ function _checkfreqandsinfields(psum, max_freq, max_sins)
     if !(CT <: PathProperties) && (max_freq != Inf || max_sins != Inf)
         throw(ArgumentError(
             "The `max_freq` and `max_sins` truncations can only be used with coefficients wrapped in `PathProperties` types.\n" *
-            "Consider using `wrapcoefficients() with the `PauliFreqTracker` type.")
+            "Consider using `wrapcoefficients() with the `PauliFreqTracker` type" *
+            " or use the out-of-place `propagate()` function for automatic conversion.")
         )
     end
 
