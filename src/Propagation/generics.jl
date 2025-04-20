@@ -34,17 +34,16 @@ A custom truncation function can be passed as `customtruncfunc` with the signatu
 Further `kwargs` are passed to the lower-level functions `applymergetruncate!`, `applytoall!`, `applyandadd!`, and `apply`.
 """
 function propagate(circ, psum, thetas=nothing; max_weight=Inf, min_abs_coeff=1e-10, max_freq=Inf, max_sins=Inf, customtruncfunc=nothing, kwargs...)
+    CT = coefftype(psum)
 
     # if max_freq and max_sins are used, automatically wrap the coefficients in `PauliFreqTracker` 
-    psum, was_converted = _check_wrapping_into_paulifreqtracker(psum, max_freq, max_sins)
+    psum = _check_wrapping_into_paulifreqtracker(psum, max_freq, max_sins)
 
     # run the in-place propagation function on a deepcopy of the input psum
     psum = propagate!(circ, deepcopy(psum), thetas; max_weight, min_abs_coeff, max_freq, max_sins, customtruncfunc, kwargs...)
 
     # if the input psum was not a `PauliFreqTracker`, and the corresponding truncations were set,we need to unwrap the coefficients
-    if was_converted
-        psum = unwrapcoefficients(psum)
-    end
+    psum = _check_unwrap_from_paulifreqtracker(CT, psum)
 
     return psum
 end
@@ -293,14 +292,27 @@ function _check_wrapping_into_paulifreqtracker(psum, max_freq, max_sins)
     # if max_freq or max_sins are used, we wrap the coefficients in `PauliFreqTracker`
     if !(coefftype(psum) <: PathProperties) && (max_freq != Inf || max_sins != Inf)
         psum = wrapcoefficients(psum, PauliFreqTracker)
-        return psum, true
+        return psum
     end
 
     # otherwise just return the original psum
-    return psum, false
+    return psum
 
 end
 
+# given a coefficient type, make sure that the PauliSum is has the same coefficient type
+# this is only to check whether we had wrapped the coefficients in `PauliFreqTracker`
+function _check_unwrap_from_paulifreqtracker(::Type{CT}, psum::PauliSum{TT,CT}) where {TT,CT}
+    # in this function they have the same type
+    return psum
+end
+
+function _check_unwrap_from_paulifreqtracker(::Type{CT}, psum::PauliSum{TT,PauliFreqTracker}) where {TT,CT}
+    # in this function they have different types
+    # we need to unwrap the coefficients
+    psum = unwrapcoefficients(psum)
+    return psum
+end
 
 # check that max_freq and max_sins are only used a PathProperties type tracking them
 function _checkfreqandsinfields(psum, max_freq, max_sins)
