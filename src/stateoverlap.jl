@@ -165,7 +165,7 @@ end
 
 Return a filtered `PauliSum` by removing all Pauli strings for which `filterfunc(pstr, coeff)` returns `false`.
 """
-function filter(filterfunc::F, psum::PauliSum) where {F<:Function}
+function Base.filter(filterfunc::F, psum::PauliSum) where {F<:Function}
     # iterating over dictionaries returns pairs like key=>value
     # so we need to unpack them to use the in-built Julia filter function
     filtered_terms = Base.filter(pair -> filterfunc(pair...), psum.terms)
@@ -177,7 +177,7 @@ end
 
 Filter a `PauliSum` in-place by removing all Pauli strings for which `filterfunc(pstr, coeff)` returns `false`.
 """
-function filter!(filterfunc::F, psum::PauliSum) where {F<:Function}
+function Base.filter!(filterfunc::F, psum::PauliSum) where {F<:Function}
     # iterating over dictionaries returns pairs like key=>value
     # so we need to unpack them to use the in-built Julia filter function
     Base.filter!(pair -> filterfunc(pair...), psum.terms)

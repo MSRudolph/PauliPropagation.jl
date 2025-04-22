@@ -674,11 +674,11 @@ Base.empty!(psum::PauliSum) = empty!(psum.terms)
 Create a new `PauliSum` with the same number of qubits and coefficient type as `psum`.
 Calls `sizehint!()` with `length(psum)` on the dictionary of the new `PauliSum`. 
 """
-function similar(psum::PauliSum)
+function Base.similar(psum::PauliSum)
     return PauliSum(psum.nqubits, similar(psum.terms))
 end
 
-function similar(psum::Dict{TT,CT}) where {TT,CT}
+function Base.similar(psum::Dict{TT,CT}) where {TT,CT}
     new_psum = Dict{TT,CT}()
     sizehint!(new_psum, length(psum))
     return new_psum
