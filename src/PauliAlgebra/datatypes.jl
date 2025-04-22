@@ -121,14 +121,14 @@ end
 
 Contructor for an empty `PauliSum` on `nqubits` qubits. Element type defaults for Float64.
 """
-PauliSum(nqubits::Int) = PauliSum(nqubits, Float64)
+PauliSum(nqubits::Int) = PauliSum(Float64, nqubits)
 
 """
-    PauliSum(nq::Int, COEFFTYPE)
+    PauliSum(CoeffType, nq::Int)
 
 Contructor for an empty `PauliSum` on `nqubits` qubits. The type of the coefficients can be provided.
 """
-function PauliSum(nq::Int, ::Type{CT}) where {CT}
+function PauliSum(::Type{CT}, nq::Int) where {CT}
     TT = getinttype(nq)
     return PauliSum(nq, Dict{TT,CT}())
 end
@@ -175,7 +175,7 @@ function PauliSum(pstrs::Union{AbstractArray,Tuple,Base.Generator})
 
     nq = first(pstrs).nqubits
     # TODO: figure out type what to do when type of coefficients is not the same
-    psum = PauliSum(nq, coefftype(first(pstrs)))
+    psum = PauliSum(coefftype(first(pstrs)), nq)
     sizehint!(psum.terms, length(pstrs))
     for pstr in pstrs
         add!(psum, pstr)
