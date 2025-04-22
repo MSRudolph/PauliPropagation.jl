@@ -1,21 +1,21 @@
 ### This file contains the functions to calculate the overlap between between backpropagated pauli strings and states or general operators.
 
 """
-    overlapbyorthogonality(psum::PauliSum, orthogonalfunc::Function)
+    overlapbyorthogonality(orthogonalfunc::Function, psum::PauliSum)
 
 Overlap a `PauliSum` with a state or operator via function that returns true if a Pauli string is orthogonal and hence doesn't contribute.
 An example `orthogonalfunc` is `containsXorY` which returns true if a Pauli string contains an X or Y Pauli.
 If not orthogonal, then a Pauli string contributes with its coefficient.
 This is particularly useful for overlaps with stabilizer states.
 """
-function overlapbyorthogonality(psum::PauliSum, orthogonalfunc::F) where {F<:Function}
+function overlapbyorthogonality(orthogonalfunc::F, psum::PauliSum) where {F<:Function}
     if length(psum) == 0
         return 0.0
     end
 
     val = zero(numcoefftype(psum))
     for (pstr, coeff) in psum
-        if overlapbyorthogonality(pstr, orthogonalfunc)
+        if overlapbyorthogonality(orthogonalfunc, pstr)
             val += tonumber(coeff)
         end
     end
@@ -23,26 +23,26 @@ function overlapbyorthogonality(psum::PauliSum, orthogonalfunc::F) where {F<:Fun
 end
 
 """
-    overlapbyorthogonality(pstr::PauliString, orthogonalfunc::Function)
+    overlapbyorthogonality(orthogonalfunc::Function, pstr::PauliString)
 
 Overlap a `PauliString` with a state or operator via function that returns true if the `PauliString` is orthogonal and hence has overlap 0.
  An example `orthogonalfunc` is `containsXorY` which returns true if the `PauliString` contains an X or Y Pauli.
 If not orthogonal, then the overlap is the coefficient of the `PauliString`.
 This is particularly useful for overlaps with stabilizer states.
 """
-function overlapbyorthogonality(pstr::PauliString, orthogonalfunc::F) where {F<:Function}
+function overlapbyorthogonality(orthogonalfunc::F, pstr::PauliString) where {F<:Function}
     return !orthogonalfunc(pstr) * tonumber(pstr.coeff)
 end
 
 """
-    overlapbyorthogonality(pstr::PauliString, orthogonalfunc::Function)
+    overlapbyorthogonality(orthogonalfunc::Function, pstr::PauliString)
 
 Overlap an integer Pauli string with a state or operator via function that returns true if the Pauli string is orthogonal and hence has overlap 0.
  An example `orthogonalfunc` is `containsXorY` which returns true if the Pauli string contains an X or Y Pauli.
 If not orthogonal, then the overlap is 1.
 This is particularly useful for overlaps with stabilizer states.
 """
-function overlapbyorthogonality(pstr::PauliStringType, orthogonalfunc::F) where {F<:Function}
+function overlapbyorthogonality(orthogonalfunc::F, pstr::PauliStringType) where {F<:Function}
     return !orthogonalfunc(pstr)
 end
 
@@ -52,7 +52,7 @@ end
 
 Calculates the overlap of a Pauli sum with the zero state |0><0|
 """
-overlapwithzero(psum) = overlapbyorthogonality(psum, orthogonaltozero)
+overlapwithzero(psum) = overlapbyorthogonality(orthogonaltozero, psum)
 
 """
     overlapwithzero(pstr) 
@@ -66,7 +66,7 @@ orthogonaltozero(pstr) = containsXorY(pstr)
 
 Calculates the overlap of a Pauli sum with the plus state |+><+|
 """
-overlapwithplus(psum) = overlapbyorthogonality(psum, orthogonaltoplus)
+overlapwithplus(psum) = overlapbyorthogonality(orthogonaltoplus, psum)
 
 """
     orthogonaltoplus(pstr) 
@@ -161,37 +161,26 @@ end
 
 
 """
-    filter(psum::PauliSum, filterfunc::Function)
+    filter(filterfunc::Function, psum::PauliSum)
 
-Return a filtered `PauliSum` by removing all Pauli strings that satisfy the `filterfunc`.
+Return a filtered `PauliSum` by removing all Pauli strings for which `filterfunc(pstr, coeff)` returns `false`.
 """
-function filter(psum::PauliSum, filterfunc::F) where {F<:Function}
-    op_dict = filter(psum.terms, filterfunc)
-    return PauliSum(psum.nqubits, op_dict)
+function filter(filterfunc::F, psum::PauliSum) where {F<:Function}
+    # iterating over dictionaries returns pairs like key=>value
+    # so we need to unpack them to use the in-built Julia filter function
+    filtered_terms = Base.filter(pair -> filterfunc(pair...), psum.terms)
+    return PauliSum(psum.nqubits, filtered_terms)
 end
 
 """
-    filter!(psum::PauliSum, filterfunc::Function)
+    filter!(filterfunc::Function, psum::PauliSum)
 
-Filter a `PauliSum` in-place by removing all Pauli strings that satisfy the `filterfunc`.
+Filter a `PauliSum` in-place by removing all Pauli strings for which `filterfunc(pstr, coeff)` returns `false`.
 """
-function filter!(psum::PauliSum, filterfunc::F) where {F<:Function}
-    filter!(psum.terms, filterfunc)
-    return psum
-end
-
-# Lower-level filter function for Dict
-function filter(psum::Dict, filterfunc::F) where {F<:Function}
-    return Dict(k => v for (k, v) in psum if !filterfunc(k))
-end
-
-# Lower-level in-place filter function for Dict
-function filter!(psum::Dict, filterfunc::F) where {F<:Function}
-    for pstr in keys(psum)
-        if filterfunc(pstr)
-            delete!(psum, pstr)
-        end
-    end
+function filter!(filterfunc::F, psum::PauliSum) where {F<:Function}
+    # iterating over dictionaries returns pairs like key=>value
+    # so we need to unpack them to use the in-built Julia filter function
+    Base.filter!(pair -> filterfunc(pair...), psum.terms)
     return psum
 end
 
@@ -202,28 +191,28 @@ end
 
 Return a filtered Pauli sum with only Pauli strings that are not orthogonal to the zero state |0><0|.
 """
-zerofilter(psum) = filter(psum, containsXorY)
+zerofilter(psum) = filter((pstr, coeff) -> !containsXorY(pstr), psum)
 
 """
     zerofilter!(psum)
 
 Filter a Pauli sum in-place with only Pauli strings that are not orthogonal to the zero state |0><0|.
 """
-zerofilter!(psum) = filter!(psum, containsXorY)
+zerofilter!(psum) = filter!((pstr, coeff) -> !containsXorY(pstr), psum)
 
 """
     plusfilter(psum)
 
 Return a filtered Pauli sum with only Pauli strings that are not orthogonal to the plus state |+><+|.
 """
-plusfilter(psum) = filter(psum, containsYorZ)
+plusfilter(psum) = filter((pstr, coeff) -> !containsYorZ(pstr), psum)
 
 """
     zerofilter!(psum)
 
 Filter a Pauli sum in-place with only Pauli strings that are not orthogonal to the plus state |+><+|.
 """
-plusfilter!(psum) = filter!(psum, containsYorZ)
+plusfilter!(psum) = filter!((pstr, coeff) -> !containsYorZ(pstr), psum)
 
 
 
