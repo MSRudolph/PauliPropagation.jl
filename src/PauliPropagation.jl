@@ -22,6 +22,7 @@ export
     set!,
     mult!,
     empty!,
+    similar,
     identitypauli,
     identitylike,
     inttosymbol,
