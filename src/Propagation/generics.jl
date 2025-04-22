@@ -303,12 +303,12 @@ end
 # given a coefficient type, make sure that the PauliSum is has the same coefficient type
 # this is only to check whether we had wrapped the coefficients in `PauliFreqTracker`
 function _check_unwrap_from_paulifreqtracker(::Type{CT}, psum::PauliSum{TT,CT}) where {TT,CT}
-    # in this function they have the same type
+    # in this function the original coefficient type and the current coefficient type are the same
     return psum
 end
 
-function _check_unwrap_from_paulifreqtracker(::Type{CT}, psum::PauliSum{TT,PauliFreqTracker}) where {TT,CT}
-    # in this function they have different types
+function _check_unwrap_from_paulifreqtracker(::Type{CT}, psum::PauliSum{TT,PFT}) where {TT,CT,PFT<:PauliFreqTracker}
+    # in this function is for when the original coefficient type was not `PauliFreqTracker` but that is what we have
     # we need to unwrap the coefficients
     psum = unwrapcoefficients(psum)
     return psum
