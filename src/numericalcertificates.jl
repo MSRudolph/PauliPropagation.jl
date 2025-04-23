@@ -34,14 +34,20 @@ function estimatemse(circ, pstr::PauliString, n_mcsamples::Integer, thetas=π; s
 end
 
 """
-    estimatemse!(circ, pstr::PauliString, error_array::AbstractVector, thetas, split_probabilities; stateoverlapfunc=overlapwithzero, circuit_is_reversed=false, kwargs...)
+    estimatemse!(
+    circ, pstr::PauliString, error_array::AbstractVector, thetas, split_probabilities; 
+    stateoverlapfunc=overlapwithzero, circuit_is_reversed=false, max_weight=Inf, max_freq=Inf, max_sins=Inf, customtruncfunc=nothing
+    )
 
 In-place version of `estimatemse`. This function takes an array `error_array` of length `n_mcsamples` as an argument and modifies it in-place. 
 It further assumes that the `thetas` and `split_probabilities` are already correctly calculated and provided as arguments. 
 In general they will be vectors, but they can also be real numbers.
 A custom truncation function can be passed as `customtruncfunc` with the signature `customtruncfunc(pstr::PauliStringType, coefficient)::Bool`.
 """
-function estimatemse!(circ, pstr::PauliString, error_array::AbstractVector, thetas, split_probabilities; stateoverlapfunc=overlapwithzero, circuit_is_reversed=false, kwargs...)
+function estimatemse!(
+    circ, pstr::PauliString, error_array::AbstractVector, thetas, split_probabilities;
+    stateoverlapfunc=overlapwithzero, circuit_is_reversed=false, max_weight=Inf, max_freq=Inf, max_sins=Inf, customtruncfunc=nothing
+)
     # This function takes an error_array as an argument and modifies it in-place.
 
     # length(thetas) should be equal to the number of parametrized gates in the circuit
@@ -57,6 +63,14 @@ function estimatemse!(circ, pstr::PauliString, error_array::AbstractVector, thet
         end
     end
 
+    # if max_freq or max_sins is not Inf, then the Pauli string must be a PathProperties type
+    # check whether the coefficient of the Pauli string is properly wrapped and convert it if not
+    if max_freq != Inf || max_sins != Inf
+        if !(pstr.coeff isa PathProperties)
+            pstr = wrapcoefficients(pstr, PauliFreqTracker)
+        end
+    end
+
     # reverse the circuit once 
     if !circuit_is_reversed
         circ = reverse(circ)
@@ -68,7 +82,7 @@ function estimatemse!(circ, pstr::PauliString, error_array::AbstractVector, thet
 
     n_mcsamples = length(error_array)
     @threads for ii in 1:n_mcsamples
-        final_pstr, is_truncated = montecarlopropagation(circ, pstr, thetas, split_probabilities; kwargs...)
+        final_pstr, is_truncated = montecarlopropagation(circ, pstr, thetas, split_probabilities; max_weight, max_freq, max_sins, customtruncfunc)
 
         # multiply the coefficient of the backpropagated Pauli with the overlap with the initial state
         # and then multply with `is_truncated` to get the final error.
