@@ -311,7 +311,7 @@ function _check_unwrap_from_paulifreqtracker(::Type{CT}, psum::PauliSum{TT,PFT})
     # in this function is for when the original coefficient type was not `PauliFreqTracker` but that is what we have
     # we need to unwrap the coefficients
 
-    # if CT is not PFT, unwrap
+    # if the original coefficient type (CT) is not PauliFreqTracker (PFT), then unwrap
     if !(CT == PFT)
         psum = unwrapcoefficients(psum)
     end
