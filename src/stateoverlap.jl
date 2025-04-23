@@ -128,13 +128,13 @@ function overlapwithmaxmixed(psum::PauliSum{TT,CT}) where {TT,CT}
 end
 
 """
-    overlapwithpaulisum(psum1::PauliSum, psum2::PauliSum)
+    scalarproduct(psum1::PauliSum, psum2::PauliSum)
 
-Calculates the overlap between two `PauliSum`s.
-Important: We assume 'normalized' Pauli strings, i.e. such that `Tr[P^2] = 1` for any `n`-qubit Pauli string P.
-If one Pauli sum represents e.g. a normalized quantum state, the result will need to be scaled by `2^n`.  
+Calculates the scalar product between two `PauliSum`s by calculating the sum 
+of the products of their coefficients for all Pauli strings that are present in both `PauliSum`s.
+Important: This is not equivalent to the trace `Tr[psum1 * psum2]`, but instead  `Tr[psum1 * psum2]/2^n`.
 """
-function overlapwithpaulisum(psum1::PauliSum, psum2::PauliSum)
+function scalarproduct(psum1::PauliSum, psum2::PauliSum)
     if length(psum1) == 0 || length(psum2) == 0
         return 0.0
     end
@@ -157,6 +157,39 @@ function overlapwithpaulisum(psum1::PauliSum, psum2::PauliSum)
     end
     return val
 
+end
+
+"""
+    scalarproduct(pstr::PauliString, psum::PauliSum)
+    scalarproduct(psum::PauliSum, pstr::PauliString)
+
+Calculates the scalar product between a `PauliSum` and a `PauliString` by multiplying 
+the coefficient of the `PauliString` with the coefficient of the `PauliSum` for that Pauli string.
+Important: This is not equivalent to the trace `Tr[psum * pstr]`, but instead  `Tr[psum * pstr]/2^n`.
+"""
+function scalarproduct(pstr::PauliString, psum::PauliSum)
+    return tonumber(getcoeff(psum, pstr)) * tonumber(pstr.coeff)
+
+end
+
+scalarproduct(psum::PauliSum, pstr::PauliString) = scalarproduct(pstr, psum)
+
+
+"""
+    scalarproduct(pstr1::PauliString, pstr2::PauliString)
+
+Calculates the scalar product between two `PauliString`s by multiplying
+the coefficients of the two `PauliString`s if they are the same, returning zero otherwise.
+Important: This is not equivalent to the trace `Tr[pstr1 * pstr2]`, but instead  `Tr[pstr1 * pstr2]/2^n`.
+"""
+function scalarproduct(pstr1::PauliString, pstr2::PauliString)
+    if pstr1.term != pstr2.term
+        return zero(numcoefftype(pstr1))
+    end
+
+    # at this point the two Pauli strings are the same
+    # so we can just multiply the coefficients
+    return tonumber(pstr1.coeff) * tonumber(pstr2.coeff)
 end
 
 

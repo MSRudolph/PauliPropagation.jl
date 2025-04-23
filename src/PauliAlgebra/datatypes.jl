@@ -237,7 +237,6 @@ function numcoefftype(psum::PauliSum)
 end
 
 
-# TODO: rename to get() and clean up
 """
     getcoeff(psum::PauliSum{PauliStringType,CoeffType}, pstr::PauliStringType)
 
@@ -245,14 +244,7 @@ Get the coefficient of an integer Pauli string in a `PauliSum`. Defaults to 0 if
 Requires that the integer Pauli string `pstr` is the same type as the integer Pauli strings in `psum`.
 """
 function getcoeff(psum::PauliSum{TT,CT}, pstr::TT) where {TT,CT}
-    # TODO: This is not yet compatible with `PathProperties`
-    if CT <: PathProperties
-        throw(ArgumentError(
-            "This function is not yet compatible with PathProperties. " *
-            "Try psum.term[pstr]."
-        ))
-    end
-    return get(psum.terms, pstr, zero(CT))
+    return get(psum.terms, pstr, zero(numcoefftype(psum)))
 end
 
 """
@@ -262,13 +254,6 @@ Get the coefficient of a `PauliString` in a `PauliSum`. Defaults to 0 if the Pau
 Requires that the integer Pauli string in `pstr` is the same type as the integer Pauli strings in `psum`.
 """
 function getcoeff(psum::PauliSum{TT,CT1}, pstr::PauliString{TT,CT2}) where {TT,CT1,CT2}
-    # TODO: This is not yet compatible with `PathProperties`
-    if CT1 <: PathProperties
-        throw(ArgumentError(
-            "This function is not yet compatible with PathProperties. " *
-            "Try psum.terms[pstr.term]."
-        ))
-    end
     return getcoeff(psum, pstr.term)
 end
 

@@ -133,7 +133,7 @@ export
     orthogonaltozero,
     orthogonaltoplus,
     overlapwithcomputational,
-    overlapwithpaulisum,
+    scalarproduct,
     overlapwithmaxmixed,
     filter,
     filter!,
