@@ -185,12 +185,9 @@ See the `4-custom-gates.ipynb` for examples of how to define custom gates.
 apply(gate::SG, pstr, coeff, theta; kwargs...) where {SG<:StaticGate} = apply(gate, pstr, coeff; kwargs...)
 
 ### MERGE
-"""
-    mergeandempty!(psum, aux_psum)
 
-Merge `aux_psum` into `psum` using the `merge` function. `merge` can be overloaded for different coefficient types.
-Then empty `aux_psum` for the next iteration.
-"""
+# Merge `aux_psum` into `psum` using the `merge` function. `merge` can be overloaded for different coefficient types.
+# Then empty `aux_psum` for the next iteration.
 function mergeandempty!(psum, aux_psum)
     # merge the smaller dict into the larger one
     if length(psum) < length(aux_psum)
@@ -203,31 +200,22 @@ function mergeandempty!(psum, aux_psum)
     return psum, aux_psum
 end
 
-"""
-    mergewith!(merge, psum::PauliSum{TermType, CoeffType}, aux_psum::PauliSum{TermType, CoeffType})
 
-Merge two `PauliSum`s using the `merge` function on the coefficients. `merge` can be overloaded for different coefficient types.
-"""
+# Merge two `PauliSum`s using the `merge` function on the coefficients. `merge` can be overloaded for different coefficient types.
 Base.mergewith!(merge, psum::PauliSum{TT,CT}, aux_psum::PauliSum{TT,CT}) where {TT,CT} = mergewith!(merge, psum.terms, aux_psum.terms)
 
-"""
-    merge(val1, val2)
 
-Merging two coefficients calls `+` by default unless there exists a suitable overloaded `merge` function.
-"""
+# Merging two coefficients calls `+` by default unless there exists a suitable overloaded `merge` function.
 function merge(coeff1, coeff2)
     return coeff1 + coeff2
 end
 
 
 ### TRUNCATE
-"""
-    checktruncationonall!(psum; max_weight::Real=Inf, min_abs_coeff=1e-10, max_freq::Real=Inf, max_sins::Real=Inf, kwargs...)
 
-Check truncation conditions on all Pauli strings in `psum` and remove them if they are truncated.
-This function supports the default truncations based on `max_weight`, `min_abs_coeff`, `max_freq`, and `max_sins`.
-A custom truncation function can be passed as `customtruncfunc` with the signature customtruncfunc(pstr::PauliStringType, coefficient)::Bool.
-"""
+# Check truncation conditions on all Pauli strings in `psum` and remove them if they are truncated.
+# This function supports the default truncations based on `max_weight`, `min_abs_coeff`, `max_freq`, and `max_sins`.
+# A custom truncation function can be passed as `customtruncfunc` with the signature customtruncfunc(pstr::PauliStringType, coefficient)::Bool.
 function checktruncationonall!(
     psum; max_weight::Real=Inf, min_abs_coeff=1e-10, max_freq::Real=Inf,
     max_sins::Real=Inf,
@@ -246,22 +234,16 @@ function checktruncationonall!(
     return
 end
 
-"""
-    checktruncationonone!(
-    psum, pstr, coeff;
-    max_weight::Real=Inf, min_abs_coeff=1e-10,
-    max_freq::Real=Inf, max_sins::Real=Inf,
-    customtruncfunc=nothing,
-    kwargs...
 
-Check truncation conditions one Pauli string in `psum` and it them if it is truncated.
-This function supports the default truncations based on `max_weight`, `min_abs_coeff`, `max_freq`, and `max_sins`.
-A custom truncation function can be passed as `customtruncfunc` with the signature customtruncfunc(pstr::PauliStringType, coefficient)::Bool.
-"""
+# Check truncation conditions one Pauli string in `psum` and it them if it is truncated.
+# This function supports the default truncations based on `max_weight`, `min_abs_coeff`, `max_freq`, and `max_sins`.
+# A custom truncation function can be passed as `customtruncfunc` with the signature customtruncfunc(pstr::PauliStringType, coefficient)::Bool.
 @inline function checktruncationonone!(
     psum, pstr, coeff;
-    max_weight::Real=Inf, min_abs_coeff=1e-10,
-    max_freq::Real=Inf, max_sins::Real=Inf,
+    max_weight::Real=Inf,
+    min_abs_coeff=1e-10,
+    max_freq::Real=Inf,
+    max_sins::Real=Inf,
     customtruncfunc=nothing,
     kwargs...
 )
