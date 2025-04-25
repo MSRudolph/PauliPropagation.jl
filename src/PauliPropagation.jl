@@ -130,8 +130,6 @@ export
     overlapwithzero,
     overlapwithplus,
     overlapwithones,
-    orthogonaltozero,
-    orthogonaltoplus,
     overlapwithcomputational,
     overlapwithmaxmixed,
     scalarproduct,
