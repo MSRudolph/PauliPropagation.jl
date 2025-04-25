@@ -33,7 +33,7 @@ function freeze(gate::ParametrizedGate, parameter::Number)
 end
 
 """
-    freeze(gates, parameters)
+    freeze(gates::Vector{Gate}, parameters::Vector{Number})
 
 Returns a vector of `Gate`s where `ParametrizedGate`s are frozen with their `parameters`.
 """
