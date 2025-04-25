@@ -92,17 +92,12 @@ const pauli_basis = [Idmat / sqrt(2), Xmat / sqrt(2), Ymat / sqrt(2), Zmat / sqr
 
 const _nqubit_pauli_matrices = Dict{Int,Vector{Matrix{ComplexF64}}}(1 => pauli_basis)
 
-"""
-    getpaulimatrices(nq::Int)
 
-Compute the Pauli basis for `n` qubits.
-
-Arguments
-- `n::Int`: The number of qubits.
-
-Returns
-- `basis::Vector{Array{ComplexF64}}`: The Pauli basis for `nq` qubits.
-"""
+# Compute the Pauli basis for `n` qubits.
+# Arguments
+# - `n::Int`: The number of qubits.
+# Returns
+# - `basis::Vector{Array{ComplexF64}}`: The Pauli basis for `nq` qubits.
 function getpaulibasis(nq::Int)
     if haskey(_nqubit_pauli_matrices, nq)
         return _nqubit_pauli_matrices[nq]
