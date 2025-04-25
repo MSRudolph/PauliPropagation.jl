@@ -109,12 +109,6 @@ function commutes(gate::PauliRotation, pstr::PauliStringType)
 end
 
 
-# The fast `MaskedPauliRotation` version that we use in propagate()
-function commutes(gate::MaskedPauliRotation, pstr::PauliStringType)
-    return commutes(gate.generator_mask, pstr)
-end
-
-
 
 # A parametrized Pauli rotation gate acting on the qubits `qinds` with the Pauli string `symbols`.
 # The `term` is the integer representation of the Pauli string with the correct integer type for the total number of qubits.
@@ -130,6 +124,11 @@ end
 # Union type for `PauliRotation` and `MaskedPauliRotation`, useful for functions which handle either agnostically.
 PauliRotationUnion = Union{PauliRotation,MaskedPauliRotation}
 
+
+# The fast `MaskedPauliRotation` version that we use in propagate()
+function commutes(gate::MaskedPauliRotation, pstr::PauliStringType)
+    return commutes(gate.generator_mask, pstr)
+end
 
 
 # Returns a circuit where `PauliRotation` gates are transformed to `MaskedPauliRotation` gates.
