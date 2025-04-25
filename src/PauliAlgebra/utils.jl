@@ -1,5 +1,5 @@
 # Defines mapping of integers 0, 1, 2, 3 to symbols :I, :X, :Y, :Z
-const pauli_symbols::Vector{Symbol} = [:I, :X, :Y, :Z]
+const pauli_symbols = (:I, :X, :Y, :Z)
 
 
 """
