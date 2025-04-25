@@ -107,10 +107,6 @@ export
 
 include("truncations.jl")
 export
-    truncateweight,
-    truncatemincoeff,
-    truncatefrequency,
-    truncatesins,
     truncatedampingcoeff
 
 include("Propagation/Propagation.jl")
