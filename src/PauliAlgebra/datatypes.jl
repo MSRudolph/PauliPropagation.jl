@@ -562,6 +562,71 @@ function -(psum1::PauliSum{TT1,CT1}, psum2::PauliSum{TT2,CT2}) where {TT1,CT1,TT
     return psum1 - psum2
 end
 
+# Pauli products
+"""
+    *(pstr1::PauliString, pstr2::PauliString)
+
+Perform a Pauli product of two `PauliString`s. 
+"""
+function *(pstr1::PauliString, pstr2::PauliString)
+    _checknumberofqubits(pstr1, pstr2)
+    # TODO: This should be a thing
+    return pauliprod(pstr1, pstr2)
+end
+
+"""
+    *(pstr::PauliString, psum::PauliSum)
+    *(psum::PauliSum, pstr::PauliString)
+
+Perform a Pauli product of a `PauliString` with a `PauliSum`.
+Returns a `PauliSum` with complex coefficients.
+"""
+function *(psum::PauliSum, pstr::PauliString)
+    _checknumberofqubits(psum, pstr)
+    new_psum = PauliSum(ComplexF64, psum.nqubits)
+    sizehint!(new_psum.terms, length(psum))
+
+    for (term, coeff) in psum
+        new_term, sign = pauliprod(term, pstr.term)
+        add!(new_psum, new_term, pstr.coeff * coeff * sign)
+    end
+    return new_psum
+end
+
+function *(pstr::PauliString, psum::PauliSum)
+    _checknumberofqubits(pstr, psum)
+    # TODO: this is literally the same, just argument oder reversed in pauliprod()
+    new_psum = PauliSum(ComplexF64, psum.nqubits)
+    for (term, coeff) in psum
+        new_term, sign = pauliprod(pstr.term, term)
+        add!(new_psum, new_term, pstr.coeff * coeff * sign)
+    end
+    return new_psum
+end
+
+
+"""
+    *(psum1::PauliSum, psum2::PauliSum)
+
+Perform a Pauli product of two `PauliSum`s.
+Returns a `PauliSum` with complex coefficients.
+"""
+function *(psum1::PauliSum, psum2::PauliSum)
+    _checknumberofqubits(psum1, psum2)
+    psum = PauliSum(ComplexF64, psum1.nqubits)
+    sizehint!(psum.terms, length(psum1))
+
+    for (pstr1, coeff1) in psum1
+        for (pstr2, coeff2) in psum2
+            pstr, sign = pauliprod(pstr1, pstr2)
+            coeff = coeff1 * coeff2 * sign
+            add!(psum, pstr, coeff)
+        end
+    end
+    return psum
+
+end
+
 
 ## In-place Multiplication
 
