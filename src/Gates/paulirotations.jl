@@ -103,10 +103,9 @@ end
 Check if a `PauliRotation` commutes with an integer Pauli string.
 """
 function commutes(gate::PauliRotation, pstr::PauliStringType)
-    # use the integer representation of the Pauli string `MaskedPauliRotation` 
-    # for faster computation.
-    masked_gate = _tomaskedpaulirotation(gate, typeof(pstr))
-    return commutes(masked_gate, pstr)
+    # calculate the integer representation of the gate generator for faster computation
+    generator_mask = symboltoint(typeof(pstr), gate.symbols, gate.qinds)
+    return commutes(generator_mask, pstr)
 end
 
 
@@ -123,7 +122,7 @@ end
 
 
 # Union type for `PauliRotation` and `MaskedPauliRotation`, useful for functions which handle either agnostically.
-PauliRotationUnion = Union{PauliRotation, MaskedPauliRotation}
+PauliRotationUnion = Union{PauliRotation,MaskedPauliRotation}
 
 
 # The fast `MaskedPauliRotation` version that we use in propagate()
