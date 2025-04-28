@@ -28,6 +28,8 @@ using Random
 
     include("test_paulitransfermaps.jl")
 
+    include("test_pathproperties.jl")
+
     include("test_truncations.jl")
 
     include("test_numericalcertificates.jl")

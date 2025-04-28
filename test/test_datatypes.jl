@@ -138,3 +138,65 @@ end
     @test !(result_psum ≈ complex_psum + eps(coefftype(result_psum)))
 
 end
+
+# YT: I think these belong to paulioperations but adding them here for now
+
+@testset "* for two PauliStrings" begin
+    
+    # Test for single-qubit pauli string
+    @testset "Single Qubit PauliString" begin
+        nq = 1
+        pstr1 = PauliString(nq, :X, 1)
+        pstr2 = PauliString(nq, :Y, 1)
+        result = pstr1 * pstr2
+        expected_result = PauliString(nq, :Z, 1, 1im)
+        @test result == expected_result
+    end
+
+    # Test for multi-qubit pauli string
+    @testset "Multi Qubit PauliString" begin
+        nq = 3
+        pstr1 = PauliString(nq, [:X, :Y], [1, 2], 2.)
+        pstr2 = PauliString(nq, [:Y, :Z], [2, 3])
+        result = pstr1 * pstr2
+        # YT: the coefficient of the product is a complex number?
+        expected_result = PauliString(nq, [:X, :Z], [1, 3], 2. + 0im)
+        @test result == expected_result
+    end
+end
+
+@testset "PauliSum * PauliString" begin
+
+    @testset "Multiply with Identity" begin
+        nq = 3
+        psum = PauliSum(nq, Dict([:I, :I, :I] => 1.5))
+        pstr = PauliString(nq, [:I, :I], [1, 2], 2.)
+        result = psum * pstr
+        expected_result = PauliSum(nq, Dict([:I, :I, :I] => 3 + 0im))
+        @test result == expected_result
+    end
+
+    @testset "Multiply with PauliString" begin
+        nq = 3
+        psum = PauliSum(nq, Dict([:I, :X, :Y] => 1.5, [:I, :I, :Y] => 1.0))
+        pstr = PauliString(nq, [:Y, :Z], [1, 2], 2.)
+        result = psum * pstr
+        #TODO define add! with complex type coefficients
+        # expected_result = PauliSum(nq)
+        # add!(expected_result, [:Y, :Y, :Y], [1, 2, 3], -3im)
+        # add!(expected_result, [:Y, :Z, :Y], [1, 2, 3], 2. + 0im)
+        expected_result = PauliSum(nq, Dict([:Y, :Y, :Y] => -3im, [:Y, :Z, :Y] => 2. + 0im))
+        @test result == expected_result
+    end
+end
+
+
+@testset "PauliString * PauliSum" begin
+    nq = 3
+    pstr = PauliString(nq, [:Y, :Z], [1, 2], 2.)
+    psum = PauliSum(nq, Dict([:I, :X, :Y] => 1.5, [:I, :I, :Y] => 1.0))
+    result = pstr * psum
+    #TODO define add! with complex type coefficients
+    expected_result = PauliSum(nq, Dict([:Y, :Y, :Y] => 3im, [:Y, :Z, :Y] => 2. + 0im))
+    @test result == expected_result
+end

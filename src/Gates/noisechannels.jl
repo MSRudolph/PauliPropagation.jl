@@ -61,7 +61,7 @@ struct PauliXNoise <: PauliNoise
     A Pauli-X noise channel acting on the qubit at index `qind`.
     If `p` is provided, this returns a frozen gate with that noise strength.
     Will damp Y and Z Paulis equally by a factor of `1-p`.
-    This corresponds to inserting a random Pauli X operator into the circuit with probability `p/2`.
+    This corresponds to inserting a Pauli X operator into the circuit with probability `p/2`.
     """
     PauliXNoise(qind::Int) = (_qinds_check(qind); new(qind))
 end
@@ -91,7 +91,7 @@ struct PauliYNoise <: PauliNoise
     A Pauli-Y noise channel acting on the qubit at index `qind`.
     If `p` is provided, this returns a frozen gate with that noise strength.
     Will damp X and Z Paulis equally by a factor of `1-p`.
-    This corresponds to inserting a random Pauli Y operator into the circuit with probability `p/2`.
+    This corresponds to inserting a Pauli Y operator into the circuit with probability `p/2`.
     """
     PauliYNoise(qind::Int) = (_qinds_check(qind); new(qind))
 end
@@ -121,7 +121,7 @@ struct PauliZNoise <: PauliNoise
     A Pauli-Z noise channel acting on the qubit at index `qind`.
     If `p` is provided, this returns a frozen gate with that noise strength.
     Will damp X and Y Paulis equally by a factor of `1-p`.
-    This corresponds to inserting a random Pauli Z operator with probability `p/2`.
+    This corresponds to inserting a Pauli Z operator with probability `p/2`.
     """
     PauliZNoise(qind::Int) = (_qinds_check(qind); new(qind))
 end
@@ -140,7 +140,7 @@ function isdamped(::PauliZNoise, pauli::PauliType)
 end
 
 
-## DepolarizingNoise is an alias for PauliZNoise
+## DephasingNoise is an alias for PauliZNoise
 """
     DephasingNoise(qind::Int)
     DephasingNoise(qind::Int, p::Real)

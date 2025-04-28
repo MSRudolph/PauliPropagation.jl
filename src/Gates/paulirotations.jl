@@ -103,7 +103,8 @@ end
 Check if a `PauliRotation` commutes with an integer Pauli string.
 """
 function commutes(gate::PauliRotation, pstr::PauliStringType)
-    # the symbolic version is not worth it so convert to a MaskedPauliRotation
+    # use the integer representation of the Pauli string `MaskedPauliRotation` 
+    # for faster computation.
     masked_gate = _tomaskedpaulirotation(gate, typeof(pstr))
     return commutes(masked_gate, pstr)
 end
@@ -113,7 +114,7 @@ end
 # A parametrized Pauli rotation gate acting on the qubits `qinds` with the Pauli string `symbols`.
 # The `term` is the integer representation of the Pauli string with the correct integer type for the total number of qubits.
 # This allows for faster application of the gate.
-# See `tomaskedpaulirotation` for conversion from `PauliRotation`, which is the easiest way to construct a `MaskedPauliRotation`.
+# See `_tomaskedpaulirotation` for conversion from `PauliRotation`, which is the easiest way to construct a `MaskedPauliRotation`.
 struct MaskedPauliRotation{T} <: ParametrizedGate where {T<:PauliStringType}
     symbols::Vector{Symbol}
     qinds::Vector{Int}
@@ -122,7 +123,7 @@ end
 
 
 # Union type for `PauliRotation` and `MaskedPauliRotation`, useful for functions which handle either agnostically.
-PauliRotationUnion = Union{PauliRotation,MaskedPauliRotation}
+PauliRotationUnion = Union{PauliRotation, MaskedPauliRotation}
 
 
 # The fast `MaskedPauliRotation` version that we use in propagate()

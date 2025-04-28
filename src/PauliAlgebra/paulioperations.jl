@@ -190,7 +190,7 @@ commutator(psum::PauliSum, pstr::PauliString) = commutator(psum, PauliSum(pstr))
 commutator(pstr::PauliString, psum::PauliSum) = commutator(PauliSum(pstr), psum)
 
 """
-    commutator(pstr1::Integer, pstr2::Integer)
+    commutator(pstr1::PauliStringType, pstr2::PauliStringType)
 
 Calculate the commutator of two integer Pauli strings.
 Returns a tuple of the coefficient and the potentially integer Pauli string.
@@ -260,7 +260,7 @@ end
 
 
 """
-    pauliprod(pauli1::PauliType, pauli2::PauliType)
+    pauliprod(pauli1::PauliStringType, pauli2::PauliStringType)
 
 Calculate the product of two integer Paulis. 
 Indicate via `changed_indices` which qubit sites to check. It can be any iterable.
@@ -318,7 +318,7 @@ end
 # Indicate via `changed_indices` which qubit sites to check. It can be any iterable.
 
 # Note, this function is the foundation of `calculatesign` but assumes that the only (potentially) non-identity Pauli is on the first site.
-function _generalizedlevicivita(pauli1::PauliType, pauli2::PauliType, pauli3::PauliType)
+function _generalizedlevicivita(pauli1::PauliStringType, pauli2::PauliStringType, pauli3::PauliStringType)
     # acts like levicivita but yields the correct sign for products with I or P^2, and takes care of the imaginary coefficients in Pauli products
     return generalized_levicivita_matrix[pauli1+1, pauli2+1, pauli3+1]
 end
