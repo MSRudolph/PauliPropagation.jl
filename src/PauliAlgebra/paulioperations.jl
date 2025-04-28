@@ -156,30 +156,6 @@ function commutes(psum1::Dict{TT,CT1}, psum2::Dict{TT,CT2}) where {TT,CT1,CT2}
     return isempty(comm)
 end
 
-"""
-    commutes(pauli1::Symbol, pauli2::PauliType)
-    commutes(pauli1::PauliType, pauli2::Symbol)
-
-Check if two Paulis commute where one is a `Symbol` and the other is in the integer representation.
-This assumes that the integer Pauli is a single Pauli, not a Pauli string.
-"""
-function commutes(pauli1::Symbol, pauli2::PauliType)
-    return commutes(pauli1, inttosymbol(pauli2))
-end
-
-function commutes(pauli1::PauliType, pauli2::Symbol)
-    return commutes(pauli2, pauli1)
-end
-
-"""
-    commutes(pauli1::Symbol, pauli2::Symbol)
-
-Check if two Paulis of type `Symbol` commute.
-"""
-function commutes(pauli1::Symbol, pauli2::Symbol)
-    # this also checks if they are valid symbols
-    return commutes(symboltoint(pauli1), symboltoint(pauli2))
-end
 
 ## Commutator
 """
@@ -282,34 +258,6 @@ function pauliprod(pauli1::PauliStringType, pauli2::PauliStringType)
     return pauli3, sign
 end
 
-"""
-    pauliprod(pauli1::Symbol, pauli2::Integer)
-    pauliprod(pauli1::Integer, pauli2::Symbol)
-
-Calculate the product of two Paulis where one is a `Symbol` and the other is in the integer representation.
-This assumes that the integer Pauli is a single Pauli, not a Pauli string.
-"""
-function pauliprod(pauli1::Symbol, pauli2::PauliType)
-    # assume that just one qubit is involved because we check commutation with a single Symbol
-    return pauliprod(symboltoint(pauli1), pauli2, 1:1)
-end
-
-
-function pauliprod(pauli1::PauliType, pauli2::Symbol)
-    return pauliprod(pauli2, pauli1)
-end
-
-
-"""
-    pauliprod(pauli1::Symbol, pauli2::Symbol)
-
-Calculate the product of two Paulis of type `Symbol`.
-"""
-function pauliprod(pauli1::Symbol, pauli2::Symbol)
-    # assume that just one qubit is involved because we check commutation with a single Symbol
-    # also checks if they are valid symbols
-    return pauliprod(symboltoint(pauli1), symboltoint(pauli2), 1:1)
-end
 
 """
     pauliprod(pauli1::PauliType, pauli2::PauliType)
