@@ -1,3 +1,10 @@
+### paulioperations.jl
+## 
+# This file contains function definitions for Pauli operations such as
+# commutation and multiplication.
+##
+###
+
 # TODO: generate these definitions with Macro's instead? Easier to maintain and less error-prone
 
 """
@@ -234,7 +241,7 @@ function commutator(psum1::Dict{TT,CT1}, psum2::Dict{TT,CT2}) where {TT,CT1,CT2}
 end
 
 ## Pauli product
-# TODO: Pauli product is not yet implemented for PauliSum
+
 """
     pauliprod(pstr1::PauliString, pstr2::PauliString)
 
@@ -247,7 +254,7 @@ function pauliprod(pstr1::PauliString, pstr2::PauliString)
 end
 
 """
-    pauliprod(pstr1::Integer, pstr2::Integer)
+    pauliprod(pstr1::PauliStringType, pstr2::PauliStringType)
 
 Calculate the product of two integer Pauli strings.
 """
@@ -260,7 +267,7 @@ end
 
 
 """
-    pauliprod(pstr1::Integer, pstr1::Integer, changed_indices::Vector{Integer})
+    pauliprod(pstr1::PauliStringType, pstr1::PauliStringType, changed_indices::Vector{Integer})
 
 Calculate the product of two integer Paulis. 
 Indicate via `changed_indices` which qubit sites to check for calculating the sign.

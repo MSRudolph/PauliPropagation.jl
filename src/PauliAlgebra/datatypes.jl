@@ -481,6 +481,31 @@ end
 
 +(pstr::PauliString{TT,CT}, psum::PauliSum{TT,CT}) where {TT,CT} = psum + pstr
 
+function +(psum::PauliSum{TT1,CT1}, pstr::PauliString{TT2,CT2}) where {TT1,CT1,TT2,CT2}
+
+    # check if the types of the Pauli strings are the same
+    _checktermtype(psum, pstr)
+
+    # promote the coefficient type if necessary
+    if CT1 <: Real && CT2 <: Complex
+        psum1 = deepcopy(psum)
+        psum = PauliSum(ComplexF64, psum1.nqubits)
+        for (pstr, coeff) in psum1
+            psum.terms[pstr] = ComplexF64(coeff)
+        end
+    
+    elseif CT1 <: Complex && CT2 <: Real
+        pstr = PauliString(
+            ComplexF64, pstr.nqubits, pstr.term, ComplexF64(pstr.coeff)
+        )
+    
+    elseif CT1 != CT2
+        throw(ArgumentError("Addition of Paulis with different coefficient types " *
+                            "is not yet supported. Got $(CT1) and $(CT2)."))
+    end
+    
+    return psum + pstr
+end
 
 """
     +(psum1::PauliSum, psum2::PauliSum)
@@ -495,15 +520,47 @@ end
 
 
 # throw error for miss-matched types
-# TODO!
-function +(psum1::PauliSum{TT1,CT1}, psum2::PauliSum{TT2,CT2}) where {TT1,CT1,TT2,CT2}
+
+function _checktermtype(psum1::PauliSum{TT1,CT1}, pstr::PauliString{TT2,CT2}) where {TT1,CT1,TT2,CT2}
     if TT1 != TT2
         throw(ArgumentError("Pauli string types do not match. Got $(TT1) and $(TT2)."))
     end
-    if CT1 != CT2
-        throw(ArgumentError("Addition of Pauli sums with different coefficient types " *
-                            "is not yet supported. Got $(CT1) and $(CT2)."))
+end
+
+function _checktermtype(psum1::PauliSum{TT1,CT1}, psum2::PauliSum{TT2,CT2}) where {TT1,CT1,TT2,CT2}
+    if TT1 != TT2
+        throw(ArgumentError("Pauli string types do not match. Got $(TT1) and $(TT2)."))
     end
+end
+
+# TODO!
+function +(psum1::PauliSum{TT1,CT1}, psum2::PauliSum{TT2,CT2}) where {TT1,CT1,TT2,CT2}
+
+    # check if the types of the Pauli strings are the same
+    _checktermtype(psum1, psum2)
+
+    # promote the coefficient type if necessary
+    if isa(CT1, Real) && isa(CT2, Complex)
+        psum = deepcopy(psum1.terms)
+        psum1 = PauliSum(ComplexF64, psum.nqubits)
+        for (pstr, coeff) in psum
+            psum1.terms[pstr] = ComplexF64(coeff)
+        end
+    
+    elseif isa(CT1, Complex) && isa(CT2, Real)
+        psum = deepcopy(psum2.terms)
+        psum2 = PauliSum(ComplexF64, psum.nqubits)
+        for (pstr, coeff) in psum
+            psum2.terms[pstr] = ComplexF64(coeff)
+        end
+    
+    elseif CT1 != CT2
+        throw(
+            ArgumentError("Addition of PauliSums with different coefficient" * 
+                            "types is not yet supported. Got $(CT1) and $(CT2).")
+            )
+    end
+    
     return psum1 + psum2
 end
 
@@ -552,9 +609,9 @@ end
 # throw error for miss-matched types
 # TODO!
 function -(psum1::PauliSum{TT1,CT1}, psum2::PauliSum{TT2,CT2}) where {TT1,CT1,TT2,CT2}
-    if TT1 != TT2
-        throw(ArgumentError("Pauli string types do not match. Got $(TT1) and $(TT2)."))
-    end
+    
+    _checktermtype(psum1, psum2)
+
     if CT1 != CT2
         throw(ArgumentError("Subtraction of Pauli sums with different coefficient types " *
                             "is not yet supported. Got $(CT1) and $(CT2)."))
@@ -685,9 +742,9 @@ end
 # throw error for miss-matched types
 # TODO!
 function add!(psum1::PauliSum{TT1,CT1}, psum2::PauliSum{TT2,CT2}) where {TT1,CT1,TT2,CT2}
-    if TT1 != TT2
-        throw(ArgumentError("Pauli string types do not match. Got $(TT1) and $(TT2)."))
-    end
+    
+    _checktermtype(psum1, psum2)
+
     if CT1 != CT2
         throw(ArgumentError("Addition of Pauli sums with different coefficient types " *
                             "is not yet supported. Got $(CT1) and $(CT2)."))
