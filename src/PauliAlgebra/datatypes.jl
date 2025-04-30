@@ -131,20 +131,6 @@ function PauliSum(::Type{CT}, nq::Int) where {CT}
     return PauliSum(nq, Dict{TT,CT}())
 end
 
-"""
-    PauliSum(nqubits::Integer, psum::Dict{Vector{Symbol},CoeffType})
-
-Constructor for a `PauliSum` on `nqubits` qubits from a dictionary of {Vector{Symbols} => coefficients}.
-"""
-function PauliSum(nqubits::Int, psum::Dict{Vector{Symbol},CT}) where {CT}
-
-    _checknumberofqubits.(nqubits, keys(psum))
-    TT = getinttype(nqubits)
-    int_dict = Dict{TT,CT}(symboltoint(k) => float(v) for (k, v) in psum)
-
-    return PauliSum(nqubits, int_dict)
-end
-
 
 """
     PauliSum(pstr::PauliString)
