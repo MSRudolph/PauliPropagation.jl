@@ -2,11 +2,14 @@
 
 """
     overlapbyorthogonality(orthogonalfunc::Function, psum::PauliSum)
+    overlapbyorthogonality(orthogonalfunc::Function, pstr::PauliString)
+    overlapbyorthogonality(orthogonalfunc::Function, pstr::Integer)
 
-Overlap a `PauliSum` with a state or operator via function that returns true if a Pauli string is orthogonal and hence doesn't contribute.
-An example `orthogonalfunc` is `containsXorY` which returns true if a Pauli string contains an X or Y Pauli.
-If not orthogonal, then a Pauli string contributes with its coefficient.
+Overlap a `PauliSum`, `PauliString` or integer Pauli string with a state or operator via function 
+that returns true if a Pauli string is orthogonal or not.
+If a Pauli string is orthogonal, it does not contribute, otherwise it contributes with its coefficient.
 This is particularly useful for overlaps with stabilizer states.
+An example `orthogonalfunc` is `containsXorY` which returns true if a Pauli string contains an X or Y Pauli.
 """
 function overlapbyorthogonality(orthogonalfunc::F, psum::PauliSum) where {F<:Function}
     if length(psum) == 0
@@ -22,26 +25,12 @@ function overlapbyorthogonality(orthogonalfunc::F, psum::PauliSum) where {F<:Fun
     return val
 end
 
-"""
-    overlapbyorthogonality(orthogonalfunc::Function, pstr::PauliString)
 
-Overlap a `PauliString` with a state or operator via function that returns true if the `PauliString` is orthogonal and hence has overlap 0.
- An example `orthogonalfunc` is `containsXorY` which returns true if the `PauliString` contains an X or Y Pauli.
-If not orthogonal, then the overlap is the coefficient of the `PauliString`.
-This is particularly useful for overlaps with stabilizer states.
-"""
 function overlapbyorthogonality(orthogonalfunc::F, pstr::PauliString) where {F<:Function}
     return !orthogonalfunc(pstr) * tonumber(pstr.coeff)
 end
 
-"""
-    overlapbyorthogonality(orthogonalfunc::Function, pstr::PauliString)
 
-Overlap an integer Pauli string with a state or operator via function that returns true if the Pauli string is orthogonal and hence has overlap 0.
- An example `orthogonalfunc` is `containsXorY` which returns true if the Pauli string contains an X or Y Pauli.
-If not orthogonal, then the overlap is 1.
-This is particularly useful for overlaps with stabilizer states.
-"""
 function overlapbyorthogonality(orthogonalfunc::F, pstr::PauliStringType) where {F<:Function}
     return !orthogonalfunc(pstr)
 end
@@ -49,39 +38,34 @@ end
 ## For the typical |0> or |+> cases
 """
     overlapwithzero(psum) 
+    overlapwithzero(pstr)
 
-Calculates the overlap of a Pauli sum with the zero state |0><0|
+Calculates the overlap of a Pauli sum with the zero state |0><0|,
+i.e., Tr[psum * |0><0|] = <0|psum|0> or Tr[pstr * |0><0|] = <0|pstr|0>.
 """
-overlapwithzero(psum) = overlapbyorthogonality(orthogonaltozero, psum)
-
-"""
-    overlapwithzero(pstr) 
-
-Calculates the overlap of a Pauli string with the zero state |0><0|
-"""
-orthogonaltozero(pstr) = containsXorY(pstr)
+overlapwithzero(pobj) = overlapbyorthogonality(containsXorY, pobj)
 
 """
     overlapwithplus(psum) 
+    overlapwithplus(pstr)
 
-Calculates the overlap of a Pauli sum with the plus state |+><+|
+Calculates the overlap of a Pauli sum or Pauli string with the plus state |+><+|,
+i.e. Tr[psum * |+><+|] = <+|psum|+> or Tr[pstr * |+><+|] = <+|pstr|+>.
 """
-overlapwithplus(psum) = overlapbyorthogonality(orthogonaltoplus, psum)
+overlapwithplus(psum) = overlapbyorthogonality(containsYorZ, psum)
 
-"""
-    orthogonaltoplus(pstr) 
-
-Calculates the overlap of a Pauli string with the plus state |+><+|
-"""
-orthogonaltoplus(pstr) = containsYorZ(pstr)
 
 # eval against |±i> not implemented
 
+
 """
     overlapwithcomputational(psum::PauliSum, onebitinds)
+    overlapwithcomputational(pstr::PauliString, onebitinds)
 
-Calculates the overlap of a Pauli sum with the computational basis state which has one-bits at all specified `indices` and zero-bits elsewhere.
-For example, `overlapwithcomputational(psum, [1,2,4])` returns the overlap with `|1101000...>`
+Calculates the overlap of a Pauli sum or Pauli string with the computational basis state 
+which has one-bits at all specified `indices` and zero-bits elsewhere.
+If |x><x| is a computational basis state, it we compute Tr[psum * |x><x|] = <x|psum|x> or Tr[pstr * |x><x|] = <x|pstr|x>.
+For example, `overlapwithcomputational(psum, [1,2,4])` returns the overlap with `|1101000...>`.
 """
 function overlapwithcomputational(psum::PauliSum, onebitinds)
     val = zero(numcoefftype(psum))
@@ -91,15 +75,11 @@ function overlapwithcomputational(psum::PauliSum, onebitinds)
     return val
 end
 
-"""
-    overlapwithcomputational(pstr::PauliString, onebitinds)
 
-Calculates the overlap of a Pauli string with the computational basis state which has one-bits at all specified `onebitinds` and zero-bits elsewhere.
-For example, `overlapwithcomputational(pstr, [1,2,4])` returns the overlap with `|1101000...>` and will be either zero or plus/minus `pstr.coeff`.
-"""
 function overlapwithcomputational(pstr::PauliString, onebitinds)
     return _calcsignwithones(pstr.term, onebitinds) * tonumber(pstr.coeff)
 end
+
 
 function _calcsignwithones(pstr::PauliStringType, onebitinds)
 
@@ -115,7 +95,8 @@ end
 """
     overlapwithmaxmixed(psum::PauliSum)
 
-Calculates the overlap of a `PauliSum` with the maximally mixed state 1/2^n I.
+Calculates the overlap of a `PauliSum` with the maximally mixed state I/2^n,
+i.e., Tr[psum * I/2^n].
 """
 function overlapwithmaxmixed(psum::PauliSum{TT,CT}) where {TT,CT}
     if length(psum) == 0
@@ -127,14 +108,19 @@ function overlapwithmaxmixed(psum::PauliSum{TT,CT}) where {TT,CT}
     return get(psum.terms, identitypauli(TT), zero(NumType))
 end
 
-"""
-    overlapwithpaulisum(psum1::PauliSum, psum2::PauliSum)
 
-Calculates the overlap between two `PauliSum`s.
-Important: We assume 'normalized' Pauli strings, i.e. such that `Tr[P^2] = 1` for any `n`-qubit Pauli string P.
-If one Pauli sum represents e.g. a normalized quantum state, the result will need to be scaled by `2^n`.  
 """
-function overlapwithpaulisum(psum1::PauliSum, psum2::PauliSum)
+    scalarproduct(psum1::PauliSum, psum2::PauliSum)
+    scalarproduct(pstr::PauliString, psum::PauliSum)
+    scalarproduct(psum::PauliSum, pstr::PauliString)
+    scalarproduct(pstr1::PauliString, pstr2::PauliString)
+
+Calculates the scalar product between any combination of `PauliSum` and `PauliString`.
+This  calculates the sum of the products of their coefficients for all Pauli strings that are present .
+Important: This is not equivalent to the trace `Tr[psum1 * psum2]` but instead  `Tr[psum1 * psum2]/2^n`,
+and equivalently for Pauli strings.
+"""
+function scalarproduct(psum1::PauliSum, psum2::PauliSum)
     if length(psum1) == 0 || length(psum2) == 0
         return 0.0
     end
@@ -157,6 +143,26 @@ function overlapwithpaulisum(psum1::PauliSum, psum2::PauliSum)
     end
     return val
 
+end
+
+
+function scalarproduct(pstr::PauliString, psum::PauliSum)
+    return tonumber(getcoeff(psum, pstr)) * tonumber(pstr.coeff)
+
+end
+
+scalarproduct(psum::PauliSum, pstr::PauliString) = scalarproduct(pstr, psum)
+
+
+
+function scalarproduct(pstr1::PauliString, pstr2::PauliString)
+    if pstr1.term != pstr2.term
+        return zero(numcoefftype(pstr1))
+    end
+
+    # at this point the two Pauli strings are the same
+    # so we can just multiply the coefficients
+    return tonumber(pstr1.coeff) * tonumber(pstr2.coeff)
 end
 
 
