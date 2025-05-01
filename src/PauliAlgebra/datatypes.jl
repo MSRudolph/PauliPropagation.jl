@@ -83,6 +83,13 @@ Multiply a `PauliString` by a scalar `c`. Returns a new `PauliString`.
 *(pstr::PauliString, c::Number) = PauliString(pstr.nqubits, pstr.term, pstr.coeff * c)
 *(c::Number, pstr::PauliString) = pstr * c
 
+"""
+    /(pstr::PauliString, c::Number)
+
+Divide a `PauliString` by a scalar `c`. Returns a new `PauliString`.
+"""
+/(pstr::PauliString, c::Number) = pstr * (1 / c)
+
 
 # Pretty print for `PauliString`.
 function show(io::IO, pstr::PauliString)
