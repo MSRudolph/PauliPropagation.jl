@@ -98,18 +98,12 @@ end
     @test tonumber(wrapped_pstr.coeff) == tonumber(pstr.coeff) == pstr.coeff
 end
 
-# Test PauliSum from Dict creation
-function test_paulisum_from_dict()
-    psum = PauliSum(3, Dict([:I, :I, :I] => 1.5, [:I, :I, :Y] => 1.0))
-
-    # Collect and return keys and values for testing
-    return collect(keys(psum.terms)), collect(values(psum.terms))
-end
-
 # Test subtraction of PauliSum
 function subtractpaulisums()
-    psum1 = PauliSum(3, Dict([:I, :I, :I] => 1.5, [:I, :I, :Y] => 1.0))
-    psum2 = PauliSum(3, Dict([:I, :I, :I] => 1.5))
+    psum1 = PauliSum(3)
+    add!(psum1, [:I, :I, :Y], 1:3, 1.0)
+    add!(psum1, :I, 1, 1.5)
+    psum2 = PauliSum(PauliString(3, :I, 1, 1.5))
 
     return psum1 - psum2
 end
@@ -118,14 +112,10 @@ end
 # TODO(YT): Add tests for *, /, + overloading for PauliSum
 
 @testset "PauliSum Tests" begin
-    # Subtest for PauliSum from Dict
-    paulis, pauli_cs = test_paulisum_from_dict()
-    @test paulis == [symboltoint([:I, :I, :Y]), symboltoint([:I, :I, :I])]
-    @test pauli_cs == [1.0, 1.5]
 
     # Subtest for subtracting PauliSum
     result_psum = subtractpaulisums()
-    expected_psum = PauliSum(3, Dict([:I, :I, :Y] => 1.0))
+    expected_psum = PauliSum(PauliString(3, [:I, :I, :Y], 1:3, 1.0))
     @test result_psum == expected_psum
     @test result_psum ≈ expected_psum
 
@@ -142,7 +132,7 @@ end
 # YT: I think these belong to paulioperations but adding them here for now
 
 @testset "* for two PauliStrings" begin
-    
+
     # Test for single-qubit pauli string
     @testset "Single Qubit PauliString" begin
         nq = 1
@@ -156,11 +146,11 @@ end
     # Test for multi-qubit pauli string
     @testset "Multi Qubit PauliString" begin
         nq = 3
-        pstr1 = PauliString(nq, [:X, :Y], [1, 2], 2.)
+        pstr1 = PauliString(nq, [:X, :Y], [1, 2], 2.0)
         pstr2 = PauliString(nq, [:Y, :Z], [2, 3])
         result = pstr1 * pstr2
 
-        expected_result = PauliString(nq, [:X, :Z], [1, 3], 2. + 0im)
+        expected_result = PauliString(nq, [:X, :Z], [1, 3], 2.0 + 0im)
 
         @test result == expected_result
     end
@@ -170,25 +160,27 @@ end
 
     @testset "Multiply with Identity" begin
         nq = 3
-        psum = PauliSum(nq, Dict([:I, :I, :I] => 1.5))
-        pstr = PauliString(nq, [:I, :I], [1, 2], 2.)
+        psum = PauliSum(PauliString(nq, :I, 1, 1.5))
+        pstr = PauliString(nq, [:I, :I], [1, 2], 2.0)
         result = psum * pstr
-        expected_result = PauliSum(nq, Dict([:I, :I, :I] => 3 + 0im))
+        expected_result = PauliSum(PauliString(nq, :I, 2, 3 + 0im))
         @test result == expected_result
     end
 
     @testset "Multiply with PauliString" begin
         nq = 3
-        psum = PauliSum(nq, Dict([:I, :X, :Y] => 1.5, [:I, :I, :Y] => 1.0))
-        pstr = PauliString(nq, [:Y, :Z], [1, 2], 2.)
+        psum = PauliSum(nq)
+        add!(psum, [:X, :Y], 2:3, 1.5)
+        add!(psum, :Y, 3, 1.0)
+        pstr = PauliString(nq, [:Y, :Z], [1, 2], 2.0)
         result = psum * pstr
-        
+
         expected_result = PauliSum(nq)
-        add!(expected_result, [:Y, :Z, :Y], [1, 2, 3], 2.)
+        add!(expected_result, [:Y, :Z, :Y], [1, 2, 3], 2.0)
         expected_result = expected_result + PauliString(
             nq, [:Y, :Y, :Y], [1, 2, 3], -3im
         )
-        
+
         @test result == expected_result
     end
 end
@@ -198,23 +190,23 @@ end
 
     @testset "Multiply with Identity Complex Coefficients" begin
         nq = 3
-        psum = PauliSum(nq, Dict([:I, :I, :I] => 1.5im))
+        psum = PauliSum(PauliString(nq, [:I, :I, :I], 1:3, 1.5im))
         pstr = PauliString(nq, [:I, :I], [1, 2], 2)
         result = psum * pstr
-        expected_result = PauliSum(nq, Dict([:I, :I, :I] => 3im))
+        expected_result = PauliSum(PauliString(nq, [:I, :I, :I], 1:3, 3im))
         @test result == expected_result
     end
-    
+
     @testset "Multiply with PauliString" begin
         nq = 3
-        pstr = PauliString(nq, [:Y, :Z], [1, 2], 2.)
-        psum = PauliSum(nq, Dict([:I, :X, :Y] => 1.5, [:I, :I, :Y] => 1.0))
+        pstr = PauliString(nq, [:Y, :Z], [1, 2], 2.0)
+        psum = PauliSum([PauliString(nq, [:X, :Y], 2:3, 1.5), PauliString(nq, :Y, 3, 1.0)])
         result = pstr * psum
-    
-        expected_result = PauliSum(ComplexF64, nq) 
-        add!(expected_result, [:Y, :Z, :Y], [1, 2, 3], 2. + 0im)
+
+        expected_result = PauliSum(ComplexF64, nq)
+        add!(expected_result, [:Y, :Z, :Y], [1, 2, 3], 2.0 + 0im)
         add!(expected_result, [:Y, :Y, :Y], [1, 2, 3], 3im)
-    
+
         @test result == expected_result
     end
 end
