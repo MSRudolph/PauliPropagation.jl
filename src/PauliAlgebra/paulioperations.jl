@@ -197,7 +197,7 @@ commutator(psum::PauliSum, pstr::PauliString) = commutator(psum, PauliSum(pstr))
 commutator(pstr::PauliString, psum::PauliSum) = commutator(PauliSum(pstr), psum)
 
 """
-    commutator(pstr1::PauliStringType, pstr2::PauliStringType)
+    commutator(pstr1::Integer, pstr2::Integer)
 
 Calculate the commutator of two integer Pauli strings.
 Returns a tuple of the coefficient and the potentially integer Pauli string.
@@ -254,7 +254,7 @@ function pauliprod(pstr1::PauliString, pstr2::PauliString)
 end
 
 """
-    pauliprod(pstr1::PauliStringType, pstr2::PauliStringType)
+    pauliprod(pstr1::Integer, pstr2::Integer)
 
 Calculate the product of two integer Pauli strings.
 """
@@ -267,7 +267,7 @@ end
 
 
 """
-    pauliprod(pstr1::PauliStringType, pstr1::PauliStringType, changed_indices::Vector{Integer})
+    pauliprod(pstr1::Integer, pstr1::Integer, changed_indices::Vector{Integer})
 
 Calculate the product of two integer Paulis. 
 Indicate via `changed_indices` which qubit sites to check for calculating the sign.
