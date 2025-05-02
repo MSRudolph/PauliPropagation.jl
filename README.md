@@ -37,52 +37,82 @@ push!(LOAD_PATH,rel_path);
 ```
 This may require that you have no global installation of `PauliPropagation` in your enviroment.
 
-## Examples
+## Quick Start
 
-You can find example notebooks in the `examples` folder.
+You can find detailed example notebooks in the `examples` folder. We provide a brief example of how to use `PauliPropagation.jl`.
 
-Here is a tiny working example where we approximately simulate the expectation value of a quantum circuit.
+Consider simulating the dynamics of an operator $O=Z_{16}$ under the evolution of a unitary  channel $\mathcal{E}(\cdot) = U^\dagger \cdot U$ in a $n=32$ qubits system. 
+
 ```julia
 using PauliPropagation
 
-## number of qubits
-nqubits = 32
+nqubits = 32 # number of qubits
 
-## define the observable
-# here I...IZI...I
-observable = PauliString(nqubits, :Z, 16)
+observable = PauliString(nqubits, :Z, 16) # observable I...IZI...I
+```
 
-## define the circuit
-# the number of layers
-nlayers = 32
+Our goal is to compute
+$$
+\mathrm{Tr}[U^\dagger O U \rho].
+$$
 
-# bricklayertopology is also the default if you don't provide any
+A simple unitary $U$ is the brickwork circuit, composed of two qubit gates alternating neighbouring sites. We define the circuit connectivity by 
+
+```julia
 topology = bricklayertopology(nqubits; periodic=true)
+```
 
-# a circuit containing RX and RZZ Pauli gates on the topology
-# derived from the Trotterization of a transverse field Ising Hamiltonian
+where `periodic` specifies the boundary condition of the gates. The library has built-in circuits with e.g. a circuit containing alternating RX and RZZ Pauli gates on the topology. This can be defined by Trotterization of a transverse field Ising Hamiltonian with $l$ steps
+$$
+U = \prod_{a=1}^{l} \prod_{j=1}^n e^{-i dt   X_j} e^{-i dt Z_j Z_{j+1}}.
+$$
+
+```julia
+nlayers = 32 ## the number of layers $l$
+
 circuit = tfitrottercircuit(nqubits, nlayers; topology=topology)
+```
 
-# time step
-dt = 0.1
-# count the number of parameters
-nparams = countparameters(circuit)
-# define the parameter vector
-parameters = ones(nparams) * dt
+In our simulations, we can choose the circuit parameter $dt$
 
+```julia
+dt = 0.1 # time step
+
+nparams = countparameters(circuit) # number of parameters
+
+parameters = ones(nparams) * dt # total parameters
+```
+
+We can now compute the evolution using the `propagate` function. During the propagation, we employ truncation strategies such as coefficient or weight truncations, these options can be specified as keywords. 
+
+```julia
 ## the truncations
-# maximum Pauli weight
-max_weight = 6
-# minimal coefficient magnitude
-min_abs_coeff = 1e-4
+max_weight = 6 # maximum Pauli weight
 
-## propagate through the circuit with our best (and currently only propagation method)
+min_abs_coeff = 1e-4 # minimal coefficient magnitude
+
+## propagate through the circuit
 pauli_sum = propagate(circuit, observable, parameters; max_weight=max_weight, min_abs_coeff=min_abs_coeff)
-
+```
+The output `pauli_sum` gives us an approximation of propagated Paulis 
+$$
+U^\dagger O U \approx \sum_{\alpha} c_{\alpha} P_{\alpha}
+$$
+Finally we can compute expectation values with an initial state such as $\rho = (|0 \rangle  \langle 0 |)^{\otimes n}$
+```julia
 ## overlap with the initial state
 overlapwithzero(pauli_sum)
 # yields 0.154596728241...
 ```
+
+<!-- This computation is efficient because the initial state can be written in terms of only $\mathbb{I}$ and $Z$ strings
+$$
+\rho = (\frac{\mathbb{I} + Z}{2})^{\otimes n}
+$$
+Therefore, the trace is equivalent to sum over coefficients of such Pauli strings 
+$$
+\mathrm{Tr}[U^\dagger O U \rho] \approx \sum_{\alpha \in \{\mathbb{I}, Z\} \text{strings}} c_{\alpha}.
+$$ -->
 
 ## Important Notes and Caveats
 All of the following points can be addressed by you writing the necessary missing code due to the nice extensibility of Julia.
