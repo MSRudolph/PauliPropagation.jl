@@ -2,7 +2,6 @@
 
 using Test
 
-#TODO: Add example tests for PauliString constructors
 function createpaulistring(nq)
     symbol = rand([:I, :X, :Y, :Z])
     qind = rand(1:nq)
@@ -54,12 +53,6 @@ end
     add!(psum2, symbols, qinds, coeff)
     @test getcoeff(psum2, symbols, qinds) == coeff
 
-    psum3 = psum + psum2
-    println(psum3)
-
-    psum2 - psum3
-
-    return psum
 end
 
 @testset "PauliString Tests" begin
@@ -75,7 +68,7 @@ end
     qinds = shuffle(1:nq)[1:min(nq, 4)]
     coeff = randn()
     pstr = PauliString(nq, symbols, qinds, coeff)
-    println(pstr)
+
     for (ii, qind) in enumerate(qinds)
         @test getpauli(pstr.term, qind) == symboltoint(symbols[ii])
     end
@@ -89,8 +82,6 @@ end
     @test coefftype(psum) == Float64
     @test paulitype(psum) == getinttype(nq)
     @test paulitype(psum) == PauliPropagation.UInt40
-    println(psum)
-
 
     pstr = createpaulistring(7)
     wrapped_pstr = wrapcoefficients(pstr, PauliFreqTracker)
@@ -98,38 +89,84 @@ end
     @test tonumber(wrapped_pstr.coeff) == tonumber(pstr.coeff) == pstr.coeff
 end
 
-# Test subtraction of PauliSum
-function subtractpaulisums()
-    psum1 = PauliSum(3)
-    add!(psum1, [:I, :I, :Y], 1:3, 1.0)
-    add!(psum1, :I, 1, 1.5)
-    psum2 = PauliSum(PauliString(3, :I, 1, 1.5))
-
-    return psum1 - psum2
-end
 
 # Test overloading methods for PauliSum
-# TODO(YT): Add tests for *, /, + overloading for PauliSum
-
 @testset "PauliSum Tests" begin
 
     # Subtest for subtracting PauliSum
-    result_psum = subtractpaulisums()
-    expected_psum = PauliSum(PauliString(3, [:I, :I, :Y], 1:3, 1.0))
-    @test result_psum == expected_psum
-    @test result_psum ≈ expected_psum
+    @testset "Substract PauliSums" begin
 
-    complex_psum = PauliSum(3, Dict(pstr => complex(coeff) for (pstr, coeff) in result_psum))
-    @test result_psum ≈ complex_psum
+        psum1 = PauliSum(3)
+        add!(psum1, [:I, :I, :Y], 1:3, 1.0)
+        add!(psum1, :I, 1, 1.5)
+        psum2 = PauliSum(PauliString(3, :I, 1, 1.5))        
+        result_psum = psum1 - psum2
 
-    # Not sure why this returns false, but this is Base Julia behavior
-    # between tiny differences between Float64 and Complex{Float64}
-    # Question/ TODO: Do we want to change this behavior compared to Base Julia?
-    @test !(result_psum ≈ complex_psum + eps(coefftype(result_psum)))
+        expected_psum = PauliSum(PauliString(3, [:I, :I, :Y], 1:3, 1.0))
+        @test result_psum == expected_psum
+        @test result_psum ≈ expected_psum
+
+        complex_psum = PauliSum(3)
+        for (pstr, coeff) in result_psum
+            add!(complex_psum, pstr, coeff)
+        end
+        @test result_psum ≈ complex_psum
+    end
+
+    @testset "+ PauliSum" begin
+        psum1 = PauliSum(3)
+        add!(psum1, [:I, :I, :Y], 1:3, 1.0)
+        add!(psum1, :I, 1, 1.5)
+        psum2 = PauliSum(PauliString(3, :I, 1, 1.5))
+
+        result_psum = psum1 + psum2
+        expected_psum = PauliSum(PauliString(3, [:I, :I, :Y], 1:3, 1.0))
+        add!(expected_psum, :I, 1, 3.0)
+        @test result_psum == expected_psum
+    end
+
+    @testset "- PauliSum" begin
+        psum1 = PauliSum(PauliString(3, [:I, :I, :Y], 1:3, 1im))
+        add!(psum1, :I, 1, 1.5im)
+        psum2 = PauliSum(PauliString(3, :I, 1, 1.5im))
+
+        result_psum = psum1 - psum2
+        expected_psum = PauliSum(PauliString(3, [:I, :I, :Y], 1:3, 1im))
+        @test result_psum == expected_psum
+    end
+
+    @testset "* PauliSum" begin
+        c = 2
+        psum1 = PauliSum(3)
+        add!(psum1, [:I, :I, :Y], 1:3, 1.0)
+        add!(psum1, :I, 1, 1.5)
+        
+
+        result_psum = psum1 * c
+        expected_psum = PauliSum(PauliString(3, [:I, :I, :Y], 1:3, 2.0))
+        add!(expected_psum, :I, 1, 3.0)
+        @test result_psum == expected_psum
+
+        c = 2.0 + 1im
+        psum2 = PauliSum(PauliString(3, :I, 1, 1.5im))
+        result_psum = psum2 * c
+        expected_psum = PauliSum(PauliString(3, :I, 1, 3im - 1.5))
+        @test result_psum == expected_psum
+    end
+
+    @testset "/ PauliSum" begin
+        c = 2
+        psum1 = PauliSum(3)
+        add!(psum1, [:I, :I, :Y], 1:3, 1.0)
+        add!(psum1, :I, 1, 1.5)
+
+        result_psum = psum1 / c
+        expected_psum = PauliSum(PauliString(3, [:I, :I, :Y], 1:3, 0.5))
+        add!(expected_psum, :I, 1, 0.75)
+        @test result_psum == expected_psum
+    end
 
 end
-
-# YT: I think these belong to paulioperations but adding them here for now
 
 @testset "* for two PauliStrings" begin
 
