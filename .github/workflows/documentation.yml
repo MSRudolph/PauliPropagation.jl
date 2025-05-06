@@ -86,6 +86,10 @@ jobs:
     # perform this after doc regen
     needs: build-doc
 
+    # only cleanup when main is pushed, preserving all the
+    # working clones of the doc (like from PRs) in the meantime
+    if: github.event_name == 'push' && github.ref_name == 'main'
+
     steps:
 
       - name: Checkout gh-pages branch

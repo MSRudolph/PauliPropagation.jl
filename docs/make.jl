@@ -82,4 +82,8 @@ deploydocs(
 # - msrudolph.github.io/PauliPropagation.jl/
 # - msrudolph.github.io/PauliPropagation.jl/dev/
 # - msrudolph.github.io/PauliPropagation.jl/previews/PR#
-# where # above is replaced with the pull request number
+# where # above is replaced with the pull request number.
+#
+# These "doc clones" are deleted whenever a commit is pushed to the main
+# branch (signifying a version release), so that development history does
+# not bloat the repo. Deletion is performed by the 'tidy-doc' CI job.
