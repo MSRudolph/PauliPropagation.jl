@@ -66,6 +66,12 @@ jobs:
           Pkg.develop(PackageSpec(path=pwd()))
           Pkg.instantiate()
 
+      # symlink repo README to 'docs/src/index.md'
+      # as needed by subsequent doc generation
+      - name: Setup symlink
+        run: ln -s ../../README.md index.md
+        working-directory: docs/src
+
       - name: Build and deploy
         run: julia --color=yes --project=docs docs/make.jl
         env:
