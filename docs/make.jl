@@ -44,7 +44,9 @@ makedocs(
 
         # these other 'top-level' files DO exist, and
         # have names inferred from their section names
-        "installation.md",
+
+        # Remove installation bc it's in README
+        # "installation.md",
         "tutorials.md",
 
         # these 'lower-level' files also exist, and will
