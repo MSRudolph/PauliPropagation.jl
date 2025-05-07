@@ -1,12 +1,21 @@
 # PauliPropagation.jl
-`PauliPropagation.jl` is a Julia package for Pauli propagation simulation of quantum circuits and quantum systems.
+`PauliPropagation.jl` is a Julia package for Pauli propagation simulation of quantum circuits and quantum systems. It focuses on simulating the evolution of observables expressed in the Pauli basis, under e.g. the dynamics of quantum circuits.
+
+Unlike traditional simulation approaches that evolve quantum states (Schrödinger picture), Pauli propagation often works in the Heisenberg picture, evolving observables like $\mathcal{E}^\dagger(\hat{O})$ rather than states $\mathcal{E}(\rho)$. This can be particularly efficient when the observables remain sparse or structured under evolution, and is useful for studying operator dynamics, estimating expectation values, and computing correlation functions.
+
+Pauli propagation sits alongside other classical simulation techniques, such as stabilizer simulation and tensor networks, but offers a distinct approach that can handle different regimes of quantum complexity.
+
+Implemented in Julia, `PauliPropagation.jl` combines high-performance computation (using features such as multiple dispatch) with an accessible design similar to Python.
+<!-- `PauliPropagation.jl` is a Julia package for Pauli propagation simulation of quantum circuits and quantum systems.
 
 The package simulates the evolution of objects expressed in the Pauli basis under noiseless and noisy quantum circuits. Commonly, this is used for the Heisenberg picture evolution of an observable. For example, if $`\hat{O}`$ is an observable that is preferably sparse in Pauli basis and $`\mathcal{E}`$ is a quantum circuit, we simulate $`\mathcal{E}^\dagger(\hat{O})`$ instead of most quantum simulation packages simulating the Schrödinger evolution  $`\mathcal{E}(\rho)`$ of states $`\rho`$. For the case of unitary quantum circuits $`U`$, the evolved observable $`\mathcal{E}^\dagger(\hat{O})`$ is usually written like $`U^\dagger \hat{O} U`$.
 
-Some opt-in truncations or approximations are particularly suited for estimating expectation values $`Tr[\rho \mathcal{E}^\dagger(\hat{O})]`$ of evolved observables with quantum states. 
+Some opt-in truncations or approximations are particularly suited for estimating expectation values $`Tr[\rho \mathcal{E}^\dagger(\hat{O})]`$ of evolved observables with quantum states.  -->
 
 
 ## Installation
+
+> Note the current package requires `Julia 1.10+`.
 
 The `PauliPropagation.jl` package is registered and can be installed into your environment in the following way:
 ```julia
@@ -36,6 +45,17 @@ rel_path = "your/relative/path/PauliPropagation"
 push!(LOAD_PATH,rel_path);
 ```
 This may require that you have no global installation of `PauliPropagation` in your enviroment.
+
+### A note on julia installation 
+It is recommended to install julia using `juliaup`
+
+```juliaup add 1.10```
+
+Go to the project directory (e.g. PauliPropagation.jl). To start julia for a local environment
+
+```julia --project=./```
+
+More details can be found on this useful [guide](https://modernjuliaworkflows.org/writing/#installation).
 
 ## Quick Start
 
@@ -119,7 +139,6 @@ $$ -->
 
 ## Important Notes and Caveats
 All of the following points can be addressed by you writing the necessary missing code due to the nice extensibility of Julia.
-- The package is tested for Julia `1.10` and `1.11`.
 - The default is the Heisenberg _backpropagation_. Schrödinger propagation may soon be natively supported. At this moment, there are options to transpose `PauliRotation` gates by multiplying their angles with `-1` and `CliffordGate`s by using `transposecliffordmap()`.
 - We currently do not support the strong simulation of quantum states in non-exponential time (even for Stabilizer states). Pauli propagation could in principle be used as a backend for extended stabilizer simulation.
 - Sampling quantum states is currently not supported.
