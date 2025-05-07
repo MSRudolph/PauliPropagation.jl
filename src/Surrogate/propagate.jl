@@ -1,28 +1,24 @@
 ### Propagation necessities
 
 """
-    propagate(circ, pstr::PauliString{PauliStringType,NodePathProperties}; max_weight=Inf, max_freq=Inf, max_sins=Inf, customtruncfunc=nothing, kwargs...)
+    propagate(circ, pstr::PauliString{<:Integer,NodePathProperties}; max_weight=Inf, max_freq=Inf, max_sins=Inf, customtruncfunc=nothing, kwargs...)
 
 Construct a Pauli propagation surrogate of the propagated `PauliString` through the circuit `circ` in the Heisenberg picture. 
 The circuit must only contain `CliffordGate`s and `PauliRotation`s.
-It is applied to the Pauli string in reverse order, and the action of each gate is its conjugate action.
-Default truncations are `max_weight`, `max_freq`, and `max_sins`.
-A custom truncation function can be passed as `customtruncfunc` with the signature customtruncfunc(pstr::PauliStringType, coefficient)::Bool.
-Further `kwargs` are passed to the lower-level functions `applymergetruncate!`, `applytoall!`, `applyandadd!`, and `apply`.
+Truncations based on any numerical coefficient value cannot be used.
+Everything else is the same as in `propagate!()` for the non-Surrogate code.
 """
 function propagate(circ, pstr::PauliString{TT,NodePathProperties}; max_weight=Inf, max_freq=Inf, max_sins=Inf, customtruncfunc=nothing, kwargs...) where {TT<:PauliStringType}
     return propagate(circ, PauliSum(pstr); max_weight, max_freq, max_sins, customtruncfunc, kwargs...)
 end
 
 """
-    propagate(circ, psum::PauliSum{PauliStringType,NodePathProperties}; max_weight=Inf, max_freq=Inf, max_sins=Inf, customtruncfunc=nothing, kwargs...)
+    propagate(circ, psum::PauliSum{<:Integer,NodePathProperties}; max_weight=Inf, max_freq=Inf, max_sins=Inf, customtruncfunc=nothing, kwargs...)
 
 Construct a Pauli propagation surrogate of the propagated `PauliSum` through the circuit `circ` in the Heisenberg picture.
 The circuit must only contain `CliffordGate`s and `PauliRotation`s. 
-It is applied to the Pauli sum in reverse order, and the action of each gate is its conjugate action.
-Default truncations are `max_weight`, `max_freq`, and `max_sins`.
-A custom truncation function can be passed as `customtruncfunc` with the signature customtruncfunc(pstr::PauliStringType, coefficient)::Bool.
-Further `kwargs` are passed to the lower-level functions `applymergetruncate!`, `applytoall!`, `applyandadd!`, and `apply`.
+Truncations based on any numerical coefficient value cannot be used.
+Everything else is the same as in `propagate!()` for the non-Surrogate code.
 """
 function propagate(circ, psum::PauliSum{TT,NodePathProperties}; max_weight=Inf, max_freq=Inf, max_sins=Inf, customtruncfunc=nothing, kwargs...) where {TT<:PauliStringType}
     _checksurrogationconditions(circ)
@@ -30,16 +26,13 @@ function propagate(circ, psum::PauliSum{TT,NodePathProperties}; max_weight=Inf, 
 end
 
 """
-    propagate!(circ, psum::PauliSum{PauliStringType,NodePathProperties}; max_weight=Inf, max_freq=Inf, max_sins=Inf, customtruncfunc=nothing, kwargs...)
+    propagate!(circ, psum::PauliSum{<:Integer,NodePathProperties}; max_weight=Inf, max_freq=Inf, max_sins=Inf, customtruncfunc=nothing, kwargs...)
 
 Construct a Pauli propagation surrogate of the propagated `PauliSum` through the circuit `circ` in the Heisenberg picture. 
 The `PauliSum` `psum` is modified in place.
-The circuit must only contain `CliffordGate`s and `PauliRotation`s. 
-It is applied to the Pauli sum in reverse order, and the action of each gate is its conjugate action.
-The input `psum` will be modified.
-Default truncations are `max_weight`, `max_freq`, and `max_sins`.
-A custom truncation function can be passed as `customtruncfunc` with the signature customtruncfunc(pstr::PauliStringType, coefficient)::Bool.
-Further `kwargs` are passed to the lower-level functions `applymergetruncate!`, `applytoall!`, `applyandadd!`, and `apply`.
+The circuit must only contain `CliffordGate`s and `PauliRotation`s.
+Truncations based on any numerical coefficient value cannot be used.
+Everything else is the same as in `propagate!()` for the non-Surrogate code.
 """
 function propagate!(circ, psum::PauliSum{TT,NodePathProperties}; max_weight=Inf, max_freq=Inf, max_sins=Inf, customtruncfunc=nothing, kwargs...) where {TT<:PauliStringType}
     _checksurrogationconditions(circ)
@@ -101,11 +94,8 @@ end
 
 ## For Clifford Gates
 
-"""
-    apply(gate::CliffordGate, pstr::PauliStringType, coeff::NodePathProperties)
 
-Apply a `CliffordGate` to an integer Pauli string and `NodePathProperties` coefficient. 
-"""
+# Apply a `CliffordGate` to an integer Pauli string and `NodePathProperties` coefficient. 
 function apply(gate::CliffordGate, pstr::PauliStringType, coeff::NodePathProperties; kwargs...)
     # this array carries the new Paulis + sign for every occuring old Pauli combination
     map_array = clifford_map[gate.symbol]

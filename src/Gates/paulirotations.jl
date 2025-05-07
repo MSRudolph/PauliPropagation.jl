@@ -89,13 +89,31 @@ end
 
 
 """
-    MaskedPauliRotation(symbols::Vector{Symbol}, qinds::Vector{Int}, term::PauliStringType)
+    commutes(gate::PauliRotation, pstr::PauliString)
 
-A parametrized Pauli rotation gate acting on the qubits `qinds` with the Pauli string `symbols`.
-The `term` is the integer representation of the Pauli string with the correct integer type for the total number of qubits.
-This allows for faster application of the gate.
-See `tomaskedpaulirotation` for conversion from `PauliRotation`, which is the easiest way to construct a `MaskedPauliRotation`.
+Check if a `PauliRotation` commutes with a `PauliString`.
 """
+function commutes(gate::PauliRotation, pstr::PauliString)
+    return commutes(gate, pstr.term)
+end
+
+"""
+    commutes(gate::PauliRotation, pstr::Integer)
+
+Check if a `PauliRotation` commutes with an integer Pauli string.
+"""
+function commutes(gate::PauliRotation, pstr::PauliStringType)
+    # calculate the integer representation of the gate generator for faster computation
+    generator_mask = symboltoint(typeof(pstr), gate.symbols, gate.qinds)
+    return commutes(generator_mask, pstr)
+end
+
+
+
+# A parametrized Pauli rotation gate acting on the qubits `qinds` with the Pauli string `symbols`.
+# The `term` is the integer representation of the Pauli string with the correct integer type for the total number of qubits.
+# This allows for faster application of the gate.
+# See `_tomaskedpaulirotation` for conversion from `PauliRotation`, which is the easiest way to construct a `MaskedPauliRotation`.
 struct MaskedPauliRotation{T} <: ParametrizedGate where {T<:PauliStringType}
     symbols::Vector{Symbol}
     qinds::Vector{Int}
@@ -103,31 +121,34 @@ struct MaskedPauliRotation{T} <: ParametrizedGate where {T<:PauliStringType}
 end
 
 
-"""
-    PauliRotationUnion
-
-Union type for `PauliRotation` and `MaskedPauliRotation`, useful for functions which handle either agnostically.
-"""
+# Union type for `PauliRotation` and `MaskedPauliRotation`, useful for functions which handle either agnostically.
 PauliRotationUnion = Union{PauliRotation,MaskedPauliRotation}
 
 
-"""
-    _tomaskedpaulirotation(circ::Vector{Gate})
+# The fast `MaskedPauliRotation` version that we use in propagate()
+function commutes(gate::MaskedPauliRotation, pstr::PauliStringType)
+    return commutes(gate.generator_mask, pstr)
+end
 
-Returns a circuit where `PauliRotation` gates are transformed to `MaskedPauliRotation` gates.
-This allows for significantly faster computation with the gate.
-"""
+
+# Returns a circuit where `PauliRotation` gates are transformed to `MaskedPauliRotation` gates.
+# This allows for significantly faster computation with the gate.
 function _tomaskedpaulirotation(circ::Vector{G}, nqubits::Integer) where {G<:Gate}
     TT = getinttype(nqubits)
     return _tomaskedpaulirotation(circ, TT)
 end
 
-"""
-    _tomaskedpaulirotation(circ::Vector{Gate})
 
-Returns a circuit where `PauliRotation` gates are transformed to `MaskedPauliRotation` gates.
-This allows for significantly faster computation with the gate.
-"""
+# Transforms a `PauliRotation` to a `MaskedPauliRotation` which carries the integer representation of the gate generator.
+# This allows for significantly faster computation with the gate.
+function _tomaskedpaulirotation(pauli_gate::PauliRotation, ::Type{TT}) where {TT<:PauliStringType}
+    pstr_term = symboltoint(TT, pauli_gate.symbols, pauli_gate.qinds)
+    return MaskedPauliRotation(pauli_gate.symbols, pauli_gate.qinds, pstr_term)
+end
+
+
+# Returns a circuit where `PauliRotation` gates are transformed to `MaskedPauliRotation` gates.
+# This allows for significantly faster computation with the gate.
 function _tomaskedpaulirotation(circ::Vector{G}, ::Type{TT}) where {G<:Gate,TT<:PauliStringType}
     masked_circ = copy(circ)
     for (ii, gate) in enumerate(masked_circ)
@@ -138,71 +159,27 @@ function _tomaskedpaulirotation(circ::Vector{G}, ::Type{TT}) where {G<:Gate,TT<:
     return masked_circ
 end
 
-"""
-    _tomaskedpaulirotation(pauli_gate::PauliRotation, nqubits::Integer)
 
-Transforms a `PauliRotation` to a `MaskedPauliRotation` which carries the integer representation of the gate generator.
-This allows for significantly faster computation with the gate.
-"""
+# Transforms a `PauliRotation` to a `MaskedPauliRotation` which carries the integer representation of the gate generator.
+# This allows for significantly faster computation with the gate.
 function _tomaskedpaulirotation(pauli_gate::PauliRotation, nqubits::Integer)
     pstr_term = symboltoint(nqubits, pauli_gate.symbols, pauli_gate.qinds)
     return MaskedPauliRotation(pauli_gate.symbols, pauli_gate.qinds, pstr_term)
 end
 
-"""
-    _tomaskedpaulirotation(frozen_gate::FrozenGate, nqubits::Integer)
 
-Transforms a `FrozenGate` with a `PauliRotation` to a `MaskedPauliRotation` 
-which carries the integer representation of the gate generator.
-"""
+# Transforms a `FrozenGate` with a `PauliRotation` to a `MaskedPauliRotation` 
+# which carries the integer representation of the gate generator.
 function _tomaskedpaulirotation(frozen_gate::FrozenGate, nqubits::Integer)
     return FrozenGate(_tomaskedpaulirotation(frozen_gate.gate, nqubits), frozen_gate.theta)
 end
 
-"""
-    _tomaskedpaulirotation(fast_pauli_gate::MaskedPauliRotation, args...)
 
-Return the `MaskedPauliRotation` gate as is.
-"""
+# Return the `MaskedPauliRotation` gate as is.
 function _tomaskedpaulirotation(masked_pauli_gate::MaskedPauliRotation, args...)
     return masked_pauli_gate
 end
 
-"""
-    _tomaskedpaulirotation(pauli_gate::PauliRotation, ::TermType)
-
-Transforms a `PauliRotation` to a `MaskedPauliRotation` which carries the integer representation of the gate generator.
-This allows for significantly faster computation with the gate.
-"""
-function _tomaskedpaulirotation(pauli_gate::PauliRotation, ::Type{TT}) where {TT<:PauliStringType}
-    pstr_term = symboltoint(TT, pauli_gate.symbols, pauli_gate.qinds)
-    return MaskedPauliRotation(pauli_gate.symbols, pauli_gate.qinds, pstr_term)
-end
 
 
-"""
-    commutes(gate::PauliRotation, pstr::PauliString)
 
-Check if a `PauliRotation` commutes with a `PauliString`.
-"""
-function commutes(gate::PauliRotation, pstr::PauliString)
-    return commutes(gate, pstr.term)
-end
-
-"""
-    commutes(gate::PauliRotationUnion, pstr)
-
-Check if a `PauliRotation` commutes with an integer Pauli string.
-"""
-function commutes(gate::PauliRotation, pstr::PauliStringType)
-    return sum(!commutes(gate_sym, getpauli(pstr, qind)) for (qind, gate_sym) in zip(gate.qinds, gate.symbols)) % 2 == 0
-end
-
-"""
-    commutes(gate::MaskedPauliRotation, pstr::PauliStringType)
-
-Check if a `MaskedPauliRotation` commutes with an integer Pauli string.
-"""
-function commutes(gate::MaskedPauliRotation, pstr::PauliStringType)
-    return commutes(gate.generator_mask, pstr)
-end

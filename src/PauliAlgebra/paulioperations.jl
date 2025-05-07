@@ -1,3 +1,10 @@
+### paulioperations.jl
+## 
+# This file contains function definitions for Pauli operations such as
+# commutation and multiplication.
+##
+###
+
 # TODO: generate these definitions with Macro's instead? Easier to maintain and less error-prone
 
 """
@@ -10,7 +17,7 @@ function countweight(pstr::PauliString)
 end
 
 """
-    countweight(pstr::PauliStringType)
+    countweight(pstr::Integer)
 
 Function to count the weight of an integer Pauli string.
 """
@@ -41,7 +48,7 @@ function countxy(pstr::PauliString)
 end
 
 """
-    countxy(pstr::PauliStringType)
+    countxy(pstr::Integer)
 
 Function to count the number of X and Y Paulis in an integer Pauli string.
 """
@@ -72,7 +79,7 @@ function countyz(pstr::PauliString)
 end
 
 """
-    countyz(pstr::PauliStringType)
+    countyz(pstr::Integer)
 
 Function to count the number of Y and Z Paulis in an integer Pauli string.
 """
@@ -101,7 +108,7 @@ Check if a Pauli string contains an X or Y Pauli.
 containsXorY(pstr::PauliString) = containsXorY(pstr.term)
 
 """
-    containsXorY(pstr::PauliStringType)
+    containsXorY(pstr::Integer)
 
 Check if an integer Pauli string contains an X or Y Pauli.
 """
@@ -115,7 +122,7 @@ Check if a Pauli string contains a Y or Z Pauli.
 containsYorZ(pstr::PauliString) = containsYorZ(pstr.term)
 
 """
-    containsYorZ(pstr::PauliStringType)
+    containsYorZ(pstr::Integer)
 
 Check if an integer Pauli string contains a Y or Z Pauli.
 """
@@ -133,7 +140,7 @@ function commutes(pstr1::PauliString, pstr2::PauliString)
 end
 
 """
-    commutes(pstr1::PauliStringType, pstr2::PauliStringType)
+    commutes(pstr1::Integer, pstr2::Integer)
 
 Check if two integer Pauli strings commute.
 """
@@ -156,32 +163,6 @@ function commutes(psum1::Dict{TT,CT1}, psum2::Dict{TT,CT2}) where {TT,CT1,CT2}
     return isempty(comm)
 end
 
-"""
-    commutes(pauli1::Symbol, pauli2::PauliType)
-    commutes(pauli1::PauliType, pauli2::Symbol)
-
-Check if two Paulis commute where one is a `Symbol` and the other is in the integer representation.
-"""
-function commutes(pauli1::Symbol, pauli2::PauliType)
-    return commutes(pauli1, inttosymbol(pauli2))
-end
-
-function commutes(pauli1::PauliType, pauli2::Symbol)
-    return commutes(pauli2, pauli1)
-end
-
-"""
-    commutes(pauli1::Symbol, pauli2::Symbol)
-
-Check if two Paulis of type `Symbol` commute.
-"""
-function commutes(pauli1::Symbol, pauli2::Symbol)
-    if pauli1 == :I || pauli2 == :I
-        return true
-    else
-        return pauli1 == pauli2
-    end
-end
 
 ## Commutator
 """
@@ -216,7 +197,7 @@ commutator(psum::PauliSum, pstr::PauliString) = commutator(psum, PauliSum(pstr))
 commutator(pstr::PauliString, psum::PauliSum) = commutator(PauliSum(pstr), psum)
 
 """
-    commutator(pstr1::PauliStringType, pstr2::PauliStringType)
+    commutator(pstr1::Integer, pstr2::Integer)
 
 Calculate the commutator of two integer Pauli strings.
 Returns a tuple of the coefficient and the potentially integer Pauli string.
@@ -260,7 +241,7 @@ function commutator(psum1::Dict{TT,CT1}, psum2::Dict{TT,CT2}) where {TT,CT1,CT2}
 end
 
 ## Pauli product
-# TODO: Pauli product is not yet implemented for PauliSum
+
 """
     pauliprod(pstr1::PauliString, pstr2::PauliString)
 
@@ -273,80 +254,47 @@ function pauliprod(pstr1::PauliString, pstr2::PauliString)
 end
 
 """
-    pauliprod(pauli1::PauliStringType, pauli2::PauliStringType)
+    pauliprod(pstr1::Integer, pstr2::Integer)
 
 Calculate the product of two integer Pauli strings.
 """
-function pauliprod(pauli1::PauliStringType, pauli2::PauliStringType)
+function pauliprod(pstr1::PauliStringType, pstr2::PauliStringType)
     # This function is for when we need to globally check the sign of the product (like in general products of Paulis, not local Pauli gates)
-    pauli3 = _bitpaulimultiply(pauli1, pauli2)
-    sign = calculatesign(pauli1, pauli2, pauli3)
-    return pauli3, sign
+    pstr3 = _bitpaulimultiply(pstr1, pstr2)
+    sign = _calculatesign(pstr1, pstr2, pstr3)
+    return pstr3, sign
 end
 
-"""
-    pauliprod(pauli1::Symbol, pauli2::PauliType)
-
-Calculate the product of two Paulis where one is a `Symbol` and the other is in the integer representation.
-"""
-function pauliprod(pauli1::Symbol, pauli2::PauliType)
-    # assume that just one qubit is involved because we check commutation with a single Symbol
-    return pauliprod(symboltoint(pauli1), pauli2, 1:1)
-end
 
 """
-    pauliprod(pauli1::PauliType, pauli2::Symbol)
-
-Calculate the product of two Paulis where one is in the integer representation and the other is a `Symbol`.
-"""
-function pauliprod(pauli1::PauliType, pauli2::Symbol)
-    return pauliprod(pauli2, pauli1)
-end
-
-"""
-    pauliprod(pauli1::Symbol, pauli2::Symbol)
-
-Calculate the product of two Paulis of type `Symbol`.
-"""
-function pauliprod(pauli1::Symbol, pauli2::Symbol)
-    # assume that just one qubit is involved because we check commutation with a single Symbol
-    return pauliprod(symboltoint(pauli1), symboltoint(pauli2), 1:1)
-end
-
-"""
-    pauliprod(pauli1::PauliType, pauli2::PauliType)
+    pauliprod(pstr1::Integer, pstr1::Integer, changed_indices::Vector{Integer})
 
 Calculate the product of two integer Paulis. 
-Indicate via `changed_indices` which qubit sites to check. It can be any iterable.
+Indicate via `changed_indices` which qubit sites to check for calculating the sign.
+It can be any iterable.
 """
-function pauliprod(pauli1::PauliStringType, pauli2::PauliStringType, changed_indices)
+function pauliprod(pstr1::PauliStringType, pstr2::PauliStringType, changed_indices)
     # Calculate the Pauli product when you know on which sites the Paulis differ (changed_indices)
-    pauli3 = _bitpaulimultiply(pauli1, pauli2)
-    sign = calculatesign(pauli1, pauli2, pauli3, changed_indices)
-    return pauli3, sign
+    pstr3 = _bitpaulimultiply(pstr1, pstr2)
+    sign = _calculatesign(pstr1, pstr2, pstr3, changed_indices)
+    return pstr3, sign
 end
 
-"""
-    calculatesign(pauli1::PauliStringType, pauli2::PauliStringType)
 
-Calculate the sign of the product of two integer Pauli strings. Outcomes are either ±1 or ±i.
-"""
-function calculatesign(pauli1::PauliStringType, pauli2::PauliStringType)
-    return calculatesign(pauli1, pauli2, _bitpaulimultiply(pauli1, pauli2))
+# Calculate the sign of the product of two integer Pauli strings. Outcomes are either ±1 or ±i.
+function _calculatesign(pauli1::PauliType, pauli2::PauliType)
+    return _calculatesign(pauli1, pauli2, _bitpaulimultiply(pauli1, pauli2))
 end
 
-"""
-    calculatesign(pauli1::PauliStringType, pauli2::PauliStringType, pauli3::PauliStringType)
 
-Calculate the sign of the product of two integer Pauli strings. Outcomes are either ±1 or ±i.
-Takes the product of the Paulis `pauli3` as argument for efficiency. 
-"""
-function calculatesign(pauli1::PauliStringType, pauli2::PauliStringType, pauli3::PauliStringType)
+# Calculate the sign of the product of two integer Pauli strings. Outcomes are either ±1 or ±i.
+# Takes the product of the Paulis `pauli3` as argument for efficiency. 
+function _calculatesign(pauli1::PauliType, pauli2::PauliType, pauli3::PauliType)
     # Calculate the sign of the product, loop as long as neither of the Paulis are Identity
     sign = Complex{Int64}(1)
     identity_pauli = 0
     while pauli1 > identity_pauli || pauli2 > identity_pauli  # while both are not identity
-        sign *= calculatesign(pauli1, pauli2, pauli3, 1:1)
+        sign *= _calculatesign(pauli1, pauli2, pauli3, 1:1)
         pauli1 = _paulishiftright(pauli1)
         pauli2 = _paulishiftright(pauli2)
         pauli3 = _paulishiftright(pauli3)
@@ -354,18 +302,17 @@ function calculatesign(pauli1::PauliStringType, pauli2::PauliStringType, pauli3:
     return sign
 end
 
-"""
-    calculatesign(pauli1::PauliStringType, pauli2::PauliStringType, pauli3::PauliStringType, changed_indices)
 
-Calculate the sign of the product of two integer Pauli strings. Outcomes are either ±1 or ±i.
-Takes the product of the Paulis as argument for efficiency. 
-Indicate via `changed_indices` which qubit sites to check. It can be any iterable.
-"""
-function calculatesign(pauli1::PauliStringType, pauli2::PauliStringType, pauli3::PauliStringType, changed_indices)
+# 
+# Calculate the sign of the product of two integer Pauli strings. Outcomes are either ±1 or ±i.
+# Takes the product of the Paulis as argument for efficiency. 
+# Indicate via `changed_indices` which qubit sites to check. It can be any iterable.
+function _calculatesign(pauli1::PauliType, pauli2::PauliType, pauli3::PauliType, changed_indices)
     # Calculate the sign of the product but when you know on which sites the Paulis differ (changed_indices)
+    # TODO: make this using bitoperations
     sign = Complex{Int64}(1)
     for qind in changed_indices
-        sign *= generalizedlevicivita(
+        sign *= _generalizedlevicivita(
             getpauli(pauli1, qind),
             getpauli(pauli2, qind),
             getpauli(pauli3, qind)
@@ -374,16 +321,13 @@ function calculatesign(pauli1::PauliStringType, pauli2::PauliStringType, pauli3:
     return sign
 end
 
-"""
-    generalizedlevicivita(pauli1::PauliType, pauli2::PauliType, pauli3::PauliType)
 
-Calculate the sign of the product of two integer Paulis. Outcomes are either ±1 or ±i.
-Takes the product of the Paulis as argument for efficiency. 
-Indicate via `changed_indices` which qubit sites to check. It can be any iterable.
+# Calculate the sign of the product of two integer Paulis. Outcomes are either ±1 or ±i.
+# Takes the product of the Paulis as argument for efficiency. 
+# Indicate via `changed_indices` which qubit sites to check. It can be any iterable.
 
-Note, this function is the foundation of `calculatesign` but assumes that the only (potentially) non-identity Pauli is on the first site.
-"""
-function generalizedlevicivita(pauli1::PauliType, pauli2::PauliType, pauli3::PauliType)
+# Note, this function is the foundation of `calculatesign` but assumes that the only (potentially) non-identity Pauli is on the first site.
+function _generalizedlevicivita(pauli1::PauliType, pauli2::PauliType, pauli3::PauliType)
     # acts like levicivita but yields the correct sign for products with I or P^2, and takes care of the imaginary coefficients in Pauli products
     return generalized_levicivita_matrix[pauli1+1, pauli2+1, pauli3+1]
 end

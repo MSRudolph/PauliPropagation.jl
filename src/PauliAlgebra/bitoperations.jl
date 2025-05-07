@@ -58,11 +58,7 @@ end
 Base.hash(v::BitIntegers.AbstractBitUnsigned, h::UInt) = Base.hash_integer(v, h)
 
 
-"""
-    _countbitweight(pstr::PauliStringType)
-
-This function counts the number of 00 bit pairs in the integer Pauli string.
-"""
+# This function counts the number of 00 bit pairs in the integer Pauli string.
 function _countbitweight(pstr::PauliStringType)
     # get our super bit mask looking like ....1010101.
     mask = alternatingmask(pstr)
@@ -80,11 +76,8 @@ function _countbitweight(pstr::PauliStringType)
     return count_ones(res)
 end
 
-"""
-     _countbitxy(pstr::PauliStringType)
 
-This function counts the number of 01 (X) or 10 (Y) bit pairs in the integer Pauli string.
-"""
+# This function counts the number of 01 (X) or 10 (Y) bit pairs in the integer Pauli string.
 function _countbitxy(pstr::PauliStringType)
     # we use that 01 and 10 have exactly one 1 and one 0
 
@@ -101,11 +94,8 @@ function _countbitxy(pstr::PauliStringType)
     return count_ones(op)
 end
 
-"""
-    _countbityz(pstr::PauliStringType)
 
-This function counts the number of 10 (Y) or 11 (Z) bit pairs in the integer Pauli string.
-"""
+# This function counts the number of 10 (Y) or 11 (Z) bit pairs in the integer Pauli string.
 function _countbityz(pstr::PauliStringType)
     # we use that both have a 1 on the left bit
 
@@ -119,11 +109,8 @@ function _countbityz(pstr::PauliStringType)
     return count_ones(op)
 end
 
-"""
-    _bitcommutes(pstr1::PauliStringType, pstr2::PauliStringType)
 
-This function checks if two integer Pauli strings commute.
-"""
+# This function checks if two integer Pauli strings commute.
 function _bitcommutes(pstr1::PauliStringType, pstr2::PauliStringType)
 
     mask0 = alternatingmask(pstr1)
@@ -146,11 +133,8 @@ function _bitcommutes(pstr1::PauliStringType, pstr2::PauliStringType)
     return (count_ones(flags) % 2) == 0
 end
 
-"""
-    _bitpaulimultiply(pstr1::PauliStringType, pstr2::PauliStringType)
 
-XOR between two Pauli different non-identity strings gives the third one. Ignores signs or any coefficient.
-"""
+# XOR between two Pauli different non-identity strings gives the third one. Ignores signs or any coefficient.
 _bitpaulimultiply(pstr1::PauliStringType, pstr2::PauliStringType) = pstr1 ⊻ pstr2
 
 """
@@ -161,11 +145,8 @@ Shift to the right and truncate the first encoded Pauli string. Just a utility f
 _paulishiftright(pstr::PauliStringType) = pstr >> 2
 
 
-"""
-    _getpaulibits(pstr::PauliStringType, index::Integer)
 
-This function extracts the Pauli at position `index` from the integer Pauli string.
-"""
+# This function extracts the Pauli at position `index` from the integer Pauli string.
 function _getpaulibits(pstr::PauliStringType, index::Integer)
     # we need to shift the integer by 2 * (index - 1), then the first two bits are target Pauli
     bitindex = 2 * (index - 1)
@@ -177,11 +158,8 @@ function _getpaulibits(pstr::PauliStringType, index::Integer)
     return shifted_pstr & typeof(pstr)(3)
 end
 
-"""
-    _getbit(pauli::Integer, bitindex::Integer)
 
-Gets the bit at index `bitindex` in the integer Pauli string.
-"""
+# Gets the bit at index `bitindex` in the integer Pauli string.
 function _getbit(pauli::Integer, bitindex::Integer)
     # return integer with ...000[bit].
 
@@ -192,11 +170,8 @@ function _getbit(pauli::Integer, bitindex::Integer)
     return shifted_pauli & typeof(pauli)(1)
 end
 
-"""
-    _setpaulibits(pstr::PauliStringType, pauli::PauliType, index::Integer)
 
-This function sets the Pauli at position `index` in the integer Pauli string to `target_pauli`.
-"""
+# This function sets the Pauli at position `index` in the integer Pauli string to `target_pauli`.
 function _setpaulibits(pstr::PauliStringType, target_pauli::PauliType, index::Integer)
     # we need to shift the integer by 2 * (index - 1), then the first two bits are target Pauli
     bitindex = 2 * (index - 1)
@@ -211,11 +186,8 @@ function _setpaulibits(pstr::PauliStringType, target_pauli::PauliType, index::In
     return pstr
 end
 
-"""
-    _setbit(pstr::PauliStringType, target_bit::Integer, bitindex::Integer)
 
-Sets a bit at index `bitindex` in the integer Pauli string to the value of `target_bit`.
-"""
+# Sets a bit at index `bitindex` in the integer Pauli string to the value of `target_bit`.
 function _setbit(pstr::PauliStringType, target_bit::Integer, bitindex::Integer)
     # set bit at bitindex to bit
 
@@ -227,11 +199,8 @@ function _setbit(pstr::PauliStringType, target_bit::Integer, bitindex::Integer)
     return pstr
 end
 
-"""
-    _setbittoone(pstr::Integer, bitindex::Integer)
 
-Sets a bit at index `bitindex` in the integer Pauli string to 1.
-"""
+# Sets a bit at index `bitindex` in the integer Pauli string to 1.
 function _setbittoone(pstr::Integer, bitindex::Integer)
     # set bit at bitindex to 1
 
@@ -243,11 +212,8 @@ function _setbittoone(pstr::Integer, bitindex::Integer)
 end
 
 
-"""
-    _setbittozero(pstr::Integer, bitindex::Integer)
 
-Sets a bit at index `bitindex` in the integer Pauli string to 0.
-"""
+# Sets a bit at index `bitindex` in the integer Pauli string to 0.
 function _setbittozero(pstr::Integer, bitindex::Integer)
     # set bit at bitindex to 0
 
@@ -263,6 +229,7 @@ function _setbittozero(pstr::Integer, bitindex::Integer)
 end
 
 
+# This mask helps us to parallelize the bit operations over all qubits.
 @generated function alternatingmask(pstr::T) where {T<:PauliStringType}
     # define our super bit mask looking like ....1010101.
 

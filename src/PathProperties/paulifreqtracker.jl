@@ -30,11 +30,8 @@ Initializes `nsins`, `ncos`, and `freq` to zero.
 PauliFreqTracker(coeff::Number) = PauliFreqTracker(float(coeff), 0, 0, 0)
 
 ### Specializations for PauliRotations that incremet the nsins, ncos, and freq
-"""
-    applytoall!(gate::PauliRotation, theta, psum, aux_psum; kwargs...)
 
-Overload of `applytoall!` for `PauliRotation` gates acting onto Pauli sums with `PathProperties` coefficients. 
-"""
+# Overload of `applytoall!` for `PauliRotation` gates acting onto Pauli sums with `PathProperties` coefficients. 
 function applytoall!(gate::PauliRotation, theta, psum::PauliSum{TT,PProp}, aux_psum; kwargs...) where {TT<:PauliStringType,PProp<:PathProperties}
     # turn the (potentially) PauliRotation gate into a MaskedPauliRotation gate
     # this allows for faster operations

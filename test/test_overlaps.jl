@@ -45,3 +45,26 @@ const test_cases = [
     end
 
 end
+
+@testset "Test scalarproduct" begin
+
+    # Test the scalar product of two Pauli strings
+    pstr1 = PauliString(4, [:I, :Z], [1, 2], 1.0)
+    pstr2 = PauliString(4, [:X, :Y], [2, 3], -2.0)
+    pstr3 = PauliString(4, [:Z, :X], [3, 4], 0.2)
+
+    @test scalarproduct(pstr1, pstr2) == 0.0
+    @test scalarproduct(pstr1, pstr3) == 0.0
+    @test scalarproduct(pstr2, pstr3) == 0.0
+
+    orig_psum = PauliSum([pstr1, pstr2])
+    wrapped_psum = wrapcoefficients(orig_psum, PauliFreqTracker)
+    for psum in [orig_psum, wrapped_psum]
+        @test scalarproduct(psum, pstr3) == scalarproduct(pstr3, psum) == 0.0
+        @test scalarproduct(psum, pstr1) == scalarproduct(pstr1, psum) == 1.0
+        @test scalarproduct(psum, pstr2) == scalarproduct(pstr2, psum) == 4.0
+    end
+
+    @test scalarproduct(orig_psum, wrapped_psum) == scalarproduct(wrapped_psum, orig_psum) == 5.0
+    @test scalarproduct(orig_psum, orig_psum) == scalarproduct(wrapped_psum, wrapped_psum) == 5.0
+end

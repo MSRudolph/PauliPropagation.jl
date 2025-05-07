@@ -1,5 +1,5 @@
 # Defines mapping of integers 0, 1, 2, 3 to symbols :I, :X, :Y, :Z
-const pauli_symbols::Vector{Symbol} = [:I, :X, :Y, :Z]
+const pauli_symbols = (:I, :X, :Y, :Z)
 
 
 """
@@ -13,9 +13,9 @@ function identitypauli(nqubits::Integer)
 end
 
 """
-    identitypauli(TermType<:PauliStringType)
+    identitypauli(::PauliStringType)
 
-Returns the integer representation of the identity Pauli string with type `TermType`.
+Returns the integer representation of the identity Pauli string with type `PauliStringType`.
 """
 function identitypauli(::Type{TT}) where {TT<:PauliStringType}
     return zero(TT)
@@ -91,9 +91,9 @@ function symboltoint(nqubits::Integer, pauli::Symbol, qind::Integer)
 end
 
 """
-    symboltoint(::TermType, pauli::Symbol, qind::Integer)
+    symboltoint(::PauliStringType, pauli::Symbol, qind::Integer)
 
-Maps a single symbol `pauli` acting on the index `qind` to an integer Pauli string with type `TermType`.
+Maps a single symbol `pauli` acting on the index `qind` to an integer Pauli string with type `PauliStringType`.
 Other sites are set to the identity.
 """
 function symboltoint(::Type{TT}, pauli::Symbol, qind::Integer) where {TT<:PauliStringType}
@@ -103,9 +103,9 @@ function symboltoint(::Type{TT}, pauli::Symbol, qind::Integer) where {TT<:PauliS
 end
 
 """
-    symboltoint(::TermType, paulis, qinds)
+    symboltoint(::PauliStringType, paulis, qinds)
 
-Maps a vector of symbols `paulis` acting on the indices `qinds` to an integer Pauli string with type `TermType`.
+Maps a vector of symbols `paulis` acting on the indices `qinds` to an integer Pauli string with type `PauliStringType`.
 Other sites are set to the identity.
 `qinds` can be any iterable.
 """

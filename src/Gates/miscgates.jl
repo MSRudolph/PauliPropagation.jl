@@ -36,7 +36,7 @@ const _tgate_unitary = [[1 0]; [0 exp(1.0im * pi / 4)]]
 ## TransferMapGate
 # TODO: this should all be made immutable for performance
 """
-    TransferMapGate(transfer_map::Vector{Vector{Tuple{TermType,CoeffType}}}, qinds::Vector{Int})
+    TransferMapGate(transfer_map::Vector{Vector{Tuple{PauliStringType,CoeffType}}}, qinds::Vector{Int})
 
 A non-parametrized `StaticGate` defined by a transfer map acting on the qubits `qinds`.
 Transfer maps can be constructed manually or generated via `totransfermap()`.

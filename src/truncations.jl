@@ -1,96 +1,9 @@
-## TODO: Make actual use of this ile or remove.
-
-"""
-    truncateweight(pstr::PauliStringType, max_weight::Real)
-    
-Return `true` if an integer Pauli string should be truncated because its weight (i.e., number of non-identity Paulis) is larger than `max_weight`. 
-"""
-function truncateweight(pstr::PauliStringType, max_weight::Real)
-    return countweight(pstr) > max_weight
-end
-
-"""
-    truncatemincoeff(coeff, min_abs_coeff::Real)
-
-Return `true` if `abs(coeff) < min_abs_coeff`. Truncations on coefficients should default to false if it is not applicable for a type.
-"""
-function truncatemincoeff(coeff, min_abs_coeff::Real)
-    return false
-end
-
-"""
-    truncatemincoeff(coeff::Float64, min_abs_coeff::Real)
-
-Return `true` if `abs(coeff) < min_abs_coeff`. 
-"""
-function truncatemincoeff(coeff::Real, min_abs_coeff::Real)
-    return abs(coeff) < min_abs_coeff
-end
-
-
-"""
-    truncatemincoeff(path_property::PathProperties, min_abs_coeff::Real)
-
-Return `true` if `abs(path_property.coeff) < min_abs_coeff`. 
-"""
-function truncatemincoeff(path_property::PProp, min_abs_coeff::Real) where {PProp<:PathProperties}
-    if hasfield(PProp, :coeff)
-        return abs(path_property.coeff) < min_abs_coeff
-    else
-        return false
-    end
-end
-
-
-"""
-    truncatefrequency(coeff, max_freq::Real)
-
-Return `true` if  `PathProperties.freq > max_freq`. Truncations on coefficients should default to false if it is not applicable for a type.
-"""
-function truncatefrequency(coeff, max_freq::Real)
-    return false
-end
-
-"""
-    truncatefrequency(path_properties::PathProperties, max_freq::Real)
-
-Return `true` if  `path_properties.freq > max_freq`.
-"""
-function truncatefrequency(path_properties::PProp, max_freq::Real) where {PProp<:PathProperties}
-    if hasfield(PProp, :freq)
-        return path_properties.freq > max_freq
-    else
-        return false
-    end
-end
-
-"""
-    truncatesins(coeff, max_sins::Real)
-
-Return `true` if  `PathProperties.nsins > max_sins`. Truncations on coefficients should default to false if it is not applicable for a type.
-"""
-function truncatesins(coeff, max_sins::Real)
-    return false
-end
-"""
-    truncatesins(path_properties::PathProperties, max_sins::Real)
-
-Return `true` if  `path_properties.nsins > max_sins`.
-"""
-function truncatesins(path_properties::PProp, max_sins::Real) where {PProp<:PathProperties}
-    if hasfield(PProp, :nsins)
-        return path_properties.nsins > max_sins
-    else
-        return false
-    end
-end
-
 # Custom truncation function
 
 # Define the custom truncation functions by dissipation-assisted damping
 """
     truncatedampingcoeff(
-        pstr::PauliStringType, 
+        pstr::Integer, 
         coeff::Real, 
         gamma::Real, 
         min_abs_coeff::Float64
@@ -130,3 +43,70 @@ function truncatedampingcoeff(
 
     return abs(tonumber(coeff)) * 10.0^(-gamma * countweight(pstr)) < min_abs_coeff
 end
+
+
+## TODO: Make actual use of this file or remove.
+## from here on, the are just for the backend
+
+## Truncations on the Pauli string:
+
+# Return `true` if an integer Pauli string should be truncated because its weight (i.e., number of non-identity Paulis) is larger than `max_weight`. 
+function truncateweight(pstr::PauliStringType, max_weight::Real)
+    return countweight(pstr) > max_weight
+end
+
+
+## Truncations on the coefficient:
+
+# Truncations on unsuitable coefficient types defaults to false.
+function truncatemincoeff(coeff, min_abs_coeff::Real)
+    return false
+end
+
+
+# Return `true` if `abs(coeff) < min_abs_coeff`. 
+function truncatemincoeff(coeff::Number, min_abs_coeff::Real)
+    return abs(coeff) < min_abs_coeff
+end
+
+
+# Return `true` if `abs(path_property.coeff) < min_abs_coeff`. 
+function truncatemincoeff(path_property::PProp, min_abs_coeff::Real) where {PProp<:PathProperties}
+    if hasfield(PProp, :coeff)
+        return abs(path_property.coeff) < min_abs_coeff
+    else
+        return false
+    end
+end
+
+
+# Return `true` if  `PathProperties.freq > max_freq`. Truncations on coefficients should default to false if it is not applicable for a type.
+function truncatefrequency(coeff, max_freq::Real)
+    return false
+end
+
+
+# Return `true` if  `path_properties.freq > max_freq`.
+function truncatefrequency(path_properties::PProp, max_freq::Real) where {PProp<:PathProperties}
+    if hasfield(PProp, :freq)
+        return path_properties.freq > max_freq
+    else
+        return false
+    end
+end
+
+# Return `true` if  `PathProperties.nsins > max_sins`. Truncations on coefficients should default to false if it is not applicable for a type.
+function truncatesins(coeff, max_sins::Real)
+    return false
+end
+
+
+# Return `true` if  `path_properties.nsins > max_sins`.
+function truncatesins(path_properties::PProp, max_sins::Real) where {PProp<:PathProperties}
+    if hasfield(PProp, :nsins)
+        return path_properties.nsins > max_sins
+    else
+        return false
+    end
+end
+

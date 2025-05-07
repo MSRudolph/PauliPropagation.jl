@@ -107,10 +107,6 @@ export
 
 include("truncations.jl")
 export
-    truncateweight,
-    truncatemincoeff,
-    truncatefrequency,
-    truncatesins,
     truncatedampingcoeff
 
 include("Propagation/Propagation.jl")
@@ -130,11 +126,9 @@ export
     overlapwithzero,
     overlapwithplus,
     overlapwithones,
-    orthogonaltozero,
-    orthogonaltoplus,
     overlapwithcomputational,
-    overlapwithpaulisum,
     overlapwithmaxmixed,
+    scalarproduct,
     filter,
     filter!,
     zerofilter,

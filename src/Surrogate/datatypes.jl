@@ -1,13 +1,14 @@
-"""
-Abstract node type for the Pauli propagation Surrogate 
-"""
+###
+##
+# This file contains the types with which we represent the surrogate graph.
+##
+###
+
+# Abstract node type for the Pauli propagation Surrogate #
 abstract type CircuitNode end
 
-"""
-    EvalEndNode(pstr::Integer, coefficient::Real)
 
-Node type for the Pauli strings in the observable to be backpropagated.
-"""
+# Node type for the Pauli strings in the observable to be backpropagated.
 @kwdef mutable struct EvalEndNode <: CircuitNode
     pstr::Int
     coefficient::Float64
@@ -15,18 +16,12 @@ Node type for the Pauli strings in the observable to be backpropagated.
     is_evaluated::Bool = false
 end
 
-"""
-    EvalEndNode(pstr::Integer)
 
-Constructor for `EvalEndNode` with a default coefficient of 1.0.
-"""
+# Constructor for `EvalEndNode` with a default coefficient of 1.0.
 EvalEndNode(pstr::Integer) = EvalEndNode(pstr, 1.0)
 
-"""
-    PauliRotationNode(parents::Vector{Union{EvalEndNode,PauliRotationNode}}, trig_inds::Vector{Int}, signs::Vector{Int}, param_idx::Int)
 
-Surrogate graph node for a Pauli rotation gate.
-"""
+# Surrogate graph node for a Pauli rotation gate.
 @kwdef mutable struct PauliRotationNode <: CircuitNode
     parents::Vector{Union{EvalEndNode,PauliRotationNode}}
     trig_inds::Vector{Int}
@@ -36,20 +31,20 @@ Surrogate graph node for a Pauli rotation gate.
     is_evaluated::Bool = false
 end
 
-"""
-Pretty print for `CircuitNode`
-"""
+
+# Pretty print for `CircuitNode`
 Base.show(io::IO, node::CircuitNode) = print(io, "$(typeof(node))($(length(node.parents)) parent(s), param_idx=$(node.param_idx))")
-"""
-Pretty print for `EvalEndNode`
-"""
+
+# Pretty print for `EvalEndNode`
 Base.show(io::IO, node::EvalEndNode) = print(io, "$(typeof(node))(Pauli string=$(node.pstr), coefficient=$(node.coefficient))")
 
 ## PathProperties Type
 """
+    NodePathProperties(node::CircuitNode)
     NodePathProperties(node::CircuitNode, nsins::Int, ncos::Int, freq::Int)
 
 Surrogate `PathProperties` type. Carries `CircuitNode`s instead of numerical coefficients.
+If `nsins`, `ncos`, and `freq` are not provided, they are initialized to 0.
 """
 struct NodePathProperties <: PathProperties
     node::Union{EvalEndNode,PauliRotationNode}
@@ -58,17 +53,13 @@ struct NodePathProperties <: PathProperties
     freq::Int
 end
 
-"""
-Pretty print for PauliFreqTracker
-"""
+
+# Pretty print for PauliFreqTracker
 Base.show(io::IO, pth::NodePathProperties) = print(io, "NodePathProperties($(typeof(pth.node)), nsins=$(pth.nsins), ncos=$(pth.ncos), freq=$(pth.freq))")
 
 
-"""
-    NodePathProperties(node::CircuitNode)
 
-One-argument constructor for `NodePathProperties`. Initializes `nsins`, `ncos`, and `freq` to 0.
-"""
+# One-argument constructor for `NodePathProperties`. Initializes `nsins`, `ncos`, and `freq` to 0.
 NodePathProperties(node::CircuitNode) = NodePathProperties(node, 0, 0, 0)
 
 
@@ -116,13 +107,6 @@ function setcummulativevalue(node::CircuitNode, val)
     return
 end
 
-"""
-    set!(psum::Dict{TermType, NodePathProperties}, pstr::TermType, path::NodePathProperties)
-
-In-place setting the coefficient of a Pauli string in a Pauli sum dictionary.
-The type of the Pauli string needs to be the keytype=`TermType` of the dictionary, and the coefficient `coeff` needs to be the valuetype=`NodePathProperties`.
-If the coefficient is 0, the Pauli string is removed from the dictionary.
-"""
 function set!(psum::Dict{TT,NodePathProperties}, pstr::TT, path::NodePathProperties) where {TT}
     psum[pstr] = path
     return psum
