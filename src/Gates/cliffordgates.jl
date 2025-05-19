@@ -62,7 +62,7 @@ const _default_clifford_map = Dict{Symbol,Vector{Tuple{UInt8,Int64}}}(
     clifford_map
 
 Global dictionary of Clifford gates and their action on Pauli strings.
-Currently supported Clifford gates are `:H`, `:X`, `:Y`, `:Z`, `:SX`, `:SY`, `:S` (`:SZ`) , `:CNOT`, `:CZ`, :ZZpihalf`, and `:SWAP`.
+Currently supported Clifford gates are `:H`, `:X`, `:Y`, `:Z`, `:SX`, `:SY`, `:S` (`:SZ`) , `:CNOT`, `:CZ`, `:ZZpihalf`, and `:SWAP`.
 If one indexes into the returned arrays with the integer that corresponds to the partial Pauli string,
 the returned tuple is `(sign, partial_pstr)` where `sign` is the sign change and `partial_pstr` is the new partial Pauli string.
 """
@@ -133,7 +133,7 @@ end
     composecliffordmaps(circuit::Vector{CliffordGate})
 
 Compose a circuit of Clifford gates into a single Clifford map.
-The length of the map is `4^nq`` where `nq` is the maximum qubit index in the circuit.
+The length of the map is `4^nq` where `nq` is the maximum qubit index in the circuit.
 The resulting clifford map can be added to the global `clifford_map` with a custom Clifford gate name.
 The maximum number of qubits is 4 due to current restrictions of `UInt8`.
 Even if all gates only act on one qubit, that qubit index will determine the dimensionality of the map.
