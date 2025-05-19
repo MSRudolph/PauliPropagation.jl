@@ -29,6 +29,13 @@ using Documenter, PauliPropagation
 
 # Generate doc HTML files, saved to build/
 makedocs(
+    # Add favicon.ico
+    format=Documenter.HTML(
+        assets=[
+            "assets/favicon.ico",
+        ],
+    ),    
+    
     sitename="Pauli Propagation",
 
     # determines site layout
