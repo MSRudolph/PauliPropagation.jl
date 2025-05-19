@@ -67,9 +67,9 @@ observable = PauliString(nqubits, :Z, 16) # I...IZI...I
 
 Our goal is to compute
 
-$$
+```math
 \text{Tr}[U^\dagger O U \rho].
-$$
+```
 
 A simple unitary $U$ is the brickwork circuit, composed of two qubit gates alternating neighbouring sites. We define the circuit connectivity by 
 
@@ -79,9 +79,9 @@ topology = bricklayertopology(nqubits; periodic=true)
 
 where `periodic` specifies the boundary condition of the gates. The library has built-in circuits with e.g. a circuit containing alternating RX and RZZ Pauli gates on the topology. This can be defined by Trotterization of a transverse field Ising Hamiltonian with $l$ steps
 
-$$
+```math
 U = \prod_{a=1}^{l} \prod_{j=1}^n e^{-i dt   X_j} e^{-i dt Z_j Z_{j+1}}.
-$$
+```
 
 ```julia
 nlayers = 32 # l as above
@@ -111,9 +111,9 @@ max_weight=max_weight, min_abs_coeff=min_abs_coeff)
 ```
 The output `pauli_sum` gives us an approximation of propagated Paulis 
 
-$$
+```math
 U^\dagger O U \approx \sum_{\alpha} c_{\alpha} P_{\alpha}
-$$
+```
 
 Finally we can compute expectation values with an initial state such as $\rho = (|0 \rangle  \langle 0 |)^{\otimes n}$
 ```julia
@@ -124,15 +124,15 @@ overlapwithzero(pauli_sum)
 
 This computation is efficient because the initial state can be written in terms of only $\mathbb{I}$ and $Z$ strings
 
-$$
+```math
 \rho = (\frac{\mathbb{I} + Z}{2})^{\otimes n}
-$$
+```
 
 Therefore, the trace is equivalent to sum over coefficients of such Pauli strings 
 
-$$
+```math
 \mathrm{Tr}[U^\dagger O U \rho] \approx \sum_{\alpha \in \{\mathbb{I}, Z\}\, \text{strings}} c_{\alpha}.
-$$
+```
 
 ## Important Notes and Caveats
 All of the following points can be addressed by you writing the necessary missing code due to the nice extensibility of Julia.
