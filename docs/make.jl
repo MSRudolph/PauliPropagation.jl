@@ -34,9 +34,7 @@ makedocs(
         assets=[
             "assets/favicon.ico",
         ],
-    ),    
-    
-    sitename="Pauli Propagation",
+    ), sitename="PauliPropagation.jl",
 
     # determines site layout
     pages=[
@@ -47,7 +45,7 @@ makedocs(
         # the README.md contents into Documenter.jl 
         # pages. We manually override its name in the
         # left navbar to be "Introduction"
-        "Introduction" => "index.md",
+        "Home" => "index.md",
 
         # these other 'top-level' files DO exist, and
         # have names inferred from their section names
