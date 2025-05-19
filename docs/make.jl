@@ -50,9 +50,8 @@ makedocs(
         # these other 'top-level' files DO exist, and
         # have names inferred from their section names
 
-        # Remove installation bc it's in README
-        # "installation.md",
-        "tutorials.md",
+        # TODO: add this back once we know how to embed the Jupyter notebooks
+        # "tutorials.md",
 
         # these 'lower-level' files also exist, and will
         # be grouped under an 'API' section in the navbar
