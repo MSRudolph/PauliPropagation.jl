@@ -1,24 +1,18 @@
 # Gates
 
-## Cliffords
+## Clifford Gates
 
 ```@autodocs
 Modules = [PauliPropagation]
 Pages = ["src/Gates/cliffordgates.jl"]
+Order = [:type, :function, :constant]
 ```
 
-## Pauli rotations
+## Pauli Rotations
 
 ```@autodocs
 Modules = [PauliPropagation]
 Pages = ["src/Gates/paulirotations.jl"]
-```
-
-## Frozen
-
-```@autodocs
-Modules = [PauliPropagation]
-Pages = ["src/Gates/frozengates.jl"]
 ```
 
 ## Noise
@@ -33,4 +27,11 @@ Pages = ["src/Gates/noisechannels.jl"]
 ```@autodocs
 Modules = [PauliPropagation]
 Pages = ["src/Gates/miscgates.jl"]
+```
+
+## Frozen Gates
+
+```@autodocs
+Modules = [PauliPropagation]
+Pages = ["src/Gates/frozengates.jl"]
 ```
