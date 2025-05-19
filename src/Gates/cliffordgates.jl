@@ -1,8 +1,3 @@
-"""
-    
-
-
-"""
 struct CliffordGate <: StaticGate
     symbol::Symbol
     qinds::Vector{Int}
