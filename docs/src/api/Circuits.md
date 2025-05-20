@@ -2,11 +2,7 @@
 
 ## Builders
 
-<!-- ```@autodocs
-Modules = [PauliPropagation]
-Pages = ["src/Circuits/builders.jl"]
-``` -->
-```
+```@docs
 tfitrottercircuit
 tiltedtfitrottercircuit
 heisenbergtrottercircuit
