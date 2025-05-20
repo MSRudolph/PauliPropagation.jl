@@ -13,6 +13,7 @@ Order = [:type, :function, :constant]
 ```@autodocs
 Modules = [PauliPropagation]
 Pages = ["src/Gates/paulirotations.jl"]
+Order = [:type, :function, :constant]
 ```
 
 ## Noise Channels
@@ -20,6 +21,7 @@ Pages = ["src/Gates/paulirotations.jl"]
 ```@autodocs
 Modules = [PauliPropagation]
 Pages = ["src/Gates/noisechannels.jl"]
+Order = [:type, :function, :constant]
 ```
 
 ## Misc
@@ -27,6 +29,7 @@ Pages = ["src/Gates/noisechannels.jl"]
 ```@autodocs
 Modules = [PauliPropagation]
 Pages = ["src/Gates/miscgates.jl"]
+Order = [:type, :function, :constant]
 ```
 
 ## Frozen Gates
@@ -34,4 +37,5 @@ Pages = ["src/Gates/miscgates.jl"]
 ```@autodocs
 Modules = [PauliPropagation]
 Pages = ["src/Gates/frozengates.jl"]
+Order = [:type, :function, :constant]
 ```
