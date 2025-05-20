@@ -44,20 +44,13 @@ function tfitrottercircuit(nqubits::Integer, nlayers::Integer; topology=nothing,
 end
 
 """
-    tiltedtfitrottercircuit(nqubits, n_layers; topology=nothing)
+    tiltedtfitrottercircuit(nqubits::Integer, nlayers::Integer; topology=nothing)
 
-Returns a Trottterized circuit for the tilted transverse field Ising model.
-H = Sum_{(i, i+1) in topology} Z_i Z_{i+1} 
-  + Sum_{i=1}^{nqubits} Z_i + Sum_{i=1}^{nqubits} X_i
-
-# Arguments
-- `nqubits::Integer`: The number of qubits in the circuit.
-- `n_layers::Integer`: The number of Trotter steps to perform.
-- `topology=nothing`: The topology of the qubits in the circuit. 
-    Default (nothing): A linear chain.
-
-# Returns
-The Trottterized circuit as a vector of Gate.
+Create a circuit that corresponds to a Trotterization of the transverse-field Ising Hamiltonian. 
+```math
+H = ∑_{(i,j) in topology} J_{ij} Z_i Z_j 
+  + ∑_{i=1...nqubits} h_i Z_i +  ∑_{i=1...nqubits} b_i X_i
+```
 """
 function tiltedtfitrottercircuit(nqubits::Integer, layers::Integer; topology=nothing)
     # TODO(YT): the ordering of the Trotter circuit layer will be important
