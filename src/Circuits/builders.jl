@@ -73,9 +73,7 @@ end
 
 Create a circuit that corresponds to a Trotterization of the Heisenberg Hamiltonian.
 ```math
-H = ∑_{(i,j) ∈ topology} Jzz_{ZZ} Z_i Z_j 
-+ ∑_{(i,j) ∈ topology} Jxx_{XX} X_i X_j
-+ ∑_{(i,j) ∈ topology} Jyy_{YY} Y_i Y_j
+H = ∑_{(i,j) ∈ topology} Jzz_{ij} Z_i Z_j + Jxx_{ij} X_i X_j + Jyy_{ij} Y_i Y_j
 ```
 This returns only the sequence of gates, not their parameters.
 A topology can be specified as a list of pairs of qubit indices. If no topology is specified, a bricklayer topology is used.

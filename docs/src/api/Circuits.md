@@ -12,6 +12,7 @@ Pages = ["src/Circuits/builders.jl"]
 ```@autodocs
 Modules = [PauliPropagation]
 Pages = ["src/Circuits/topologies.jl"]
+Order = [:function, :constant]
 ```
 
 ## Utils
