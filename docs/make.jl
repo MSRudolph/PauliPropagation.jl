@@ -56,15 +56,15 @@ makedocs(
         # these 'lower-level' files also exist, and will
         # be grouped under an 'API' section in the navbar
         "API" => [
-            "api/Circuits.md",
-            "api/Gates.md",
-            "api/PathProperties.md",
             "api/PauliAlgebra.md",
-            "api/PauliTransferMatrix.md",
+            "api/Gates.md",
+            "api/Circuits.md",
             "api/Propagation.md",
+            "api/StateOverlap.md",
+            "api/PathProperties.md",
+            "api/PauliTransferMatrix.md",
             "api/Surrogate.md",
             "api/NumericalCertificates.md",
-            "api/StateOverlap.md",
             "api/Truncations.md"
         ]
     ]
