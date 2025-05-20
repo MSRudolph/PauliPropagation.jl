@@ -8,35 +8,35 @@
 
 # Depolarzing noise channel
 """
-Abstract type for parametrized noise channels
+Abstract type for parametrized noise channels.
 """
 abstract type ParametrizedNoiseChannel <: ParametrizedGate end
 
 """
-Abstract type for Pauli noise, i.e., noise that is diagonal in Pauli basis
+Abstract type for Pauli noise, i.e., noise that is diagonal in Pauli basis.
 """
 abstract type PauliNoise <: ParametrizedNoiseChannel end
 
 
-
+"""
+A type for depolarizing noise channels carrying the qubit index on which they act.
+"""
 struct DepolarizingNoise <: PauliNoise
     qind::Int
 
     @doc """
         DepolarizingNoise(qind::Int)
+        DepolarizingNoise(qind::Int, p::Real)
 
     A depolarizing noise channel acting on the qubit at index `qind`.
+    If `p` is provided, this returns a frozen gate with that noise strength.
     Will damp X, Y, and Z Paulis equally by a factor of `1-p`.
     """
     DepolarizingNoise(qind::Int) = (_qinds_check(qind); new(qind))
 end
 
-"""
-    DepolarizingNoise(qind::Int, p::Real)
 
-A frozen depolarizing noise channel acting on the qubit at index `qind` with noise strength `p`.
-Will damp X, Y, and Z Paulis equally by a factor of `1-p`.
-"""
+# the frozen gate version
 function DepolarizingNoise(qind::Int, p::Real)
     _check_noise_strength(DepolarizingNoise, p)
 
@@ -48,9 +48,9 @@ function isdamped(::DepolarizingNoise, pauli::PauliType)
 end
 
 
-
-## The other Pauli noise channels
-# Pauli-X noise channel
+"""
+A type for Pauli X noise channels carrying the qubit index on which they act.
+"""
 struct PauliXNoise <: PauliNoise
     qind::Int
 
@@ -80,7 +80,9 @@ function isdamped(::PauliXNoise, pauli::PauliType)
 end
 
 
-# Pauli-Y noise channel
+"""
+A type for Pauli Y noise channels carrying the qubit index on which they act.
+"""
 struct PauliYNoise <: PauliNoise
     qind::Int
 
@@ -110,7 +112,9 @@ function isdamped(::PauliYNoise, pauli::PauliType)
 end
 
 
-# Pauli-Z noise channel
+"""
+A type for Pauli Z noise channels carrying the qubit index on which they act.
+"""
 struct PauliZNoise <: PauliNoise
     qind::Int
 
@@ -159,15 +163,13 @@ const DephasingNoise = PauliZNoise
 struct PauliXDamping <: PauliNoise
     qind::Int
 
-    @doc """
-        PauliXDamping(qind::Int)
-        PauliXDamping(qind::Int, p::Real)
+    #     PauliXDamping(qind::Int)
+    #     PauliXDamping(qind::Int, p::Real)
 
-    A Pauli-X noise damping acting on the qubit at index `qind`.
-    If `p` is provided, this returns a frozen gate with that damping strength.
-    Will damp X Paulis by a factor of `1-p`. 
-    This alone is not a valid quantum channel.
-    """
+    # A Pauli-X noise damping acting on the qubit at index `qind`.
+    # If `p` is provided, this returns a frozen gate with that damping strength.
+    # Will damp X Paulis by a factor of `1-p`. 
+    # This alone is not a valid quantum channel.
     PauliXDamping(qind::Int) = (_qinds_check(qind); new(qind))
 end
 
@@ -188,14 +190,12 @@ end
 struct PauliYDamping <: PauliNoise
     qind::Int
 
-    @doc """
-        PauliYDamping(qind::Int)
+    #     PauliYDamping(qind::Int)
 
-    A Pauli-Y noise damping acting on the qubit at index `qind`.
-    If `p` is provided, this returns a frozen gate with that damping strength.
-    Will damp Y Paulis by a factor of `1-p`. 
-    This alone is not a valid quantum channel.
-    """
+    # A Pauli-Y noise damping acting on the qubit at index `qind`.
+    # If `p` is provided, this returns a frozen gate with that damping strength.
+    # Will damp Y Paulis by a factor of `1-p`. 
+    # This alone is not a valid quantum channel.
     PauliYDamping(qind::Int) = (_qinds_check(qind); new(qind))
 end
 
@@ -216,14 +216,12 @@ end
 struct PauliZDamping <: PauliNoise
     qind::Int
 
-    @doc """
-        PauliZDamping(qind::Int)
+    #     PauliZDamping(qind::Int)
 
-    A Pauli-Z noise damping acting on the qubit at index `qind`.
-    If `p` is provided, this returns a frozen gate with that damping strength.
-    Will damp Z Paulis by a factor of `1-p`. 
-    This alone is not a valid quantum channel.
-    """
+    # A Pauli-Z noise damping acting on the qubit at index `qind`.
+    # If `p` is provided, this returns a frozen gate with that damping strength.
+    # Will damp Z Paulis by a factor of `1-p`. 
+    # This alone is not a valid quantum channel.
     PauliZDamping(qind::Int) = (_qinds_check(qind); new(qind))
 end
 
@@ -241,16 +239,21 @@ end
 
 ## Amplitude damping noise
 """
-    AmplitudeDampingNoise(qind::Int)
-    AmplitudeDampingNoise(qind::Int, gamma::Real)
-
-An amplitude damping noise channel acting on the qubit at index `qind`.
-If `gamma` is provided, this returns a frozen gate with that noise strength.
-Damps X and Y Paulis by a factor of sqrt(1-gamma)
-and splits Z into and gamma * I and (1-gamma) * Z component (in the transposed Heisenberg picture).
+A type for amplitude damping noise channels carrying the qubit index on which they act.
 """
 struct AmplitudeDampingNoise <: ParametrizedNoiseChannel
     qind::Int
+
+    @doc """
+        AmplitudeDampingNoise(qind::Int)
+        AmplitudeDampingNoise(qind::Int, gamma::Real)
+
+    An amplitude damping noise channel acting on the qubit at index `qind`.
+    If `gamma` is provided, this returns a frozen gate with that noise strength.
+    Damps X and Y Paulis by a factor of sqrt(1-gamma)
+    and splits Z into and gamma * I and (1-gamma) * Z component (in the transposed Heisenberg picture).
+    """
+    AmplitudeDampingNoise(qind::Int) = (_qinds_check(qind); new(qind))
 end
 
 
