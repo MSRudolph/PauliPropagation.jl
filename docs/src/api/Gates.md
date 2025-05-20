@@ -15,7 +15,7 @@ Modules = [PauliPropagation]
 Pages = ["src/Gates/paulirotations.jl"]
 ```
 
-## Noise
+## Noise Channels
 
 ```@autodocs
 Modules = [PauliPropagation]
