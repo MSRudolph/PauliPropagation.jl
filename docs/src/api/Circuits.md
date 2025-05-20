@@ -2,10 +2,27 @@
 
 ## Builders
 
-```@autodocs
+<!-- ```@autodocs
 Modules = [PauliPropagation]
 Pages = ["src/Circuits/builders.jl"]
+``` -->
 ```
+tfitrottercircuit
+tiltedtfitrottercircuit
+heisenbergtrottercircuit
+hardwareefficientcircuit
+efficientsu2circuit
+su4circuit
+rxlayer!
+rylayer!
+rzlayer!
+rxxlayer!
+ryylayer!
+rzzlayer!
+qcnncircuit
+appendSU4!
+```
+
 
 ## Topologies
 
