@@ -1,3 +1,6 @@
+"""
+A type for a Clifford gate that carries the name of the gate and qubit indices on which it acts.
+"""
 struct CliffordGate <: StaticGate
     symbol::Symbol
     qinds::Vector{Int}

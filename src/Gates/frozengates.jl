@@ -6,16 +6,19 @@
 ##
 ###
 
-"""
-    FrozenGate(gate::ParametrizedGate, parameter::Number)
 
-A `StaticGate` that wraps a `ParametrizedGate` with a fixed parameter.
-These are used to fix the parameter of `ParametrizedGate` at the time of circuit construction.
-This can be convenient but might exclude this parameter from being, e.g., differentiated by external libraries.
-"""
-struct FrozenGate{GateType<:ParametrizedGate,T<:Number} <: StaticGate
+struct FrozenGate{GateType<:ParametrizedGate,T} <: StaticGate
     gate::GateType
     parameter::T
+
+    @doc """
+        FrozenGate(gate::ParametrizedGate, parameter::Number)
+
+    A `StaticGate` that wraps a `ParametrizedGate` with a fixed parameter.
+    These are used to fix the parameter of `ParametrizedGate` at the time of circuit construction.
+    This can be convenient but might exclude this parameter from being, e.g., differentiated by external libraries.
+    """
+    FrozenGate(gate, parameter) = new(gate, parameter)
 end
 
 

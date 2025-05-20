@@ -19,7 +19,7 @@ abstract type PauliNoise <: ParametrizedNoiseChannel end
 
 
 """
-A type for depolarizing noise channels carrying the qubit index on which they act.
+A type for a depolarizing noise channel carrying the qubit index on which it acts.
 """
 struct DepolarizingNoise <: PauliNoise
     qind::Int
@@ -49,7 +49,7 @@ end
 
 
 """
-A type for Pauli X noise channels carrying the qubit index on which they act.
+A type for a Pauli X noise channel carrying the qubit index on which it acts.
 """
 struct PauliXNoise <: PauliNoise
     qind::Int
@@ -81,7 +81,7 @@ end
 
 
 """
-A type for Pauli Y noise channels carrying the qubit index on which they act.
+A type for a Pauli Y noise channel carrying the qubit index on which it acts.
 """
 struct PauliYNoise <: PauliNoise
     qind::Int
@@ -113,7 +113,7 @@ end
 
 
 """
-A type for Pauli Z noise channels carrying the qubit index on which they act.
+A type for a Pauli Z noise channel carrying the qubit index on which it acts.
 """
 struct PauliZNoise <: PauliNoise
     qind::Int
@@ -239,7 +239,7 @@ end
 
 ## Amplitude damping noise
 """
-A type for amplitude damping noise channels carrying the qubit index on which they act.
+A type for an amplitude damping noise channel carrying the qubit index on which it acts.
 """
 struct AmplitudeDampingNoise <: ParametrizedNoiseChannel
     qind::Int
