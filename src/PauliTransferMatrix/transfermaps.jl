@@ -29,7 +29,7 @@ function totransfermap(nq::Integer, circuit, thetas=nothing)
 end
 
 """
-    totransfermap(ptm::Matrix)
+    totransfermap(ptm::AbstractMatrix)
 
 Computes the Pauli transfer map acting on `nq` qubits from a Pauli Transfer Matrix (PTM).
 The PTM should be the matrix representation of a gate in Pauli basis.

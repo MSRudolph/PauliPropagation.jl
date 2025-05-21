@@ -1,7 +1,8 @@
 """
     getinttype(nqubits::Integer)
 
-Function to return the smallest integer type that can hold nqubits for memory and speed.
+Function to return the smallest integer type that can hold `nqubits`.
+This is the type that will be used internally for representing Pauli strings.
 """
 function getinttype(nqubits::Integer)
     # we need 2 bits per qubit
@@ -137,11 +138,9 @@ end
 # XOR between two Pauli different non-identity strings gives the third one. Ignores signs or any coefficient.
 _bitpaulimultiply(pstr1::PauliStringType, pstr2::PauliStringType) = pstr1 ⊻ pstr2
 
-"""
-    _paulishiftright(pstr::PauliStringType)
 
-Shift to the right and truncate the first encoded Pauli string. Just a utility function.
-"""
+
+# Shift to the right and truncate the first encoded Pauli string. Just a utility function.
 _paulishiftright(pstr::PauliStringType) = pstr >> 2
 
 

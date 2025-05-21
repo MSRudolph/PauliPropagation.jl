@@ -2,30 +2,20 @@
 const pauli_symbols = (:I, :X, :Y, :Z)
 
 
-"""
-    identitypauli(nqubits::Integer)
-
-Returns the integer representation of the identity Pauli string acting on `nqubits` qubits.
-The type of will be the smallest integer type that can hold the number of qubits, as given by `getinttype(nqubits)`.
-"""
+# Returns the integer representation of the identity Pauli string acting on `nqubits` qubits.
+# The type of will be the smallest integer type that can hold the number of qubits, as given by `getinttype(nqubits)`.
 function identitypauli(nqubits::Integer)
     return identitypauli(getinttype(nqubits))
 end
 
-"""
-    identitypauli(::PauliStringType)
 
-Returns the integer representation of the identity Pauli string with type `PauliStringType`.
-"""
+# Returns the integer representation of the identity Pauli string with type `PauliStringType`.
 function identitypauli(::Type{TT}) where {TT<:PauliStringType}
     return zero(TT)
 end
 
-"""
-    identitylike(pstr::PauliStringType)
 
-Returns an integer Pauli string of the same type as `pstr` with all Paulis set to identity.
-"""
+# Returns an integer Pauli string of the same type as `pstr` with all Paulis set to identity.
 function identitylike(::TT) where {TT<:PauliStringType}
     return identitypauli(TT)
 end
@@ -36,13 +26,10 @@ end
 
 Maps a symbol or a vector of symbols `pstr` to an integer Pauli string.
 
-# Example
+Example:
 ```
 symboltoint([:X, :I])
-
-# output
-
-0x01
+>>> 0x01
 ```
 """
 function symboltoint(pstr)
@@ -178,11 +165,8 @@ end
 
 ## get and set functions
 
-"""
-    getpauli(pstr::PauliStringType, index::Integer)
 
-Gets the Pauli on index `index` of an integer Pauli string.
-"""
+# Gets the Pauli on index `index` of an integer Pauli string.
 function getpauli(pstr::PauliStringType, index::Integer)
     return _getpaulibits(pstr, index)
 end
@@ -266,12 +250,12 @@ end
     inttostring(pstr::PauliType, nqubits::Integer)
 
 Returns a string representation of an integer Pauli string `pstr` on `nqubits` qubits.
+The characters of the string from left to right are the Paulis on the qubits from 1 to `nqubits`.
 """
 inttostring(pstr::PauliType, nqubits::Integer) = prod("$(inttosymbol(getpauli(pstr, ii)))" for ii in 1:nqubits)
 
-"""
-Pretty string function.
-"""
+
+# Pretty string function.
 function _getprettystr(psum::Dict, nqubits::Int; max_lines=20)
     # TODO: rework this pretty print to not build the string but keep streaming via show(io, ...)
     str = ""
