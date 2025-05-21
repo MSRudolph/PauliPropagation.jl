@@ -5,40 +5,28 @@
     truncatedampingcoeff(
         pstr::Integer, 
         coeff::Real, 
-        gamma::Real, 
+        gamma::Number, 
         min_abs_coeff::Float64
     )
 
 Custom truncation function with dissipation-assisted damping of coefficients.
+It returns `true` (indicating to truncate) if the coefficient exponentially damped by the Pauli weight drops below `min_abs_coeff`.
 
-This function damps the coefficient `coeff` scaling with the weight of an interger Pauli string `pstr`. 
-The damping factor is `gamma`. 
-If the coefficient, damped by an exponential factor, falls below `min_abs_coeff`, 
-the function returns `true` to indicate truncation.
-
-# Arguments
-- `pstr::PauliStringType`: The Pauli string whose coefficient may be damped.
-- `coeff::Float64`: The coefficient associated with the Pauli string `pstr`.
-- `gamma::Float64`: Gamma, rate of exponential decay in the damping process.
-- `min_abs_coeff::Float64`: The minimum value of the coefficient for truncation.
-
-# Returns
-- `Bool`: `true` if the damped coefficient of `pstr` < `min_abs_coeff`;
-    `false` otherwise.
-
-# Details
 The function evaluates the condition:
-`abs(coeff) * exp(-gamma * w(pstr)) < min_abs_coeff`
+`abs(coeff) * 10^(-gamma * countweight(pstr)) < min_abs_coeff`
 
-where `w(pstr)` is the weight of the Pauli string (computed by `countweight`). 
-The damping factor `gamma` controls the exponential decay.
+`gamma` is the damping factor controlling the rate of exponential decay with Pauli weight.
 
-# Examples
+To turn this function into a custom truncation function for `propagate()`, you need to define a _closure_ 
+that only takes the `pstr` and `coeff` as arguments, but has `gamma` and `min_abs_coeff` fixed.
+
+Example:
 ```julia
-truncatedampingcoeff(pstr, 0.8, 0.5, 0.01)
+customtruncfunc = (pstr, coeff) -> truncatedampingcoeff(pstr, coeff, 0.5, 1e-10) 
+```
 """
 function truncatedampingcoeff(
-    pstr::PauliStringType, coeff, gamma::Real, min_abs_coeff::Real
+    pstr::PauliStringType, coeff, gamma::Number, min_abs_coeff::Real
 )
 
     return abs(tonumber(coeff)) * 10.0^(-gamma * countweight(pstr)) < min_abs_coeff
