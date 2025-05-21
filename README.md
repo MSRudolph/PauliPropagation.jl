@@ -1,6 +1,6 @@
 | **Documentation**|
 |:----------------:|
-|[![](https://img.shields.io/badge/docs-stable-blue.svg)](https://msrudolph.github.io/PauliPropagation.jl)|
+|[![](https://img.shields.io/badge/docs-stable-blue.svg)](https://msrudolph.github.io/PauliPropagation.jl)[![](https://img.shields.io/badge/docs-dev-green.svg)](https://msrudolph.github.io/PauliPropagation.jl/dev)|
 
 # PauliPropagation.jl
 `PauliPropagation.jl` is a Julia package for simulating Pauli propagation in quantum circuits and systems. It focuses on simulating the evolution of observables expressed in the Pauli basis under the action of (unitary and non-unitary) gates in a quantum circuit.
