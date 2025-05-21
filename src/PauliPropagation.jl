@@ -128,6 +128,7 @@ export
     overlapwithones,
     overlapwithcomputational,
     overlapwithmaxmixed,
+    overlapwithpaulisum,
     scalarproduct,
     filter,
     filter!,

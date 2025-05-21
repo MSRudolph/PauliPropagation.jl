@@ -68,3 +68,32 @@ end
     @test scalarproduct(orig_psum, wrapped_psum) == scalarproduct(wrapped_psum, orig_psum) == 5.0
     @test scalarproduct(orig_psum, orig_psum) == scalarproduct(wrapped_psum, wrapped_psum) == 5.0
 end
+
+
+@testset "Test overlapwithpaulisum" begin
+
+    nq = 3
+
+    psum = PauliSum(nq)
+    add!(psum, :I, 1, 0.2)
+    add!(psum, :X, 2, 0.3)
+    add!(psum, :Z, 3, 0.4)
+    add!(psum, [:Z, :Z], [1, 2], 0.5)
+
+    rho = PauliSum(PauliString(3, :I, 1, 1 / 2^nq))
+    @test overlapwithpaulisum(rho, psum) == overlapwithmaxmixed(psum) == 0.2
+
+    @test overlapwithplus(rho) == 1 / 2^nq
+
+    which = rand(0:1, nq)
+    rho = prod(PauliSum([PauliString(nq, :I, qind, 1 / 2), PauliString(nq, :Z, qind, which[qind] == 0 ? 1 / 2 : -1 / 2)]) for qind in 1:nq)
+    @test overlapwithpaulisum(rho, psum) == overlapwithcomputational(psum, findall(which .== 1))
+
+    rho = prod(PauliSum([PauliString(nq, :I, qind, 1 / 2), PauliString(nq, :Z, qind, 1 / 2)]) for qind in 1:nq)
+    @test overlapwithpaulisum(rho, psum) == overlapwithzero(psum) == 1.1
+
+
+
+
+
+end
