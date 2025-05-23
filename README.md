@@ -3,9 +3,9 @@
 |[![](https://img.shields.io/badge/docs-stable-blue.svg)](https://msrudolph.github.io/PauliPropagation.jl)[![](https://img.shields.io/badge/docs-dev-green.svg)](https://msrudolph.github.io/PauliPropagation.jl/dev)|
 
 # PauliPropagation.jl
-`PauliPropagation.jl` is a Julia package for simulating Pauli propagation in quantum circuits and systems. It focuses on simulating the evolution of observables expressed in the Pauli basis under the action of (unitary and non-unitary) gates in a quantum circuit.
+`PauliPropagation.jl` is a Julia package for simulating Pauli propagation in quantum circuits and systems. It focuses on simulating the evolution of observables expressed in the Pauli basis under the action of unitary gates and non-unitary channels in a quantum circuit.
 
-Unlike traditional simulation approaches that evolve quantum states in the Schrödinger picture, Pauli propagation often works in the Heisenberg picture, evolving observables like $\mathcal{E}^\dagger(\hat{O})$ rather than states $\mathcal{E}(\rho)$, where $\mathcal{E}$ is a quantum circuit. This can be particularly efficient when the observables remain sparse or structured under evolution, and is useful for studying operator dynamics, estimating expectation values, and computing correlation functions.
+Unlike traditional simulators which simulate a circuit $\mathcal{E}$ evolving the state $\rho$ in the Schrödinger picture, Pauli propagation often adopts the Heisenberg picture, evolving an observable $O$ under $\mathcal{E}^\dagger$. This can be particularly efficient when the observables remain sparse or structured under evolution, and is useful for estimating expectation values $\text{Tr}\left[\rho \mathcal{E}^{\dagger}(O)\right]$, studying operator dynamics, and computing correlation functions.
 
 Pauli propagation is related to the so-called (extended) stabilizer simulation, but is fundamentally different from, for example, tensor networks. It offers a distinct approach that can handle different regimes of quantum complexity.
 
@@ -129,7 +129,7 @@ overlapwithzero(pauli_sum)
 This computation is efficient because the initial state can be written in terms of only $\mathbb{I}$ and $Z$ strings
 
 ```math
-\rho = (\frac{\mathbb{I} + Z}{2})^{\otimes n}
+\rho = \left(\frac{\mathbb{I} + Z}{2}\right)^{\otimes n}
 ```
 
 Therefore, the trace is equivalent to the sum over the coefficients of Pauli strings containing only `I` and `Z` Paulis, 
@@ -139,12 +139,13 @@ Therefore, the trace is equivalent to the sum over the coefficients of Pauli str
 ```
 
 ## Important Notes and Caveats
-All of the following points can be addressed by you writing the necessary missing code due to the nice extensibility of Julia.
-- The order of gates and their parameters is aligned with many other packages evolving quantum states in the Schrödinger picture. This order is _reversed_ within our `propagate()` function to act in the Heisenberg picture.
-- Consequently, the default is the Heisenberg _backpropagation_ of Pauli strings. Schrödinger propagation may soon be natively supported. At this moment, there are options to transpose `PauliRotation` gates by multiplying their angles with `-1` and `CliffordGate`s by using `transposecliffordmap()`, in addition to having to reverse the order of the circuit.
+- Circuits are specified in the _Schrodinger_ picture, as if operated upon states. Behind the scenes, `propagate()` will (by default; see below) actually effect the _adjoint_ circuit upon the passed PauliSum which is treated as the observable operator.
+- Schrodinger propagation is planned but not yet supported _except_ through manually passing the _adjoint_ of the intended circuit to `propagate()`. This is often easy; the circuit is reversed, angles in `PauliRotation` gates are negated, and `CliffordGate` are passed to `transposecliffordmap()`.
 - We currently do not support the strong simulation of quantum states in non-exponential time (even for Stabilizer states). Pauli propagation could in principle be used as a backend for extended stabilizer simulation.
 - Sampling quantum states is currently not supported.
 - Many underlying data structures and functions can be used for other purposes involving Pauli operators.
+
+All of the above can be addressed by writing the additional missing code due to the nice extensibility of Julia.
 
 ## Upcoming Features
 This package is still work-in-progress. You will probably find certain features that you would like to have and that are currently missing.\
