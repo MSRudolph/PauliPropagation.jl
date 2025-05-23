@@ -5,9 +5,9 @@
 # PauliPropagation.jl
 `PauliPropagation.jl` is a Julia package for simulating Pauli propagation in quantum circuits and systems. It focuses on simulating the evolution of observables expressed in the Pauli basis under the action of unitary gates and non-unitary channels in a quantum circuit.
 
-Unlike traditional simulators which simulate a circuit $\mathcal{E}$ evolving the state $\rho$ in the Schrödinger picture, Pauli propagation often adopts the Heisenberg picture, evolving an observable $O$ under $\mathcal{E}^\dagger$. This can be particularly efficient when the observables remain sparse or structured under evolution, and is useful for estimating expectation values $\text{Tr}\left[\rho \mathcal{E}^{\dagger}(O)\right]$, studying operator dynamics, and computing correlation functions.
+Unlike traditional simulators which simulate a circuit $\mathcal{E}$ evolving the state $\rho$ in the Schrödinger picture, Pauli propagation often adopts the Heisenberg picture, evolving an observable $O$ under $\mathcal{E}^\dagger$. This can be particularly efficient when the observables remain sparse or structured under evolution, and is useful for estimating expectation values such as $\text{Tr}\left[\rho \mathcal{E}^{\dagger}(O)\right]$, studying operator dynamics, and computing correlation functions.
 
-Pauli propagation is related to the so-called (extended) stabilizer simulation, but is fundamentally different from, for example, tensor networks. It offers a distinct approach that can handle different regimes of quantum complexity.
+Pauli propagation is related to the so-called (extended) stabilizer simulation, but is fundamentally different from, for example, tensor networks. It offers a distinct approach that can handle different regimes of quantum dynamics.
 
 Implemented in Julia, `PauliPropagation.jl` combines high-performance computation (using features such as multiple dispatch) with an accessible and high-level interface.  
 
@@ -139,9 +139,9 @@ Therefore, the trace is equivalent to the sum over the coefficients of Pauli str
 ```
 
 ## Important Notes and Caveats
-- Circuits are specified in the _Schrodinger_ picture, as if operated upon states. Behind the scenes, `propagate()` will (by default; see below) actually effect the _adjoint_ circuit upon the passed PauliSum which is treated as the observable operator.
-- Schrodinger propagation is planned but not yet supported _except_ through manually passing the _adjoint_ of the intended circuit to `propagate()`. This is often easy; the circuit is reversed, angles in `PauliRotation` gates are negated, and `CliffordGate` are passed to `transposecliffordmap()`.
-- We currently do not support the strong simulation of quantum states in non-exponential time (even for Stabilizer states). Pauli propagation could in principle be used as a backend for extended stabilizer simulation.
+- Circuits are specified in the _Schrödinger_ picture, as if operated upon states. Behind the scenes, `propagate()` will (by default) apply the _adjoint_ circuit upon the passed `PauliSum` which is treated as the observable operator.
+- Schrödinger propagation is planned but not yet supported _except_ through manually passing the _adjoint_ of the intended circuit to `propagate()`. This is often easy. For instance, with the circuit order reversed, angles in `PauliRotation` gates are negated, and `CliffordGate` are passed to `transposecliffordmap()`.
+- While Pauli propagation can, in principle, be used for _extended_ stabilizer simulation, we do not currently support sub-exponential strong simulation of stabilizer states.
 - Sampling quantum states is currently not supported.
 - Many underlying data structures and functions can be used for other purposes involving Pauli operators.
 
