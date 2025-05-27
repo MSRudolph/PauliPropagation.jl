@@ -79,7 +79,11 @@ deploydocs(
     # Enable generation of doc from PRs, under a /previews/PR## sub-domain.
     # Beware that this requires the Github Action was explicitly triggered by
     # a 'pull_request' event (not a 'push')
-    push_preview=true
+    push_preview=true,
+
+    # Specify the name of our develop branch (Documenter.jl seems unable to 
+    # auto-infer it) so that changes thereto generate preview-documentation 
+    devbranch="dev"
 )
 
 
