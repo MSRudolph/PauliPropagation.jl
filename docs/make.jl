@@ -71,8 +71,8 @@ makedocs(
 )
 
 
-# When run from a Github Action, commit those files to the 'gh-pages' branch.
-# If the action's invoking branch is not main, the files are uploaded under /dev/
+# When run from a Github Action, commit those files to the 'gh-pages' branch,
+# depending upon the triggering branch or whether it is a release/pull-request.
 deploydocs(
     repo="github.com/MSRudolph/PauliPropagation.jl.git",
 
@@ -81,9 +81,21 @@ deploydocs(
     # a 'pull_request' event (not a 'push')
     push_preview=true,
 
-    # Specify the name of our develop branch (Documenter.jl seems unable to 
-    # auto-infer it) so that changes thereto generate preview-documentation 
-    devbranch="dev"
+    # Specify that changes to our 'dev' branch (rather than default 'main')
+    # should update the doc visible at the /dev/ sub-domain. Note this means
+    # pushes to the main branch never generate doc; only new releases will
+    # (see below)
+    devbranch="dev",
+    devurl="dev",
+
+    # Control which Github releases (here, all) trigger re-generation of the
+    # main documentation, and their URLs. Below, we specify that:
+    # - subdomain /stable/ presents the very latest release doc
+    # - all versions (including patches) have their own hosted doc under /vX.Y.Z/
+    # - changes to the dev branch should update the /dev/ sub-domain; this seems
+    #   gratuitous since specified above and since irrelevant to Github releases,
+    #   but it is present in the deploydocs() doc without elaboration. Grr!
+    versions = ["stable" => "v^", "v#.#.#", "dev" => "dev"]
 )
 
 

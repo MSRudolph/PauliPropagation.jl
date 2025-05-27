@@ -8,18 +8,29 @@ name: Documentation
 
 # Regenerate doc (updating Github Pages site) whenever...
 on:
-  # main is updated (updates root site with new release), or
-  # dev is updated (updates /dev/ subdomain)
   push:
+
+    # 'dev' is updated (updates /dev/ subdomain). Note we cannot
+    # simply add other branchces (like 'main') here because it must
+    # correspond to 'devbranch' passed to deploydocs() in make.jl,
+    # else the generated doc will not be published to gh-pages
     branches:
-      - main
       - dev
-  # a PR is opened to the below branches (updates /previews/PR#)
+
+    # a new release tag is created. Only releases with semantic
+    # versioning tags of the form 'vX.Y.Z' will be published to 
+    # gh-pages, updating subdomains /stable/ and /vX.Y.Z/. This
+    # is further constrained by the 'versions' arg to deploydocs()
+    tags: '*'
+
+  # a PR is opened to the below branches (updates /previews/PR# subdomain)
   pull_request:
     branches:
       - main
       - dev
-  # the workflow is manually triggered from the Actions tab (updates /dev/)
+
+  # the workflow is manually triggered in the Github Actions tab, using
+  # the dev branch (updates /dev/). 
   workflow_dispatch:
 
 
