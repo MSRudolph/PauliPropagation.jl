@@ -1,7 +1,7 @@
 using Test
 using LinearAlgebra
 using Yao
-using Yao: X, Y, Z, H, chain, put, control, zero_state, expect
+using Yao: X, Y, Z, H, chain, put, control, zero_state, expect, apply
 
 function Rzz(θ)
     phases = [exp(-im * θ/2), exp(im * θ/2), exp(im * θ/2), exp(-im * θ/2)]
@@ -69,7 +69,7 @@ const obs_symbols = [:X, :Y, :Z]
     for (axis, rot_gate_constructor) in rot_gates
         for test_i in 1:50
             θ = 2π * rand()
-           pr_gate = PauliRotation(axis, 1)
+            pr_gate = PauliRotation(axis, 1)
             yao_gate = put(1 => rot_gate_constructor(θ))
             @test mat(chain(1, yao_gate)) ≈ tomatrix(pr_gate, θ) atol=1e-12
             for obs_symbol in obs_symbols
