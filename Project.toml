@@ -11,11 +11,18 @@ Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 StatsBase = "2913bbd2-ae8a-5f71-8c99-4fb6c76f3a91"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
+[weakdeps]
+Dictionaries = "85a47980-9c8c-11e8-2b9f-f7ca1fa99fb4"
+
 [compat]
 BitIntegers = "0.3"
 Bits = "0.2"
+Dictionaries = "0.4.5"
 StatsBase = "0.34"
 julia = "1.6.7"
+
+[extensions]
+DictPauliPropagationExt = "Dictionaries"
 
 [extras]
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"

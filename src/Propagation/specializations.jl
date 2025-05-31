@@ -47,6 +47,23 @@ function applytoall!(gate::PauliRotation, theta, psum, aux_psum; kwargs...)
 
     return
 end
+function applytoall!(gate::PauliRotation, theta, psum::Dict{K,V}, aux_psum::Dict{K,V}; kwargs...) where {K,V}
+    gate = _tomaskedpaulirotation(gate, K)
+    cos_val = cos(theta)
+    sin_val = sin(theta)
+    for (pstr, coeff) in psum
+        if commutes(gate, pstr)
+            continue
+        end
+        coeff1 = coeff * cos_val
+        new_pstr, sign = getnewpaulistring(gate, pstr)
+        coeff2 = coeff * sin_val * sign
+        set!(psum, pstr, coeff1)
+        set!(aux_psum, new_pstr, coeff2)
+    end
+    return
+end
+
 
 """
     getnewpaulistring(gate::MaskedPauliRotation, pstr::PauliStringType)
