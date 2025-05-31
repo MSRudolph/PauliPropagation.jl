@@ -1,6 +1,7 @@
 using PauliPropagation
 using Test
 using Random
+using Yao
 
 @testset "PauliPropagation.jl" begin
 
@@ -33,5 +34,7 @@ using Random
     include("test_truncations.jl")
 
     include("test_numericalcertificates.jl")
+
+    include("test_gates_against_yao.jl")
 
 end
