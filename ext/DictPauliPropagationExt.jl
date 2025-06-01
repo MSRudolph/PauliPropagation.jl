@@ -12,31 +12,39 @@ using Dictionaries: Dictionary,
                    settokenvalue!,
                    haskey,
                    insert!,
-                   pairs
+                   pairs,
+                   isinsertable
 
-function PauliPropagation.applytoall!(gate::PauliRotation, theta, psum::Dictionary{K,V}, aux_psum::Dictionary{K,V}) where {K,V}
+function PauliPropagation.applytoall!(gate::PauliRotation, theta,
+        psum::Dictionary{K,V}, aux_psum::Dictionary{K,V}) where {K,V}
     gate = _tomaskedpaulirotation(gate, K)
     cos_val = cos(theta)
     sin_val = sin(theta)
-    to_update = Vector{K}()
+    updates = Vector{Tuple{K,V}}()
     new_terms = Vector{Tuple{K,V}}()
+    sizehint!(updates, length(psum))
+    sizehint!(new_terms, length(psum))
     for (pstr, coeff) in pairs(psum)
         if commutes(gate, pstr)
             continue
         end
-        push!(to_update, pstr)
+        push!(updates, (pstr, coeff * cos_val))
         new_pstr, sign = getnewpaulistring(gate, pstr)
         push!(new_terms, (new_pstr, coeff * sin_val * sign))
     end
-    for pstr in to_update
-        psum[pstr] = psum[pstr] * cos_val
+    @inbounds for (pstr, new_coeff) in updates
+        psum[pstr] = new_coeff
     end
-    for (new_pstr, new_coeff) in new_terms
-        if haskey(aux_psum, new_pstr)
-            aux_psum[new_pstr] += new_coeff
+    @inbounds for (new_pstr, new_coeff) in new_terms
+        hadtoken, token = gettoken!(aux_psum, new_pstr)
+        if hadtoken
+            current_coeff = gettokenvalue(aux_psum, token)
+            settokenvalue!(aux_psum, token, current_coeff + new_coeff)
         else
-            insert!(aux_psum, new_pstr, new_coeff)
+            settokenvalue!(aux_psum, token, new_coeff)
         end
     end
+    return nothing
 end
 end
+
