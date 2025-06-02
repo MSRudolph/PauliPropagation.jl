@@ -368,7 +368,7 @@ end
             q = rand(rng, 1:nqubits)
             sym = rand(rng, [:X, :Y, :Z])
                 obs_symbols, obs_qubits = ([sym], [q])
-            end
+        end
         @testset "Random circuit trial $trial (n=$nqubits, depth=$depth)" begin
             obs = PauliSum(nqubits)
             add!(obs, obs_symbols, obs_qubits, 1.0)
