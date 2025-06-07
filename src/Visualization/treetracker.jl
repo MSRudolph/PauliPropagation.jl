@@ -86,6 +86,7 @@ end
 Add a node to the evolution tree.
 """
 function add_node!(node_id::String, pauli_string::String, gate_applied::Union{String,Nothing}=nothing)
+    println("Adding node: $node_id, $pauli_string, $gate_applied")
     EVOLUTION_TREE[node_id] = TreeNode(node_id, pauli_string, gate_applied)
 end
 
@@ -161,20 +162,23 @@ This creates two child nodes with cos and sin coefficients.
 function splitapply(gate::MaskedPauliRotation, pstr::PauliStringType, coeff::PauliTreeTracker, theta; nqubits::Int, kwargs...)
     # Get the gate name for labeling - extract first symbol from gate.symbols
     gate_symbol = isempty(gate.symbols) ? "?" : string(gate.symbols[1])
-    gate_name = "R$(gate_symbol)(θ)"
+    gate_name = "R$(gate_symbol)"
 
     # Add the current node to the tree if not already there
     pstr_str = format_pauli_string(pstr, nqubits)
-    add_node!(coeff.node_id, pstr_str, gate_name)
+
 
     # Create cos coefficient child
     cos_coeff_value = coeff.coeff * cos(theta)
-    cos_child = create_child_tracker(coeff, cos_coeff_value, "cos(θ)", gate_name)
+    cos_multiplier = cos(theta)
+    cos_child = create_child_tracker(coeff, cos_coeff_value, string(round(cos_multiplier, digits=3)), gate_name)
+    add_node!(cos_child.node_id, pstr_str, gate_name)
 
     # Get new Pauli string and sign for sin coefficient
     new_pstr, sign = getnewpaulistring(gate, pstr)
     sin_coeff_value = coeff.coeff * sin(theta) * sign
-    sin_child = create_child_tracker(coeff, sin_coeff_value, "$(sign > 0 ? "" : "-")sin(θ)", gate_name)
+    sin_multiplier = sin(theta) * sign
+    sin_child = create_child_tracker(coeff, sin_coeff_value, string(round(sin_multiplier, digits=3)), gate_name)
 
     # Add the new Pauli string node
     new_pstr_str = format_pauli_string(new_pstr, nqubits)
@@ -215,11 +219,20 @@ function applytoall!(gate::PauliRotation, theta, psum::PauliSum{TT,PauliTreeTrac
 
     # Loop over all Pauli strings and their coefficients in the Pauli sum
     for (pstr, coeff) in psum
+        pstr_str = format_pauli_string(pstr, psum.nqubits)
+        println("pstr_str: $pstr_str")
         if commutes(gate, pstr)
-            # If the gate commutes, just add the node (no splitting)
+            # If the gate commutes, create a new child node and edge
             pstr_str = format_pauli_string(pstr, psum.nqubits)
             gate_symbol = isempty(gate.symbols) ? "?" : string(gate.symbols[1])
-            add_node!(coeff.node_id, pstr_str, "R$(gate_symbol)(θ)")
+            gate_name = "R$(gate_symbol)"
+
+            # Create new child tracker (coefficient stays the same for commuting gates)
+            new_child = create_child_tracker(coeff, coeff.coeff, "1", gate_name)
+            add_node!(new_child.node_id, pstr_str, gate_name)
+
+            # Update the coefficient in the sum with the new child tracker
+            set!(psum, pstr, new_child)
             continue
         end
 

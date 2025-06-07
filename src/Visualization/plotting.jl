@@ -33,7 +33,7 @@ function export_to_graphviz(filename::String="pauli_evolution_tree.dot";
         for (node_id, node) in EVOLUTION_TREE
             label = node.pauli_string
             if !isnothing(node.gate_applied)
-                label *= "\\n(via $(node.gate_applied))"
+                label *= "\\n($(node.gate_applied))"
             end
             println(io, "    \"$node_id\" [label=\"$label\"];")
         end

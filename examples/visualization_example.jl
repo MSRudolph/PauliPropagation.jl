@@ -9,7 +9,8 @@ function create_example_circuit()
     # Create a simple circuit: RX gate followed by RZ gate
     circ = [
         PauliRotation(:X, 1),
-        PauliRotation(:Z, 1)
+        PauliRotation(:Y, 1),
+        PauliRotation(:Z, 1),
     ]
     return circ
 end
@@ -24,10 +25,10 @@ function main()
 
     # Create example circuit
     circ = create_example_circuit()
-    println("Circuit: RX(θ₁) -> RZ(θ₂)")
+    println("Circuit: RX(θ₁) -> RY(θ₂) -> RZ(θ₃)")
 
     # Set some parameter values
-    thetas = [π / 4, π / 6]  # θ₁ = π/4, θ₂ = π/6
+    thetas = [π / 4, π / 6, π / 8]  # θ₁ = π/4, θ₂ = π/6, θ₃ = π/8
 
     # Reset tree storage before starting
     reset_tree!()
@@ -54,6 +55,12 @@ function main()
     println("\nExample completed!")
     println("To visualize the tree, run:")
     println("  dot -Tpng pauli_evolution_example.dot -o pauli_tree.png")
+
+    # use the normal propagation to verify the result
+    println("\nRunning propagation without tree tracking...")
+    result = propagate(circ, pstr, thetas)
+    println("Final result:")
+    println(result)
 end
 
 # Run the example
