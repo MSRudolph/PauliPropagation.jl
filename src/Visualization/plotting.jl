@@ -35,7 +35,7 @@ function export_to_graphviz(filename::String="pauli_evolution_tree.dot";
             if !isnothing(node.gate_applied)
                 label *= "\\n($(node.gate_applied))"
             end
-            println(io, "    \"$node_id\" [label=\"$label\"];")
+            println(io, "    \"$node_id\" [label=\"$label\", fontsize=12];")
         end
 
         println(io, "")
