@@ -203,6 +203,7 @@ function propagate_with_tree_tracking(circ, pstr::PauliString, thetas=nothing;
 
     # Add the initial node
     pstr_str = format_pauli_string(pstr)
+
     for (pstr_key, coeff) in PauliSum(tracked_pstr)
         add_node!(coeff.node_id, pstr_str, nothing)
         break  # Only one term for PauliString
@@ -238,7 +239,7 @@ function propagate_with_tree_tracking(circ, psum::PauliSum, thetas=nothing;
 
     # Add the initial nodes
     for (pstr, coeff) in tracked_psum
-        pstr_str = format_pauli_string(pstr)
+        pstr_str = inttostring(pstr, psum.nqubits)
         add_node!(coeff.node_id, pstr_str, nothing)
     end
 

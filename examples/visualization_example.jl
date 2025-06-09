@@ -75,15 +75,13 @@ function run_two_qubit_example()
     # Create a 2-qubit PauliSum with both XX and ZZ strings
     nqubits = 2
 
-    # Create individual Pauli strings
-    xx_string = PauliString(nqubits, [:X, :X], [1, 2], 1.0)
-    zz_string = PauliString(nqubits, [:Z, :Z], [1, 2], 0.5)
+    # Create PauliSum and add terms using the correct method
+    psum = PauliSum(nqubits)
+    add!(psum, [:X, :X], [1, 2], 1.0)  # XX string with coefficient 1.0
+    add!(psum, [:Z, :Z], [1, 2], 0.5)  # ZZ string with coefficient 0.5
 
-    # Create PauliSum containing both strings
-    psum = PauliSum(nqubits, [xx_string, zz_string])
     println("Initial Pauli sum: XX + 0.5*ZZ")
-    println("  XX string: $xx_string")
-    println("  ZZ string: $zz_string")
+    println(psum)
 
     # Create two-qubit circuit
     circ = create_two_qubit_circuit()
