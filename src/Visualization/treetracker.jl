@@ -12,6 +12,7 @@ import ..PauliPropagation: PathProperties, PauliSum, PauliString, PauliStringTyp
 import ..PauliPropagation: _tomaskedpaulirotation, paulitype, getnewpaulistring, commutes, set!, add!
 import ..PauliPropagation: inttostring, symboltoint, getpauli, setpauli, splitapply, applytoall!, apply
 import ..PauliPropagation: _applysin, _applycos
+import Base: mergewith!
 
 """
     TreeNode
@@ -86,7 +87,6 @@ end
 Add a node to the evolution tree.
 """
 function add_node!(node_id::String, pauli_string::String, gate_applied::Union{String,Nothing}=nothing)
-    println("Adding node: $node_id, $pauli_string, $gate_applied")
     EVOLUTION_TREE[node_id] = TreeNode(node_id, pauli_string, gate_applied)
 end
 
@@ -132,21 +132,59 @@ function format_pauli_string(pstr)
     return string(pstr)
 end
 
-# Override the addition operation to handle tree merging
-function Base.:+(path1::PauliTreeTracker, path2::PauliTreeTracker)
-    # When merging, we create a new node that represents the sum
-    # In practice, you might want to keep track of which paths were merged
-    merged_coeff = path1.coeff + path2.coeff
+"""
+    mergewith!(combine, d1::PauliSum{TT,PauliTreeTracker{T}}, d2::PauliSum{TT,PauliTreeTracker{T}}) where {TT,T}
+
+Specialized mergewith! for PauliSum with PauliTreeTracker coefficients.
+This provides the context of which Pauli string is being merged and properly tracks the genealogy.
+"""
+function Base.mergewith!(combine, d1::PauliSum{TT,PauliTreeTracker{T}}, d2::PauliSum{TT,PauliTreeTracker{T}}) where {TT,T}
+    # Ensure d1 is the larger dictionary for efficiency (similar to the base implementation)
+    if length(d1) < length(d2)
+        d1, d2 = d2, d1
+    end
+
+    # Iterate through all entries in d2
+    for (pstr, tracker2) in d2
+        if haskey(d1.terms, pstr)
+            # This Pauli string exists in both sums - we need to merge the trackers
+            tracker1 = d1.terms[pstr]
+            merged_tracker = merge_trackers_with_context(tracker1, tracker2, pstr, d1.nqubits)
+            d1.terms[pstr] = merged_tracker
+        else
+            # This Pauli string only exists in d2 - just add it to d1
+            d1.terms[pstr] = tracker2
+        end
+    end
+
+    return d1
+end
+
+"""
+    merge_trackers_with_context(tracker1::PauliTreeTracker, tracker2::PauliTreeTracker, pstr, nqubits::Int)
+
+Merge two PauliTreeTracker objects with context about which Pauli string they represent.
+Creates a proper merge node in the evolution tree.
+"""
+function merge_trackers_with_context(tracker1::PauliTreeTracker, tracker2::PauliTreeTracker, pstr, nqubits::Int)
+    # Calculate the merged coefficient
+    merged_coeff = tracker1.coeff + tracker2.coeff
     merged_id = string(uuid4())[1:8]
 
-    # Create merged tracker - for simplicity, we'll use path1's parent
-    merged_tracker = PauliTreeTracker(merged_coeff, merged_id, path1.parent_id)
+    # Create the merged tracker
+    merged_tracker = PauliTreeTracker(merged_coeff, merged_id, nothing)  # No single parent for merges
 
-    # Add edges showing the merge (optional for visualization)
-    if !isnothing(path1.parent_id) && !isnothing(path2.parent_id)
-        add_edge!(path1.node_id, merged_id, "merge_1", "MERGE")
-        add_edge!(path2.node_id, merged_id, "merge_2", "MERGE")
-    end
+    # Format the Pauli string for display
+    pstr_str = format_pauli_string(pstr, nqubits)
+
+    # Add the merged node to the tree
+    add_node!(merged_id, pstr_str, "MERGE")
+
+    # Add edges from both parent trackers to the merged node
+    add_edge!(tracker1.node_id, merged_id, "", "MERGE")
+    add_edge!(tracker2.node_id, merged_id, "", "MERGE")
+
+    println("Merging trackers for Pauli string '$pstr_str': $(tracker1.node_id) + $(tracker2.node_id) -> $merged_id")
 
     return merged_tracker
 end

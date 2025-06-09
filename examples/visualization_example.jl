@@ -29,6 +29,7 @@ end
 function create_mixed_circuit()
     # Create a circuit mixing Clifford and Pauli rotation gates
     circ = [
+        CliffordGate(:X, 1),
         PauliRotation(:X, 1),    # RX rotation (branches)
         CliffordGate(:H, 1),     # Hadamard gate (no branching)
         PauliRotation(:Z, 1),    # RZ rotation (branches)
@@ -145,7 +146,7 @@ function run_mixed_circuit_example()
 
     # Create mixed circuit
     circ = create_mixed_circuit()
-    println("Circuit: RX(θ₁) -> H -> RZ(θ₂) -> Z")
+    println("Circuit: X -> RX(θ₁) -> H -> RZ(θ₂) -> Z")
 
     # Set some parameter values (only for the parametrized gates)
     thetas = [π / 4, π / 6]  # θ₁ = π/4, θ₂ = π/6
