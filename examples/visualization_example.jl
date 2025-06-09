@@ -25,6 +25,18 @@ function create_two_qubit_circuit()
     return circ
 end
 
+# Create a circuit with both Clifford and Pauli rotation gates
+function create_mixed_circuit()
+    # Create a circuit mixing Clifford and Pauli rotation gates
+    circ = [
+        PauliRotation(:X, 1),    # RX rotation (branches)
+        CliffordGate(:H, 1),     # Hadamard gate (no branching)
+        PauliRotation(:Z, 1),    # RZ rotation (branches)
+        CliffordGate(:Z, 1),     # Z gate (no branching)
+    ]
+    return circ
+end
+
 function run_one_qubit_example()
     println("=== One-Qubit Example ===")
 
@@ -123,6 +135,54 @@ function run_two_qubit_example()
     println(result)
 end
 
+function run_mixed_circuit_example()
+    println("\n=== Mixed Circuit Example (Clifford + Pauli Rotations) ===")
+
+    # Create a simple 1-qubit Pauli string: X_1
+    nqubits = 1
+    pstr = PauliString(nqubits, :X, 1, 1.0)
+    println("Initial Pauli string: $pstr")
+
+    # Create mixed circuit
+    circ = create_mixed_circuit()
+    println("Circuit: RX(θ₁) -> H -> RZ(θ₂) -> Z")
+
+    # Set some parameter values (only for the parametrized gates)
+    thetas = [π / 4, π / 6]  # θ₁ = π/4, θ₂ = π/6
+
+    # Reset tree storage before starting
+    reset_tree!()
+
+    # Run propagation with tree tracking
+    println("\nRunning propagation with tree tracking...")
+    result = propagate_with_tree_tracking(
+        circ, pstr, thetas;
+        export_format="summary",
+        reset_tree_first=true
+    )
+
+    println("\nFinal result:")
+    println(result)
+
+    # Export to GraphViz format
+    println("\nExporting to GraphViz...")
+    visualize_tree("graphviz", "pauli_evolution_mixed.dot")
+
+    # Export to JSON format
+    println("Exporting to JSON...")
+    visualize_tree("json", "pauli_evolution_mixed.json")
+
+    println("\nMixed circuit example completed!")
+    println("To visualize the tree, run:")
+    println("  dot -Tpng pauli_evolution_mixed.dot -o pauli_tree_mixed.png")
+
+    # use the normal propagation to verify the result
+    println("\nRunning propagation without tree tracking...")
+    result = propagate(circ, pstr, thetas)
+    println("Final result:")
+    println(result)
+end
+
 function main()
     println("=== Pauli Evolution Visualization Examples ===")
 
@@ -130,12 +190,16 @@ function main()
     # run_one_qubit_example()
 
     # Run two-qubit example
-    run_two_qubit_example()
+    # run_two_qubit_example()
+
+    # Run mixed circuit example
+    run_mixed_circuit_example()
 
     println("\n=== All Examples Completed ===")
     println("Generated files:")
     println("  - pauli_evolution_1qubit.dot/json (1-qubit Z -> RX,RY,RZ)")
     println("  - pauli_evolution_2qubit.dot/json (2-qubit XX -> RY₁,RX₂,RZ₁,RY₂)")
+    println("  - pauli_evolution_mixed.dot/json (1-qubit X -> RX,H,RZ,Z)")
 end
 
 # Run the example

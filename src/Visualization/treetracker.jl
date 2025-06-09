@@ -8,9 +8,9 @@
 using UUIDs
 
 # Import necessary functions from parent modules
-import ..PauliPropagation: PathProperties, PauliSum, PauliString, PauliStringType, PauliRotation, MaskedPauliRotation
+import ..PauliPropagation: PathProperties, PauliSum, PauliString, PauliStringType, PauliRotation, MaskedPauliRotation, CliffordGate
 import ..PauliPropagation: _tomaskedpaulirotation, paulitype, getnewpaulistring, commutes, set!, add!
-import ..PauliPropagation: inttostring, symboltoint, getpauli, setpauli, splitapply, applytoall!
+import ..PauliPropagation: inttostring, symboltoint, getpauli, setpauli, splitapply, applytoall!, apply
 import ..PauliPropagation: _applysin, _applycos
 
 """
@@ -245,6 +245,39 @@ function applytoall!(gate::PauliRotation, theta, psum::PauliSum{TT,PauliTreeTrac
         # Set the coefficient of the new Pauli string in the aux_psum
         set!(aux_psum, new_pstr, coeff2)
     end
+
+    return
+end
+
+"""
+    applytoall!(gate::CliffordGate, theta, psum::PauliSum{TT,PauliTreeTracker{T}}, aux_psum; kwargs...)
+
+Specialized applytoall! for CliffordGate with PauliSum containing PauliTreeTracker coefficients.
+Clifford gates deterministically transform Pauli strings without branching, so we create a single child node for each transformation.
+"""
+function applytoall!(gate::CliffordGate, theta, psum::PauliSum{TT,PauliTreeTracker{T}}, aux_psum; kwargs...) where {TT<:PauliStringType,T<:Number}
+    # Loop over all Pauli strings and their coefficients in the Pauli sum
+    for (pstr, coeff) in psum
+        # Apply the Clifford gate to get the new Pauli string and coefficient
+        new_pstr, new_coeff_value = apply(gate, pstr, coeff.coeff; kwargs...)
+
+        # Format the gate name for display
+        gate_name = string(gate.symbol)
+
+        # Create a new child tracker for the transformed Pauli string
+        new_child = create_child_tracker(coeff, new_coeff_value, "1", gate_name)
+
+        # Add the new node to the tree
+        new_pstr_str = format_pauli_string(new_pstr, psum.nqubits)
+        add_node!(new_child.node_id, new_pstr_str, gate_name)
+
+        # Set the new Pauli string and its tracker in aux_psum
+        # (Note: Clifford gates create non-overlapping Pauli strings so we can use set!)
+        set!(aux_psum, new_pstr, new_child)
+    end
+
+    # Empty the original psum since everything was moved to aux_psum
+    empty!(psum)
 
     return
 end
