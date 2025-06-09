@@ -265,7 +265,8 @@ function applytoall!(gate::CliffordGate, theta, psum::PauliSum{TT,PauliTreeTrack
         gate_name = string(gate.symbol)
 
         # Create a new child tracker for the transformed Pauli string
-        new_child = create_child_tracker(coeff, new_coeff_value, "1", gate_name)
+        edge_num = new_coeff_value / coeff.coeff
+        new_child = create_child_tracker(coeff, new_coeff_value, string(round(edge_num, digits=3)), gate_name)
 
         # Add the new node to the tree
         new_pstr_str = format_pauli_string(new_pstr, psum.nqubits)
