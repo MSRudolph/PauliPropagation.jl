@@ -7,7 +7,7 @@
 
 # Import necessary functions
 import ..PauliPropagation: propagate, PauliString, PauliSum, wrapcoefficients, unwrapcoefficients
-
+using JSON
 """
     export_to_graphviz(filename::String="pauli_evolution_tree.dot"; 
                       show_coefficients::Bool=true,

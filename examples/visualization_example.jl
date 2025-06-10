@@ -376,16 +376,16 @@ function main()
     println("=== Pauli Evolution Visualization Examples ===")
 
     # Run one-qubit example
-    # run_one_qubit_example()
+    run_one_qubit_example()
 
     # Run two-qubit example
-    # run_two_qubit_example()
+    run_two_qubit_example()
 
     # Run mixed circuit example
-    # run_mixed_circuit_example()
+    run_mixed_circuit_example()
 
     # Run mixed multiple qubit example
-    # run_mixed_multiple_qubit_example()
+    run_mixed_multiple_qubit_example()
 
     # Run Pauli noise example
     run_pauli_noise_example()

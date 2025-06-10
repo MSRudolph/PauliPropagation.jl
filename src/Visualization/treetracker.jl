@@ -183,8 +183,6 @@ function merge_trackers_with_context(tracker1::PauliTreeTracker, tracker2::Pauli
     add_edge!(tracker1.node_id, merged_id, "", "MERGE")
     add_edge!(tracker2.node_id, merged_id, "", "MERGE")
 
-    println("Merging trackers for Pauli string '$pstr_str': $(tracker1.node_id) + $(tracker2.node_id) -> $merged_id")
-
     return merged_tracker
 end
 
@@ -237,7 +235,6 @@ function applytoall!(gate::PauliRotation, theta, psum::PauliSum{TT,PauliTreeTrac
     # Loop over all Pauli strings and their coefficients in the Pauli sum
     for (pstr, coeff) in psum
         pstr_str = format_pauli_string(pstr, psum.nqubits)
-        println("pstr_str: $pstr_str")
         if commutes(gate, pstr)
             # If the gate commutes, create a new child node and edge
             pstr_str = format_pauli_string(pstr, psum.nqubits)
