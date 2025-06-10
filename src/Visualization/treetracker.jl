@@ -11,7 +11,6 @@ using UUIDs
 import ..PauliPropagation: PathProperties, PauliSum, PauliString, PauliStringType, PauliRotation, MaskedPauliRotation, CliffordGate
 import ..PauliPropagation: _tomaskedpaulirotation, paulitype, getnewpaulistring, commutes, set!, add!
 import ..PauliPropagation: inttostring, symboltoint, getpauli, setpauli, splitapply, applytoall!, apply
-import ..PauliPropagation: _applysin, _applycos
 import Base: mergewith!
 
 """
@@ -226,26 +225,6 @@ function splitapply(gate::MaskedPauliRotation, pstr::PauliStringType, coeff::Pau
 end
 
 """
-    _applysin(pth::PauliTreeTracker, theta, sign=1; kwargs...)
-
-Apply sin coefficient while tracking the genealogy.
-"""
-function _applysin(pth::PauliTreeTracker, theta, sign=1; kwargs...)
-    sin_coeff = pth.coeff * sin(theta) * sign
-    return PauliTreeTracker(sin_coeff, pth.node_id, pth.parent_id)
-end
-
-"""
-    _applycos(pth::PauliTreeTracker, theta, sign=1; kwargs...)
-
-Apply cos coefficient while tracking the genealogy.
-"""
-function _applycos(pth::PauliTreeTracker, theta, sign=1; kwargs...)
-    cos_coeff = pth.coeff * cos(theta) * sign
-    return PauliTreeTracker(cos_coeff, pth.node_id, pth.parent_id)
-end
-
-"""
     applytoall!(gate::PauliRotation, theta, psum::PauliSum{TT,PauliTreeTracker{T}}, aux_psum; kwargs...)
 
 Specialized applytoall! for PauliRotation gates with PauliSum containing PauliTreeTracker coefficients.
@@ -317,6 +296,113 @@ function applytoall!(gate::CliffordGate, theta, psum::PauliSum{TT,PauliTreeTrack
 
     # Empty the original psum since everything was moved to aux_psum
     empty!(psum)
+
+    return
+end
+"""
+    applytoall!(gate::PauliNoise, p, psum::PauliSum{TT,PauliTreeTracker{T}}, aux_psum; kwargs...)
+
+Specialized applytoall! for PauliNoise with PauliSum containing PauliTreeTracker coefficients.
+PauliNoise gates deterministically transform Pauli strings without branching, so we create a single child node for each transformation.
+"""
+function applytoall!(gate::PauliNoise, p, psum::PauliSum{TT,PauliTreeTracker{T}}, aux_psum; kwargs...) where {TT<:PauliStringType,T<:Number}
+    # check that the noise strength is in the correct range
+    _check_noise_strength(PauliNoise, p)
+
+    # loop over all Pauli strings and their coefficients in the Pauli sum
+    for (pstr, coeff) in psum
+        # the Pauli on the site that the noise acts on
+        pauli = getpauli(pstr, gate.qind)
+
+        # `isdamped` is defined in noisechannels.jl for each Pauli noise channel
+        # I Paulis are never damped, but the others vary
+        if !isdamped(gate, pauli)
+            continue
+        end
+
+        new_coeff_value = coeff.coeff * (1 - p)
+
+        # Format the gate name for display
+        gate_name = string(typeof(gate).name.name)
+
+        # Create a new child tracker for the transformed Pauli string
+        edge_num = new_coeff_value / coeff.coeff
+        new_child = create_child_tracker(coeff, new_coeff_value, string(round(edge_num, digits=3)), gate_name)
+
+        # Add the new node to the tree
+        pstr_str = format_pauli_string(pstr, psum.nqubits)
+        add_node!(new_child.node_id, pstr_str, gate_name)
+
+        # Set the new coefficient in psum
+        set!(psum, pstr, new_child)
+    end
+
+    return
+end
+
+"""
+    applytoall!(gate::AmplitudeDampingNoise, gamma, psum::PauliSum{TT,PauliTreeTracker{T}}, aux_psum; kwargs...)
+
+Specialized applytoall! for AmplitudeDampingNoise with PauliSum containing PauliTreeTracker coefficients.
+AmplitudeDampingNoise gates can transform Pauli strings in two ways:
+1. X/Y Paulis get scaled by sqrt(1-gamma)
+2. Z Paulis split into I with coefficient gamma and Z with coefficient (1-gamma)
+"""
+function applytoall!(gate::AmplitudeDampingNoise, gamma, psum::PauliSum{TT,PauliTreeTracker{T}}, aux_psum; kwargs...) where {TT<:PauliStringType,T<:Number}
+    # check that the noise strength is in the correct range
+    _check_noise_strength(AmplitudeDampingNoise, gamma)
+
+    # loop over all Pauli strings and their coefficients in the Pauli sum
+    for (pstr, coeff) in psum
+        pauli = getpauli(pstr, gate.qind)
+        if pauli == 0
+            # Pauli is I, so the gate does not do anything
+            continue
+
+        elseif pauli == 1 || pauli == 2
+            # Pauli is X or Y, so the gate will give a sqrt(1-gamma) prefactor
+            new_coeff_value = coeff.coeff * sqrt(1 - gamma)
+
+            # Format the gate name for display
+            gate_name = string(typeof(gate).name.name)
+
+            # Create a new child tracker for the transformed Pauli string
+            edge_num = sqrt(1 - gamma)
+            new_child = create_child_tracker(coeff, new_coeff_value, string(round(edge_num, digits=3)), gate_name)
+
+            # Add the new node to the tree
+            pstr_str = format_pauli_string(pstr, psum.nqubits)
+            add_node!(new_child.node_id, pstr_str, gate_name)
+
+            # Set the new coefficient in psum
+            set!(psum, pstr, new_child)
+
+        else
+            # Pauli is Z, so the gate will split the Pauli string 
+            new_pstr = setpauli(pstr, 0, gate.qind)
+            coeff1_value = (1 - gamma) * coeff.coeff
+            coeff2_value = gamma * coeff.coeff
+
+            # Format the gate name for display
+            gate_name = string(typeof(gate).name.name)
+
+            # Create child trackers for both branches
+            edge_num1 = 1 - gamma
+            edge_num2 = gamma
+            new_child1 = create_child_tracker(coeff, coeff1_value, string(round(edge_num1, digits=3)), gate_name)
+            new_child2 = create_child_tracker(coeff, coeff2_value, string(round(edge_num2, digits=3)), gate_name)
+
+            # Add the new nodes to the tree
+            pstr_str1 = format_pauli_string(pstr, psum.nqubits)
+            pstr_str2 = format_pauli_string(new_pstr, psum.nqubits)
+            add_node!(new_child1.node_id, pstr_str1, gate_name)
+            add_node!(new_child2.node_id, pstr_str2, gate_name)
+
+            # Set the coefficients in psum and aux_psum
+            set!(psum, pstr, new_child1)
+            set!(aux_psum, new_pstr, new_child2)
+        end
+    end
 
     return
 end
