@@ -141,8 +141,12 @@ function run_mixed_circuit_example()
 
     # Create a simple 1-qubit Pauli string: X_1
     nqubits = 1
-    pstr = PauliString(nqubits, :X, 1, 1.0)
-    println("Initial Pauli string: $pstr")
+    psum = PauliSum(nqubits)
+    add!(psum, [:X], [1], 1.0)
+    add!(psum, [:Y], [1], 1.0)
+    add!(psum, [:Z], [1], 1.0)
+
+    println("Initial Pauli sum: $psum")
 
     # Create mixed circuit
     circ = create_mixed_circuit()
@@ -157,7 +161,7 @@ function run_mixed_circuit_example()
     # Run propagation with tree tracking
     println("\nRunning propagation with tree tracking...")
     result = propagate_with_tree_tracking(
-        circ, pstr, thetas;
+        circ, psum, thetas;
         export_format="summary",
         reset_tree_first=true
     )
@@ -179,8 +183,8 @@ function run_mixed_circuit_example()
 
     # use the normal propagation to verify the result
     println("\nRunning propagation without tree tracking...")
-    result = propagate(circ, pstr, thetas)
-    println("Final result:")
+    result = propagate(circ, psum, thetas)
+    println("Final result reference:")
     println(result)
 end
 
