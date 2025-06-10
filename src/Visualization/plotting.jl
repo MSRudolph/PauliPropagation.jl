@@ -183,48 +183,13 @@ function visualize_tree(output_format::String="graphviz", filename::String="")
 end
 
 """
-    propagate_with_tree_tracking(circ, pstr::PauliString, thetas=nothing; kwargs...)
+    propagate_with_tree_tracking(circ, input, thetas=nothing; kwargs...)
 
 Convenience function that wraps coefficients in PauliTreeTracker and runs propagation.
 Returns both the result and exports the tree visualization.
+Supports both PauliString and PauliSum inputs.
 """
-function propagate_with_tree_tracking(circ, pstr::PauliString, thetas=nothing;
-    export_format::String="graphviz",
-    export_filename::String="",
-    reset_tree_first::Bool=true,
-    kwargs...)
-
-    if reset_tree_first
-        reset_tree!()
-    end
-
-    # Wrap the coefficient in PauliTreeTracker
-    tracked_pstr = wrapcoefficients(pstr, PauliTreeTracker)
-
-    # Add the initial node
-    pstr_str = format_pauli_string(pstr)
-
-    for (pstr_key, coeff) in PauliSum(tracked_pstr)
-        add_node!(coeff.node_id, pstr_str, nothing)
-        break  # Only one term for PauliString
-    end
-
-    # Run propagation
-    result = propagate(circ, tracked_pstr, thetas; kwargs...)
-
-    # Export visualization
-    visualize_tree(export_format, export_filename)
-
-    # Return unwrapped result
-    return unwrapcoefficients(result)
-end
-
-"""
-    propagate_with_tree_tracking(circ, psum::PauliSum, thetas=nothing; kwargs...)
-
-Convenience function for PauliSum that wraps coefficients in PauliTreeTracker and runs propagation.
-"""
-function propagate_with_tree_tracking(circ, psum::PauliSum, thetas=nothing;
+function propagate_with_tree_tracking(circ, input, thetas=nothing;
     export_format::String="graphviz",
     export_filename::String="",
     reset_tree_first::Bool=true,
@@ -235,16 +200,24 @@ function propagate_with_tree_tracking(circ, psum::PauliSum, thetas=nothing;
     end
 
     # Wrap the coefficients in PauliTreeTracker
-    tracked_psum = wrapcoefficients(psum, PauliTreeTracker)
+    tracked_input = wrapcoefficients(input, PauliTreeTracker)
 
     # Add the initial nodes
-    for (pstr, coeff) in tracked_psum
-        pstr_str = inttostring(pstr, psum.nqubits)
-        add_node!(coeff.node_id, pstr_str, nothing)
+    if input isa PauliString
+        pstr_str = format_pauli_string(input)
+        for (pstr_key, coeff) in PauliSum(tracked_input)
+            add_node!(coeff.node_id, pstr_str, nothing)
+            break  # Only one term for PauliString
+        end
+    else  # PauliSum
+        for (pstr, coeff) in tracked_input
+            pstr_str = inttostring(pstr, input.nqubits)
+            add_node!(coeff.node_id, pstr_str, nothing)
+        end
     end
 
     # Run propagation
-    result = propagate(circ, tracked_psum, thetas; kwargs...)
+    result = propagate(circ, tracked_input, thetas; kwargs...)
 
     # Export visualization
     visualize_tree(export_format, export_filename)

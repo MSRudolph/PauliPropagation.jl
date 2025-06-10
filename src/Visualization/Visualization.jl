@@ -5,5 +5,6 @@
 ##
 ###
 
+include("datatypes.jl")
 include("treetracker.jl")
 include("plotting.jl")
