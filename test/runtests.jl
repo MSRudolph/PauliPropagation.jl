@@ -1,7 +1,6 @@
 using PauliPropagation
 using Test
 using Random
-using Yao
 
 @testset "PauliPropagation.jl" begin
 

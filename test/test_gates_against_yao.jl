@@ -1,7 +1,7 @@
 using Test
 using LinearAlgebra
 using Random
-using Yao: X, Y, Z, H, chain, put, control, zero_state, expect, apply
+using Yao: X, Y, Z, H, Rx, Rz, Ry, chain, put, control, zero_state, expect, apply, rot, mat, matblock, swap, SWAP
 using PauliPropagation
 
 function Rzz(θ)
@@ -57,7 +57,7 @@ const two_obs = [(:X, :X), (:X, :Y), (:X, :Z),
                 exp_val = overlapwithzero(propagated)
 
                 state = zero_state(nqubits)
-                evolved = Yao.apply(state, yao_gate)
+                evolved = apply(state, yao_gate)
                 yao_obs = put(nqubits, 1 => (obs_symbol == :X ? X : obs_symbol == :Y ? Y : Z))
                 ref_val = real(expect(yao_obs, evolved))
                 @test isapprox(exp_val, ref_val; atol=1e-10)
@@ -72,7 +72,7 @@ const two_obs = [(:X, :X), (:X, :Y), (:X, :Z),
                     propagated = propagate(qc, obs)
                     exp_val = overlapwithzero(propagated)
                     state = zero_state(2)
-                    evolved = Yao.apply(state, yao_gate)
+                    evolved = apply(state, yao_gate)
                     p1 = o1 == :X ? X : o1 == :Y ? Y : Z
                     p2 = o2 == :X ? X : o2 == :Y ? Y : Z
                     yao_obs = chain(put(2, 1 => p1), put(2, 2 => p2))
@@ -164,7 +164,7 @@ end
                 put(2, 1 => H),
                 put(2, 2 => H),
                 control(2, 1, 2 => X),
-                put(2, 2 => Yao.YaoBlocks.Rz(π/4)),
+                put(2, 2 => Rz(π/4)),
                 control(2, 1, 2 => X),
                 put(2, 1 => H),
                 put(2, 2 => H)
@@ -179,7 +179,7 @@ end
             ],
             yao_circuit = chain(
                 swap(2, 1, 2),
-                put(2, 1 => Yao.YaoBlocks.Ry(π/4))
+                put(2, 1 => Ry(π/4))
             ),
             obs = ([:Y], [2])
         ),
@@ -195,7 +195,7 @@ end
                 put(3, 1 => H),
                 control(3, 1, 2 => X),
                 control(3, 2, 3 => X),
-                put(3, 2 => Yao.YaoBlocks.Rx(π/4))
+                put(3, 2 => Rx(π/4))
             ),
             obs = ([:X, :X], [1, 3])
         )
@@ -209,7 +209,7 @@ end
             propagated = propagate(circuit.custom_gates, obs, θs)
             custom_val = overlapwithzero(propagated)
             zero_st = zero_state(circuit.nqubits)
-            evolved_state = Yao.apply(zero_st, circuit.yao_circuit)
+            evolved_state = apply(zero_st, circuit.yao_circuit)
             yao_obs = build_yao_observable(obs_symbols, obs_qubits, circuit.nqubits)
             yao_val = real(expect(yao_obs, evolved_state))
             @test isapprox(custom_val, yao_val; atol=1e-10)
