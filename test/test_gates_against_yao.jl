@@ -4,7 +4,6 @@ using Random
 using Yao: X, Y, Z, H, chain, put, control, zero_state, expect, apply
 using PauliPropagation
 
-
 function Rzz(θ)
     phases = [exp(-im * θ/2), exp(im * θ/2), exp(im * θ/2), exp(-im * θ/2)]
     return put(2, 1:2 => matblock(Diagonal(phases)))
@@ -128,7 +127,6 @@ function invert_gates(gates::Vector{<:Any}, θs::Vector{Float64})
         elseif gate isa CliffordGate
             inv_sym = register_inverse!(gate.symbol)
             push!(rev_list, CliffordGate(inv_sym, gate.qinds))
-
         else
             throw(ArgumentError("Cannot invert object of type $(typeof(gate))"))
         end
@@ -202,7 +200,6 @@ end
             obs = ([:X, :X], [1, 3])
         )
     ]
-
     for circuit in circuits
         @testset "nqubits=$(circuit.nqubits), obs=$(circuit.obs)" begin
             θs = fill(π/4, count(g -> g isa PauliRotation, circuit.custom_gates))
