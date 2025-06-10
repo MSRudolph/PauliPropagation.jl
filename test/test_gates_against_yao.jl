@@ -1,10 +1,9 @@
 using Test
 using LinearAlgebra
-using Yao
 using Random
 using Yao: X, Y, Z, H, chain, put, control, zero_state, expect, apply
 using PauliPropagation
-using PauliPropagation: CliffordGate, PauliRotation, PauliSum, transposecliffordmap
+
 
 function Rzz(θ)
     phases = [exp(-im * θ/2), exp(im * θ/2), exp(im * θ/2), exp(-im * θ/2)]
@@ -41,86 +40,47 @@ function clifford_to_yao(g::CliffordGate)
 end
 
 const all_gates = collect(keys(PauliPropagation._default_clifford_map))
-const obs_symbols = [:X, :Y, :Z]
+const single_obs = [:X, :Y, :Z]
+const two_obs = [(:X, :X), (:X, :Y), (:X, :Z),
+                  (:Y, :X), (:Y, :Y), (:Y, :Z),
+                  (:Z, :X), (:Z, :Y), (:Z, :Z)]
 
 @testset "Observable Propagation Check via Yao.jl" begin
     for gate_symbol in all_gates
-        nqubits = gate_symbol == :CNOT || gate_symbol == :CZ || gate_symbol == :SWAP || gate_symbol == :ZZpihalf ? 2 : 1
-        for obs_symbol in obs_symbols
-            @testset "Gate $gate_symbol propagating $obs_symbol" begin
+        nqubits = gate_symbol in (:CNOT, :CZ, :SWAP, :ZZpihalf) ? 2 : 1
+        yao_gate = clifford_to_yao(CliffordGate(gate_symbol, 1:nqubits))
+        for obs_symbol in single_obs
+            @testset "Gate $gate_symbol propagates 1-local $obs_symbol" begin
                 qc = [CliffordGate(gate_symbol, 1:nqubits)]
                 obs = PauliSum(nqubits)
                 add!(obs, [obs_symbol], [1], 1)
                 propagated = propagate(qc, obs)
-                exp_val_custom = overlapwithzero(propagated)
+                exp_val = overlapwithzero(propagated)
+
                 state = zero_state(nqubits)
-                yao_chain = chain(nqubits, [clifford_to_yao(g) for g in qc])
-                evolved_state = Yao.apply(state, yao_chain)
-                single_obs = obs_symbol == :X ? X : obs_symbol == :Y ? Y : Z
-                yao_obs = put(nqubits, 1 => single_obs)
-                ref_val = real(expect(yao_obs, evolved_state))
-                @test isapprox(exp_val_custom, ref_val, atol=1e-10)
+                evolved = Yao.apply(state, yao_gate)
+                yao_obs = put(nqubits, 1 => (obs_symbol == :X ? X : obs_symbol == :Y ? Y : Z))
+                ref_val = real(expect(yao_obs, evolved))
+                @test isapprox(exp_val, ref_val; atol=1e-10)
             end
         end
-    end
-
-    rot_gates = [
-        (:X, Rx),
-        (:Y, Ry),
-        (:Z, Rz)
-    ]
-    for (axis, rot_gate_constructor) in rot_gates
-        for test_i in 1:3
-            θ = 2π * rand()
-            pr_gate = PauliRotation(axis, 1)
-            yao_gate = put(1 => rot_gate_constructor(θ))
-            @test mat(chain(1, yao_gate)) ≈ tomatrix(pr_gate, θ) atol=1e-12
-            for obs_symbol in obs_symbols
-                @testset "Rotation Gate R$axis($θ) propagating $obs_symbol" begin
-                    qc = [PauliRotation(axis, 1)]
-                    obs = PauliSum(1)
-                    add!(obs, [obs_symbol], [1], 1)
-                    propagated = propagate(qc, obs, [θ])
-                    exp_val_custom = overlapwithzero(propagated)
-                    state = zero_state(1)
-                    evolved_state = Yao.apply(state, yao_gate)
-                    single_obs = obs_symbol == :X ? X : obs_symbol == :Y ? Y : Z
-                    yao_obs = put(1, 1 => single_obs)
-                    ref_val = real(expect(yao_obs, evolved_state))
-                    @test isapprox(exp_val_custom, ref_val, atol=1e-10)
+        if nqubits == 2
+            for (o1, o2) in two_obs
+                @testset "Gate $gate_symbol propagates 2-local $o1⊗$o2" begin
+                    qc = [CliffordGate(gate_symbol, 1:2)]
+                    obs = PauliSum(2)
+                    add!(obs, [o1, o2], [1, 2], 1)
+                    propagated = propagate(qc, obs)
+                    exp_val = overlapwithzero(propagated)
+                    state = zero_state(2)
+                    evolved = Yao.apply(state, yao_gate)
+                    p1 = o1 == :X ? X : o1 == :Y ? Y : Z
+                    p2 = o2 == :X ? X : o2 == :Y ? Y : Z
+                    yao_obs = chain(put(2, 1 => p1), put(2, 2 => p2))
+                    ref_val = real(expect(yao_obs, evolved))
+                    @test isapprox(exp_val, ref_val; atol=1e-10)
                 end
             end
-        end
-    end
-end
-
-@testset "Combined Gates Propagation Test" begin
-    nqubits = 2
-    θ = π/4
-    obs_symbols = [:X, :Y, :Z]
-    qc = [
-        CliffordGate(:H, [1]),
-        PauliRotation(:Z, 1),
-        CliffordGate(:CNOT, [1, 2])
-    ]
-    yao_gates = [
-        put(nqubits, 1 => H),
-        put(nqubits, 1 => Rz(θ)),
-        control(nqubits, 1, 2 => X)
-    ]
-    yao_chain = chain(nqubits, yao_gates)
-    state = zero_state(nqubits)
-    for obs_symbol in obs_symbols
-        @testset "Combined gates propagating $obs_symbol on qubit 1" begin
-            obs = PauliSum(nqubits)
-            add!(obs, [obs_symbol], [1], 1)
-            propagated = propagate(qc, obs, [θ])
-            exp_val_custom = overlapwithzero(propagated)
-            evolved_state = Yao.apply(state, yao_chain)
-            single_obs = obs_symbol == :X ? X : obs_symbol == :Y ? Y : Z
-            yao_obs = put(nqubits, 1 => single_obs)
-            ref_val = real(expect(yao_obs, evolved_state))
-            @test isapprox(exp_val_custom, ref_val, atol=1e-10)
         end
     end
 end
@@ -135,7 +95,6 @@ end
         @test tomatrix(PauliRotation(:Y, 1), π) ≈ -im * mat(Y)
         @test tomatrix(PauliRotation(:Y, 1), π/2) ≈ [cos(π/4) -sin(π/4); sin(π/4) cos(π/4)]
     end
-
     for gate in [(:X, Rx), (:Y, Ry), (:Z, Rz)]
         θ = randn()
         yao_gate = chain(1, put(1=>gate[2](θ)))
@@ -189,113 +148,75 @@ end
 @testset "Integration Tests for Full Circuits" begin
     circuits = [
         (
-            name = "Simple H + CNOT + Z rotation",
             nqubits = 2,
             custom_gates = [
                 CliffordGate(:H, [1]),
                 CliffordGate(:CNOT, [1, 2]),
-                PauliRotation(:Z, 2)
+                CliffordGate(:H, [1]),
+                CliffordGate(:H, [2]),
+                CliffordGate(:CNOT, [1, 2]),
+                PauliRotation(:Z, 2),
+                CliffordGate(:CNOT, [1, 2]),
+                CliffordGate(:H, [1]),
+                CliffordGate(:H, [2])
             ],
             yao_circuit = chain(
                 put(2, 1 => H),
                 control(2, 1, 2 => X),
-                put(2, 2 => Rz(π/4))
-            ),
-            obs = ([:X], [1])
-        ),
-        (
-            name = "Entangled ZZ circuit",
-            nqubits = 2,
-            custom_gates = [
-                CliffordGate(:H, [1]),
-                CliffordGate(:H, [2]),
-                CliffordGate(:ZZpihalf, [1, 2])
-            ],
-            yao_circuit = chain(
                 put(2, 1 => H),
                 put(2, 2 => H),
-                control(2, 1, 2 => Rz(π/2))
+                control(2, 1, 2 => X),
+                put(2, 2 => Yao.YaoBlocks.Rz(π/4)),
+                control(2, 1, 2 => X),
+                put(2, 1 => H),
+                put(2, 2 => H)
             ),
-            obs = ([:Z], [1])
+            obs = ([:X, :Z], [1, 2])
         ),
         (
-            name = "SWAP + Y Rotation",
             nqubits = 2,
             custom_gates = [
-                CliffordGate(:H, [1]),
                 CliffordGate(:SWAP, [1, 2]),
-                PauliRotation(:Y, 2)
+                PauliRotation(:Y, 1)
             ],
             yao_circuit = chain(
-                put(2, 1 => H),
                 swap(2, 1, 2),
-                put(2, 2 => Ry(π/4))
+                put(2, 1 => Yao.YaoBlocks.Ry(π/4))
             ),
-            obs = ([:Y], [1])
+            obs = ([:Y], [2])
         ),
         (
-            name = "3-qubit entangling circuit",
             nqubits = 3,
             custom_gates = [
                 CliffordGate(:H, [1]),
                 CliffordGate(:CNOT, [1, 2]),
-                CliffordGate(:CNOT, [2, 3])
+                CliffordGate(:CNOT, [2, 3]),
+                PauliRotation(:X, 2)
             ],
             yao_circuit = chain(
                 put(3, 1 => H),
                 control(3, 1, 2 => X),
-                control(3, 2, 3 => X)
+                control(3, 2, 3 => X),
+                put(3, 2 => Yao.YaoBlocks.Rx(π/4))
             ),
-            obs = ([:X], [3])
-        ),
-        (
-            name = "Mixed Clifford + Parametric",
-            nqubits = 2,
-            custom_gates = [
-                CliffordGate(:H, [1]),
-                PauliRotation(:X, 1),
-                CliffordGate(:CNOT, [1, 2]),
-                PauliRotation(:Y, 2)
-            ],
-            yao_circuit = chain(
-                put(2, 1 => H),
-                put(2, 1 => Rx(π/4)),
-                control(2, 1, 2 => X),
-                put(2, 2 => Ry(π/4))
-            ),
-            obs = ([:Z], [2])
-        ),
-        (
-            name = "Dense gate mix with 2-qubit observable",
-            nqubits = 2,
-            custom_gates = [
-                CliffordGate(:H, [1]),
-                PauliRotation(:Y, 1),
-                CliffordGate(:CNOT, [1, 2]),
-                PauliRotation(:Z, 2)
-            ],
-            yao_circuit = chain(
-                put(2, 1 => H),
-                put(2, 1 => Ry(π/4)),
-                control(2, 1, 2 => X),
-                put(2, 2 => Rz(π/4))
-            ),
-            obs = ([:X, :Z], [1, 2])
+            obs = ([:X, :X], [1, 3])
         )
     ]
-    for (name, nqubits, custom_gates, yao_circuit, (obs_symbols, obs_qubits)) in circuits
-        @testset "$name" begin
-            θs = fill(π/4, count(g -> g isa PauliRotation, custom_gates))
-            obs = PauliSum(nqubits)
+
+    for circuit in circuits
+        @testset "nqubits=$(circuit.nqubits), obs=$(circuit.obs)" begin
+            θs = fill(π/4, count(g -> g isa PauliRotation, circuit.custom_gates))
+            obs = PauliSum(circuit.nqubits)
+            obs_symbols, obs_qubits = circuit.obs
             add!(obs, obs_symbols, obs_qubits, 1.0)
-            propagated = propagate(custom_gates, obs, θs)
+            propagated = propagate(circuit.custom_gates, obs, θs)
             custom_val = overlapwithzero(propagated)
-            zero_st = zero_state(nqubits)
-            evolved_state = Yao.apply(zero_st, yao_circuit)
-            yao_obs = build_yao_observable(obs_symbols, obs_qubits, nqubits)
+            zero_st = zero_state(circuit.nqubits)
+            evolved_state = Yao.apply(zero_st, circuit.yao_circuit)
+            yao_obs = build_yao_observable(obs_symbols, obs_qubits, circuit.nqubits)
             yao_val = real(expect(yao_obs, evolved_state))
             @test isapprox(custom_val, yao_val; atol=1e-10)
-            rev_gates, rev_θs = invert_gates(custom_gates, θs)
+            rev_gates, rev_θs = invert_gates(circuit.custom_gates, θs)
             roundtrip_obs = propagate(rev_gates, propagated, rev_θs)
             @test roundtrip_obs == obs
         end

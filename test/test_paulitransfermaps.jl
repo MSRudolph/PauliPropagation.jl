@@ -29,7 +29,7 @@ using Test
 
     # Test using T gate
     @testset "TGate" begin
-        tgate = TGate(1)
+        tgate = PauliPropagation.TGate(1)
         matrix = tomatrix(tgate)
 
         ptmmap = calculateptm(matrix)
@@ -98,7 +98,7 @@ end
 
     nq = 2
 
-    circuit = [CliffordGate(:CNOT, [1, 2]), CliffordGate(:X, 1), CliffordGate(:H, 2), TGate(1), TGate(2)]
+    circuit = [CliffordGate(:CNOT, [1, 2]), CliffordGate(:X, 1), CliffordGate(:H, 2), PauliPropagation.TGate(1), PauliPropagation.TGate(2)]
     ptmap = totransfermap(nq, circuit)
     g = TransferMapGate(ptmap, (1, 2))
 

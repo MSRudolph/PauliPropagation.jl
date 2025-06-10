@@ -21,7 +21,7 @@ using Test
 
     # Test using T gate
     @testset "TUnitary" begin
-        tgate = TGate(1)
+        tgate = PauliPropagation.TGate(1)
         U = tomatrix(tgate)
         expected_U = [
             [1 0];
