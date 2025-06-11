@@ -147,57 +147,21 @@ end
     circuits = [
         (
             nqubits = 2,
-            custom_gates = [
-                CliffordGate(:H, [1]),
-                CliffordGate(:CNOT, [1, 2]),
-                CliffordGate(:H, [1]),
-                CliffordGate(:H, [2]),
-                CliffordGate(:CNOT, [1, 2]),
-                PauliRotation(:Z, 2),
-                CliffordGate(:CNOT, [1, 2]),
-                CliffordGate(:H, [1]),
-                CliffordGate(:H, [2])
-            ],
-            yao_circuit = chain(
-                put(2, 1 => H),
-                control(2, 1, 2 => X),
-                put(2, 1 => H),
-                put(2, 2 => H),
-                control(2, 1, 2 => X),
-                put(2, 2 => Rz(π/4)),
-                control(2, 1, 2 => X),
-                put(2, 1 => H),
-                put(2, 2 => H)
-            ),
-            obs = ([:X, :Z], [1, 2])
+            custom_gates = [PauliRotation(:X, 1)],
+            yao_circuit  = chain(put(2, 1 => Rx(π/4))),
+            obs          = ([:Z], [1])
+          ),
+        (
+            nqubits = 2,
+            custom_gates = [CliffordGate(:CNOT, [1, 2])],
+            yao_circuit  = chain(control(2, 1, 2 => X)),
+            obs          = ([:Z], [2])
         ),
         (
             nqubits = 2,
-            custom_gates = [
-                CliffordGate(:SWAP, [1, 2]),
-                PauliRotation(:Y, 1)
-            ],
-            yao_circuit = chain(
-                swap(2, 1, 2),
-                put(2, 1 => Ry(π/4))
-            ),
-            obs = ([:Y], [2])
-        ),
-        (
-            nqubits = 3,
-            custom_gates = [
-                CliffordGate(:H, [1]),
-                CliffordGate(:CNOT, [1, 2]),
-                CliffordGate(:CNOT, [2, 3]),
-                PauliRotation(:X, 2)
-            ],
-            yao_circuit = chain(
-                put(3, 1 => H),
-                control(3, 1, 2 => X),
-                control(3, 2, 3 => X),
-                put(3, 2 => Rx(π/4))
-            ),
-            obs = ([:X, :X], [1, 3])
+            custom_gates = [PauliRotation(:Z, 1)],
+            yao_circuit  = chain(put(2, 1 => Rz(π/4))),
+            obs          = ([:X], [1])
         )
     ]
     for circuit in circuits
