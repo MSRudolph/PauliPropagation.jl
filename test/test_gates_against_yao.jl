@@ -1,6 +1,7 @@
 using Test
 using LinearAlgebra
 using Random
+using Combinatorics
 using Yao: X, Y, Z, H, Rx, Rz, Ry, chain, put, control, zero_state, expect, apply, rot, mat, matblock, swap, SWAP, time_evolve, kron
 using PauliPropagation
 
@@ -135,12 +136,16 @@ function invert_gates(gates::Vector{<:Any}, θs::Vector{Float64})
 end
 
 function build_yao_observable(symbols::Vector{Symbol}, qubits::Vector{Int}, nqubits::Int)
-    blocks = []
-    for (sym, q) in zip(symbols, qubits)
-        op = sym == :X ? X : sym == :Y ? Y : sym == :Z ? Z : error("Unsupported symbol: $sym")
-        push!(blocks, put(nqubits, q => op))
+    length(symbols) == length(qubits) || throw(ArgumentError("Symbols and qubits must have same length"))
+    all(1 .≤ qubits .≤ nqubits) || throw(ArgumentError("Qubit indices out of range"))
+    
+    blocks = map(zip(symbols, qubits)) do (sym, q)
+        op = sym == :X ? X : sym == :Y ? Y : sym == :Z ? Z : 
+             throw(ArgumentError("Unsupported Pauli symbol: $sym. Use :X, :Y, or :Z"))
+        put(nqubits, q => op)
     end
-    return length(blocks) == 1 ? blocks[1] : chain(blocks...)
+    
+    return length(blocks) == 1 ? only(blocks) : chain(blocks...)
 end
 
 @testset "Integration Tests for Full Circuits" begin
@@ -208,6 +213,86 @@ end
             rev_gates, rev_θs = invert_gates(circuit.custom_gates, θs)
             roundtrip_obs = propagate(rev_gates, propagated, rev_θs)
             @test roundtrip_obs == obs
+        end
+    end
+
+    is_single_qubit(gate) = length(gate.qinds) == 1
+    @testset "Trotter Circuit Propagation" begin
+        for nq in [2, 3, 4]
+            topologies = [
+                [(i, i+1) for i in 1:(nq-1)],
+                [(i, mod1(i+1, nq)) for i in 1:nq],
+                nq >= 3 ? [(1,2), (2,3), (1,3)] : [(1,2)]
+            ]
+            for topology in topologies, nl in [2, 3, 4]
+                @testset "$nq Qubits | $nl Layers | $(typeof(topology))" begin
+                    num_terms = length(topology) + nq
+                    θs = 2π .* rand(nl * num_terms)
+                    circuit = tfitrottercircuit(nq, nl; topology=topology)
+                    yao_circ = chain(nq)
+                    param_idx = 1
+                    for gate in circuit
+                        if is_single_qubit(gate)
+                            axis = gate.symbols[1]
+                            qidx = gate.qinds[1]
+                            θ = θs[param_idx]
+                            param_idx += 1
+                            rot_gate = if axis == :X
+                                Rx(θ)
+                            elseif axis == :Y
+                                Ry(θ)
+                            else
+                                Rz(θ)
+                            end
+                            push!(yao_circ, put(nq, qidx => rot_gate))
+                        else
+                            q1, q2 = gate.qinds
+                            θ = θs[param_idx]
+                            param_idx += 1
+                         op1 = gate.symbols[1] == :X ? X :
+                                  gate.symbols[1] == :Y ? Y : Z
+                            op2 = gate.symbols[2] == :X ? X : 
+                                  gate.symbols[2] == :Y ? Y : Z
+                            op = kron(op1, op2)
+                            push!(yao_circ, put(nq, (q1, q2) => time_evolve(op, θ/2)))
+                        end
+                    end
+                    yao_state = zero_state(nq) |> yao_circ
+                    @testset "Single-Pauli Observables" begin
+                        for q in 1:nq, p in [:X, :Y, :Z]
+                            obs = PauliSum(nq)
+                            add!(obs, [p], [q], 1.0)
+                            our_val = overlapwithzero(propagate(circuit, obs, θs))
+                            yao_obs = build_yao_observable([p], [q], nq)
+                            yao_val = real(expect(yao_obs, yao_state))
+                            @test isapprox(our_val, yao_val, atol=1e-10)
+                        end
+                    end
+                    @testset "Two-Qubit Observables" begin
+                        for (q1, q2) in topology, p1 in [:X, :Y, :Z], p2 in [:X, :Y, :Z]
+                            obs = PauliSum(nq)
+                            add!(obs, [p1, p2], [q1, q2], 1.0)
+                            our_val = overlapwithzero(propagate(circuit, obs, θs))
+                            yao_obs = build_yao_observable([p1, p2], [q1, q2], nq)
+                            yao_val = real(expect(yao_obs, yao_state))
+                            @test isapprox(our_val, yao_val, atol=1e-10)
+                        end
+                    end
+                    @testset "Multi-Qubit Observables" begin
+                        for k in 2:min(3, nq)
+                            for qs in combinations(1:nq, k)
+                                ps = rand([:X, :Y, :Z], k)
+                                obs = PauliSum(nq)
+                                add!(obs, ps, qs, 1.0)
+                                our_val = overlapwithzero(propagate(circuit, obs, θs))
+                                yao_obs = build_yao_observable(ps, qs, nq)
+                                yao_val = real(expect(yao_obs, yao_state))
+                                @test isapprox(our_val, yao_val, atol=1e-10)
+                            end
+                        end
+                    end
+                end
+            end
         end
     end
 end
