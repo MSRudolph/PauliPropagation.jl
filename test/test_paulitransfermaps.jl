@@ -29,7 +29,7 @@ using Test
 
     # Test using T gate
     @testset "TGate" begin
-        tgate = PauliPropagation.TGate(1)
+        tgate = TGate(1)
         matrix = tomatrix(tgate)
 
         ptmmap = calculateptm(matrix)
