@@ -138,13 +138,11 @@ end
 function build_yao_observable(symbols::Vector{Symbol}, qubits::Vector{Int}, nqubits::Int)
     length(symbols) == length(qubits) || throw(ArgumentError("Symbols and qubits must have same length"))
     all(1 .≤ qubits .≤ nqubits) || throw(ArgumentError("Qubit indices out of range"))
-    
     blocks = map(zip(symbols, qubits)) do (sym, q)
         op = sym == :X ? X : sym == :Y ? Y : sym == :Z ? Z : 
              throw(ArgumentError("Unsupported Pauli symbol: $sym. Use :X, :Y, or :Z"))
         put(nqubits, q => op)
     end
-    
     return length(blocks) == 1 ? only(blocks) : chain(blocks...)
 end
 
@@ -216,7 +214,6 @@ end
         end
     end
 
-    is_single_qubit(gate) = length(gate.qinds) == 1
     @testset "Trotter Circuit Propagation" begin
         for nq in [2, 3, 4]
             topologies = [
@@ -232,7 +229,7 @@ end
                     yao_circ = chain(nq)
                     param_idx = 1
                     for gate in circuit
-                        if is_single_qubit(gate)
+                        if length(gate.qinds) == 1
                             axis = gate.symbols[1]
                             qidx = gate.qinds[1]
                             θ = θs[param_idx]
