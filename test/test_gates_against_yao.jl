@@ -1,7 +1,7 @@
 using Test
 using LinearAlgebra
 using Random
-using Yao: X, Y, Z, H, Rx, Rz, Ry, chain, put, control, zero_state, expect, apply, rot, mat, matblock, swap, SWAP
+using Yao: X, Y, Z, H, Rx, Rz, Ry, chain, put, control, zero_state, expect, apply, rot, mat, matblock, swap, SWAP, time_evolve, kron
 using PauliPropagation
 
 function Rzz(θ)
@@ -144,6 +144,10 @@ function build_yao_observable(symbols::Vector{Symbol}, qubits::Vector{Int}, nqub
 end
 
 @testset "Integration Tests for Full Circuits" begin
+    XX = kron(X, X)
+    YY = kron(Y, Y)
+    ZZ = kron(Z, Z)
+    XYZ = kron(X, kron(Y, Z))
     circuits = [
         (
             nqubits = 2,
@@ -162,7 +166,31 @@ end
             custom_gates = [PauliRotation(:Z, 1)],
             yao_circuit  = chain(put(2, 1 => Rz(π/4))),
             obs          = ([:X], [1])
-        )
+        ),
+        (
+            nqubits = 2,
+            custom_gates = [PauliRotation([:X, :X], [1, 2])],
+            yao_circuit  = chain(put(2, (1,2) => time_evolve(XX, π/8))),
+            obs          = ([:Z, :Z], [1, 2])
+        ),
+        (
+            nqubits = 2,
+            custom_gates = [PauliRotation([:Y, :Y], [1, 2])],
+            yao_circuit  = chain(put(2, (1,2) => time_evolve(YY, π/8))),
+            obs          = ([:X, :X], [1, 2])
+        ),
+        (
+            nqubits = 2,
+            custom_gates = [PauliRotation([:Z, :Z], [1, 2])],
+            yao_circuit  = chain(put(2, (1,2) => time_evolve(ZZ, π/8))),
+            obs          = ([:Y, :Y], [1, 2])
+        ),
+        (
+            nqubits = 3,
+            custom_gates = [PauliRotation([:X, :Y, :Z], [1, 2, 3])],
+            yao_circuit  = chain(put(3, (1,2,3) => time_evolve(XYZ, π/8))),
+            obs          = ([:Z, :Y, :X], [1, 2, 3])
+        ),
     ]
     for circuit in circuits
         @testset "nqubits=$(circuit.nqubits), obs=$(circuit.obs)" begin
