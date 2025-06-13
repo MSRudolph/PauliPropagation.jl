@@ -6,7 +6,7 @@ using PauliPropagation
 
 # Gate Translation Functions
 
-seed = rand(1:1000)
+seed = rand(UInt32)
 rng = MersenneTwister(seed)
 println("Global Yao.jl comparison test seed: $(rng.seed)")
 
