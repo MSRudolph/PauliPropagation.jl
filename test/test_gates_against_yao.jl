@@ -212,11 +212,8 @@ end
 
 @testset "PauliRotation Gates" begin
     @testset "Basic Properties" begin
-        @test tomatrix(PauliRotation(:Z, 1), 0) ≈ Matrix(I, 2, 2)
-        @test tomatrix(PauliRotation(:Z, 1), π/2) ≈ [exp(-im*π/4) 0; 0 exp(im*π/4)]
-        @test tomatrix(PauliRotation(:Z, 1), π) ≈ -im * mat(Z)
-        @test tomatrix(PauliRotation(:X, 1), π) ≈ -im * mat(X)
-        @test tomatrix(PauliRotation(:Y, 1), π) ≈ -im * mat(Y)
+      @test tomatrix(PauliRotation(:Z, 1), 0) ≈ Matrix(I, 2, 2) && tomatrix(PauliRotation(:Z, 1), π/2) ≈ [exp(-im*π/4) 0; 0 exp(im*π/4)]
+      @test tomatrix(PauliRotation(:Z, 1), π) ≈ -im * mat(Z) && tomatrix(PauliRotation(:X, 1), π) ≈ -im * mat(X) && tomatrix(PauliRotation(:Y, 1), π) ≈ -im * mat(Y)
     end
     @testset "Against Yao Rotations" begin
         for (axis, yao_rot) in [(:X, Rx), (:Y, Ry), (:Z, Rz)]
