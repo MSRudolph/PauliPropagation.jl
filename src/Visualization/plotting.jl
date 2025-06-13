@@ -8,7 +8,7 @@
 # Import necessary functions
 import ..PauliPropagation: propagate, PauliString, PauliSum, wrapcoefficients, unwrapcoefficients
 using JSON
-using PlotGraphviz
+using PlotGraphviz: plot_graphviz, read_dot_file
 
 """
     export_to_graphviz(filename::String="pauli_evolution_tree.dot"; 
@@ -282,7 +282,7 @@ function visualize_tree(output_format::String="graphviz";
     elseif output_format == "summary"
         print_tree_summary()
     else
-        throw(ArgumentError("Unsupported output format: $output_format. Use 'graphviz', 'json', or 'summary'."))
+        throw(ArgumentError("Unsupported output format: $output_format. Supported formats are 'graphviz', 'json', or 'summary'."))
     end
 end
 
