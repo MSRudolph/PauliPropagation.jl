@@ -34,4 +34,6 @@ using Random
 
     include("test_numericalcertificates.jl")
 
+    include("test_gates_against_yao.jl")
+
 end
