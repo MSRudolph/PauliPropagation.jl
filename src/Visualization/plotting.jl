@@ -19,13 +19,15 @@ Export the current evolution tree to a GraphViz DOT file.
 function export_to_graphviz(filename::String="pauli_evolution_tree.dot";
     show_coefficients::Bool=true,
     node_shape::String="ellipse",
-    edge_style::String="solid")
+    edge_style::String="solid",
+    graph_title::String="Pauli Propagation Graph")
 
     open(filename, "w") do io
         println(io, "digraph PauliEvolutionTree {")
         println(io, "    rankdir=TB;")  # Top to Bottom layout
         println(io, "    node [shape=$node_shape, fontname=\"Arial\"];")
         println(io, "    edge [fontname=\"Arial\", fontsize=10];")
+        println(io, "    label=\"$graph_title\";")
         println(io, "")
 
         # Write nodes
@@ -158,18 +160,57 @@ function print_tree_summary()
 end
 
 """
+    mute_merge_nodes()
+
+When exporting the tree to GraphViz, we don't need to show the merge nodes explicitly.
+Thus this function will remove the merge nodes from the tree.
+"""
+function remove_merge_nodes()
+    # Find all merge nodes (nodes with gate_applied == "MERGE")
+    merge_nodes = [node_id for (node_id, node) in EVOLUTION_TREE if node.gate_applied == "MERGE"]
+
+    # For each merge node, connect its parents directly to its children
+    for merge_id in merge_nodes
+        # Find all edges where this merge node is a parent
+        child_edges = [edge for edge in EVOLUTION_EDGES if edge.parent_id == merge_id]
+        # Find all edges where this merge node is a child
+        parent_edges = [edge for edge in EVOLUTION_EDGES if edge.child_id == merge_id]
+
+        # For each child of the merge node, connect it to all parents of the merge node
+        for child_edge in child_edges
+            for parent_edge in parent_edges
+                # Create new edge from parent to child
+                push!(EVOLUTION_EDGES, TreeEdge(
+                    parent_edge.parent_id,
+                    child_edge.child_id,
+                    child_edge.coefficient,
+                    child_edge.gate
+                ))
+            end
+        end
+
+        # Remove the merge node and its edges
+        delete!(EVOLUTION_TREE, merge_id)
+        filter!(edge -> edge.parent_id != merge_id && edge.child_id != merge_id, EVOLUTION_EDGES)
+    end
+end
+
+"""
     visualize_tree(output_format::String="graphviz", filename::String="")
 
 Main function for visualizing the evolution tree.
 Supports "graphviz", "json", and "summary" formats.
 """
-function visualize_tree(output_format::String="graphviz", filename::String="")
+function visualize_tree(output_format::String="graphviz", filename::String="", show_merge_nodes::Bool=false)
     if isempty(EVOLUTION_TREE)
         println("Warning: Evolution tree is empty. Run propagation with PauliTreeTracker coefficients first.")
         return
     end
 
     if output_format == "graphviz"
+        if !show_merge_nodes
+            remove_merge_nodes()
+        end
         default_filename = "pauli_evolution_tree.dot"
         export_to_graphviz(isempty(filename) ? default_filename : filename)
     elseif output_format == "json"
@@ -193,6 +234,7 @@ function propagate_with_tree_tracking(circ, input, thetas=nothing;
     export_format::String="graphviz",
     export_filename::String="",
     reset_tree_first::Bool=true,
+    show_merge_nodes::Bool=false,
     kwargs...)
 
     if reset_tree_first
@@ -220,7 +262,7 @@ function propagate_with_tree_tracking(circ, input, thetas=nothing;
     result = propagate(circ, tracked_input, thetas; kwargs...)
 
     # Export visualization
-    visualize_tree(export_format, export_filename)
+    visualize_tree(export_format, export_filename, show_merge_nodes)
 
     # Return unwrapped result
     return unwrapcoefficients(result)
