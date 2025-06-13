@@ -6,37 +6,24 @@ using PauliPropagation
 
 # Gate Translation Functions
 
-function _Rzz(θ)
-    phases = [exp(-im * θ/2), exp(im * θ/2), exp(im * θ/2), exp(-im * θ/2)]
-    return put(2, 1:2 => matblock(Diagonal(phases)))
-end
+_Rzz(θ) = put(2, 1:2 => matblock(Diagonal([exp(-im * θ/2), exp(im * θ/2), exp(im * θ/2), exp(-im * θ/2)])))
 
 function _clifford_to_yao(g::CliffordGate)
-    symbol = g.symbol
-    if symbol == :X
-        return X
-    elseif symbol == :Y
-        return Y
-    elseif symbol == :Z
-        return Z
-    elseif symbol == :H
-        return H
-    elseif symbol == :S
-        return chain(1, Rz(π/2))
-    elseif symbol == :SX
-        return chain(1, Rx(π/2))
-    elseif symbol == :SY
-        return chain(1, Ry(π/2))
-    elseif symbol == :CNOT
-        return control(2, 1, 2=>X)
-    elseif symbol == :CZ
-        return control(2, 1, 2=>Z)
-    elseif symbol == :SWAP
-        return SWAP
-    elseif symbol == :ZZpihalf
-        return _Rzz(π/2)
-    else
-        error("Unsupported CliffordGate symbol: $symbol")
+    gate_dict = Dict(
+        :X => X,
+        :Y => Y,
+        :Z => Z,
+        :H => H,
+        :S => chain(1, Rz(π/2)),
+        :SX => chain(1, Rx(π/2)),
+        :SY => chain(1, Ry(π/2)),
+        :CNOT => control(2, 1, 2=>X),
+        :CZ => control(2, 1, 2=>Z),
+        :SWAP => SWAP,
+        :ZZpihalf => _Rzz(π/2)
+    )
+    get(gate_dict, g.symbol) do
+        error("Unsupported CliffordGate symbol: $(g.symbol)")
     end
 end
 
@@ -44,7 +31,7 @@ function _build_yao_observable(symbols::Vector{Symbol}, qubits::Vector{Int}, nqu
     length(symbols) == length(qubits) || throw(ArgumentError("Symbols and qubits must have same length"))
     all(1 .≤ qubits .≤ nqubits) || throw(ArgumentError("Qubit indices out of range"))
     blocks = map(zip(symbols, qubits)) do (sym, q)
-        op = sym == :X ? X : sym == :Y ? Y : sym == :Z ? Z : 
+        op = sym == :X ? X : sym == :Y ? Y : sym == :Z ? Z :
              throw(ArgumentError("Unsupported Pauli symbol: $sym. Use :X, :Y, or :Z"))
         put(nqubits, q => op)
     end
@@ -105,41 +92,65 @@ function _invert_gates(gates::Vector{<:Any}, θs::Vector{Float64})
 end
 
 function _insert_gate!(gate_type, nqubits, rng, custom_gates, yao_ops, θs)
-    q -> rand(rng, 1:nqubits)
-    if gate_type == :H || gate_type == :X || gate_type == :Y || gate_type == :Z
-        q = rand(rng, 1:nqubits)
-        push!(custom_gates, CliffordGate(gate_type, [q]))
-        g = gate_type == :H ? H : gate_type == :X ? X : gate_type == :Y ? Y : Z
-        push!(yao_ops, put(nqubits, q => g))
-    elseif gate_type == :RX || gate_type == :RY || gate_type == :RZ
-        q = rand(rng, 1:nqubits)
-        angle = rand(rng) * π/2
-        axis = Symbol(string(gate_type)[end])
-        push!(custom_gates, PauliRotation(axis, q))
-        push!(θs, angle)
-        rot = gate_type == :RX ? Rx(angle) : gate_type == :RY ? Ry(angle) : Rz(angle)
-        push!(yao_ops, put(nqubits, q => rot))
-    elseif gate_type == :CNOT && nqubits ≥ 2
-        c, t = rand(rng, 1:nqubits), rand(rng, 1:nqubits)
-        while t == c; t = rand(rng, 1:nqubits); end
-        push!(custom_gates, CliffordGate(:CNOT, [c, t]))
-        push!(yao_ops, control(nqubits, c, t => X))
-    elseif gate_type == :SWAP && nqubits ≥ 2
-        q1, q2 = rand(rng, 1:nqubits), rand(rng, 1:nqubits)
-        while q2 == q1; q2 = rand(rng, 1:nqubits); end
-        push!(custom_gates, CliffordGate(:SWAP, [q1, q2]))
-        push!(yao_ops, swap(nqubits, q1, q2))
-    elseif gate_type == :PauliRotation
-        k = rand(rng, 1:min(3, nqubits))
-        qs = sort(unique(rand(rng, 1:nqubits, k)))
-        paulis = rand(rng, [:X, :Y, :Z], length(qs))
-        angle = rand(rng) * π/2
-        push!(custom_gates, PauliRotation(paulis, qs))
-        push!(θs, angle)
-        blocks = [pa == :X ? Rx(angle) : pa == :Y ? Ry(angle) : Rz(angle) for pa in paulis]
-        yao_op = put(nqubits, Tuple(qs) => foldl(kron, blocks))
-        push!(yao_ops, yao_op)
+    rand_qubit() = rand(rng, 1:nqubits)
+    rand_angle() = rand(rng) * π/2
+    distinct_pair() = (c = rand_qubit(); t = rand_qubit(); while t == c; t = rand_qubit(); end; (c, t))
+    gate_handlers = Dict(
+        :H => () -> let q = rand_qubit()
+            push!(custom_gates, CliffordGate(:H, [q]))
+            put(nqubits, q => H)
+        end,
+        :X => () -> let q = rand_qubit()
+            push!(custom_gates, CliffordGate(:X, [q]))
+            put(nqubits, q => X)
+        end,
+        :Y => () -> let q = rand_qubit()
+            push!(custom_gates, CliffordGate(:Y, [q]))
+            put(nqubits, q => Y)
+        end,
+        :Z => () -> let q = rand_qubit()
+            push!(custom_gates, CliffordGate(:Z, [q]))
+            put(nqubits, q => Z)
+        end,
+        :RX => () -> let q = rand_qubit(), θ = rand_angle()
+            push!(custom_gates, PauliRotation(:X, q))
+            push!(θs, θ)
+            put(nqubits, q => Rx(θ))
+        end,
+        :RY => () -> let q = rand_qubit(), θ = rand_angle()
+            push!(custom_gates, PauliRotation(:Y, q))
+            push!(θs, θ)
+            put(nqubits, q => Ry(θ))
+        end,
+        :RZ => () -> let q = rand_qubit(), θ = rand_angle()
+            push!(custom_gates, PauliRotation(:Z, q))
+            push!(θs, θ)
+            put(nqubits, q => Rz(θ))
+        end,
+        :CNOT => () -> nqubits < 2 ? nothing : let (c, t) = distinct_pair()
+            push!(custom_gates, CliffordGate(:CNOT, [c, t]))
+            control(nqubits, c, t => X)
+        end,
+        :SWAP => () -> nqubits < 2 ? nothing : let (q1, q2) = distinct_pair()
+            push!(custom_gates, CliffordGate(:SWAP, [q1, q2]))
+            swap(nqubits, q1, q2)
+        end,
+        :PauliRotation => () -> let
+            k = rand(rng, 1:min(3, nqubits))
+            qs = sort(unique(rand(rng, 1:nqubits, k)))
+            paulis = rand(rng, [:X, :Y, :Z], length(qs))
+            θ = rand_angle()
+            push!(custom_gates, PauliRotation(paulis, qs))
+            push!(θs, θ)
+            blocks = [p == :X ? Rx(θ) : p == :Y ? Ry(θ) : Rz(θ) for p in paulis]
+            put(nqubits, Tuple(qs) => foldl(kron, blocks))
+        end
+    )
+    handler = get(gate_handlers, gate_type) do
+        error("Unsupported gate type: $gate_type")
     end
+    yao_op = handler()
+    yao_op !== nothing && push!(yao_ops, yao_op)
 end
 
 const all_clifford_gates = collect(keys(PauliPropagation._default_clifford_map))
