@@ -1,10 +1,13 @@
 using Test
 using LinearAlgebra
 using Random
-using Yao: X, Y, Z, H, Rx, Rz, Ry, chain, put, control, zero_state, expect, apply, rot, mat, matblock, swap, SWAP, time_evolve, kron
+using Yao: X, Y, Z, H, Rx, Rz, Ry, I2, chain, put, control, zero_state, expect, apply, rot, mat, matblock, swap, SWAP, time_evolve, kron
 using PauliPropagation
 
 # Gate Translation Functions
+
+const rng = MersenneTwister(42)
+println("Global test seed: 1234")
 
 _Rzz(θ) = put(2, 1:2 => matblock(Diagonal([exp(-im * θ/2), exp(im * θ/2), exp(im * θ/2), exp(-im * θ/2)])))
 
@@ -33,11 +36,12 @@ function _build_yao_observable(symbols::Vector{Symbol}, qubits::Vector{Int}, nqu
     pauli_map = Dict(
         :X => X,
         :Y => Y,
-        :Z => Z
+        :Z => Z,
+        :I => I2
     )
     blocks = map(zip(symbols, qubits)) do (sym, q)
         op = get(pauli_map, sym) do
-            throw(ArgumentError("Unsupported Pauli symbol: $sym. Use :X, :Y, or :Z"))
+            throw(ArgumentError("Unsupported Pauli symbol: $sym. Use :X, :Y, :Z, or :I"))
         end
         put(nqubits, q => op)
     end
@@ -71,10 +75,7 @@ end
 
 function _build_evolution_step!(circuit, nqubits, ops::Pair{Symbol,Float64}...)
     for (op_symbol, coeff) in ops
-        op = op_symbol == :X ? kron(X, X) :
-             op_symbol == :Y ? kron(Y, Y) :
-             op_symbol == :Z ? kron(Z, Z) :
-             error("Unsupported operator")
+        op = op_symbol == :X ? kron(X, X) : op_symbol == :Y ? kron(Y, Y) : op_symbol == :Z ? kron(Z, Z) : error("Unsupported operator")
         for i in 1:nqubits-1
             push!(circuit, put(nqubits, (i, i+1) => time_evolve(op, -coeff/2)))
         end
@@ -163,9 +164,8 @@ function _insert_gate!(gate_type, nqubits, rng, custom_gates, yao_ops, θs)
 end
 
 const all_clifford_gates = collect(keys(PauliPropagation._default_clifford_map))
-const single_obs = [:X, :Y, :Z]
-const two_obs = [(:X, :X), (:X, :Y), (:X, :Z), (:Y, :X), (:Y, :Y), (:Y, :Z), (:Z, :X), (:Z, :Y), (:Z, :Z)]
-
+const single_obs = [inttosymbol(i) for i in 1:3]
+const two_obs = [Tuple(inttosymbol(p, 2)) for p in 0:15]
 
 # Test Clifford Gates on All Observables
 
@@ -236,10 +236,9 @@ end
 # Test Random Circuits with PauliRotations and Cliffords
 
 @testset "Randomized PauliRotation & Clifford Tests" begin
-    rng = MersenneTwister(1234)
     for trial in 1:10
         nqubits = rand(rng, 1:3)
-        depth = rand(rng, 3:6)
+        depth = rand(rng, 5:10)
         custom_gates = Any[]
         yao_ops = Any[]
         θs = Float64[]
@@ -277,7 +276,6 @@ end
 # Test Model Hamiltonians
 
 @testset "Transverse Field Ising Model" begin
-    rng = MersenneTwister(42)
     for nqubits in [2, 3, 4]
         J, h, dt, nsteps = 1.0, 0.5, 0.1, 3
         circuit = tfitrottercircuit(nqubits, nsteps)
@@ -312,7 +310,6 @@ end
 end
 
 @testset "Heisenberg Model" begin
-    rng = MersenneTwister(42)
     for nqubits in [2, 3]
         Jx, Jy, Jz = 0.8, 0.9, 1.0
         dt = 0.05
