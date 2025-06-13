@@ -6,8 +6,7 @@ using PauliPropagation
 
 # Gate Translation Functions
 
-seed = rand(UInt32)
-rng = MersenneTwister(seed)
+rng = MersenneTwister()
 println("Global Yao.jl comparison test seed: $(rng.seed)")
 
 _Rzz(θ) = put(2, 1:2 => matblock(Diagonal([exp(-im * θ/2), exp(im * θ/2), exp(im * θ/2), exp(-im * θ/2)])))
