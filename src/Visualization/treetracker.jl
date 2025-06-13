@@ -14,8 +14,8 @@ import ..PauliPropagation: inttostring, symboltoint, getpauli, setpauli, splitap
 import Base: mergewith!
 
 # Global storage for the evolution tree
-const EVOLUTION_TREE = Dict{String,TreeNode}()
-const EVOLUTION_EDGES = Vector{TreeEdge}()
+EVOLUTION_TREE = Dict{String,TreeNode}()
+EVOLUTION_EDGES = Vector{TreeEdge}()
 
 """
     reset_tree!()

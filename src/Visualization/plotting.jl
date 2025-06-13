@@ -8,11 +8,14 @@
 # Import necessary functions
 import ..PauliPropagation: propagate, PauliString, PauliSum, wrapcoefficients, unwrapcoefficients
 using JSON
+using PlotGraphviz
+
 """
     export_to_graphviz(filename::String="pauli_evolution_tree.dot"; 
                       show_coefficients::Bool=true,
                       node_shape::String="ellipse",
-                      edge_style::String="solid")
+                      edge_style::String="solid",
+                      graph_title::String="Pauli Propagation Graph")
 
 Export the current evolution tree to a GraphViz DOT file.
 """
@@ -22,39 +25,10 @@ function export_to_graphviz(filename::String="pauli_evolution_tree.dot";
     edge_style::String="solid",
     graph_title::String="Pauli Propagation Graph")
 
+    dot_string = format_tree("graphviz", node_shape, edge_style, graph_title, show_coefficients)
     open(filename, "w") do io
-        println(io, "digraph PauliEvolutionTree {")
-        println(io, "    rankdir=TB;")  # Top to Bottom layout
-        println(io, "    node [shape=$node_shape, fontname=\"Arial\"];")
-        println(io, "    edge [fontname=\"Arial\", fontsize=10];")
-        println(io, "    label=\"$graph_title\";")
-        println(io, "")
-
-        # Write nodes
-        println(io, "    // Nodes")
-        for (node_id, node) in EVOLUTION_TREE
-            label = node.pauli_string
-            if !isnothing(node.gate_applied)
-                label *= "\\n($(node.gate_applied))"
-            end
-            println(io, "    \"$node_id\" [label=\"$label\", fontsize=12];")
-        end
-
-        println(io, "")
-        println(io, "    // Edges")
-        # Write edges
-        for edge in EVOLUTION_EDGES
-            if show_coefficients
-                label = edge.coefficient
-                println(io, "    \"$(edge.parent_id)\" -> \"$(edge.child_id)\" [label=\"$label\", style=$edge_style];")
-            else
-                println(io, "    \"$(edge.parent_id)\" -> \"$(edge.child_id)\" [style=$edge_style];")
-            end
-        end
-
-        println(io, "}")
+        println(io, dot_string)
     end
-
     println("Evolution tree exported to $filename")
     println("To visualize, run: dot -Tpng $filename -o pauli_tree.png")
     return filename
@@ -85,9 +59,8 @@ function export_to_json(filename::String="pauli_evolution_tree.json")
                 println(io, "Edge: $(edge.parent_id) -> $(edge.child_id), Coeff: $(edge.coefficient), Gate: $(edge.gate)")
             end
         end
-
         println("Evolution tree exported as text to $filename")
-        return filename
+        return
     end
 
     # Convert tree data to JSON-friendly format
@@ -112,9 +85,7 @@ function export_to_json(filename::String="pauli_evolution_tree.json")
     open(filename, "w") do io
         JSON.print(io, tree_data, 4)  # Use indent=4 as per user rules
     end
-
     println("Evolution tree exported to $filename")
-    return filename
 end
 
 """
@@ -160,7 +131,7 @@ function print_tree_summary()
 end
 
 """
-    mute_merge_nodes()
+    remove_merge_nodes()
 
 When exporting the tree to GraphViz, we don't need to show the merge nodes explicitly.
 Thus this function will remove the merge nodes from the tree.
@@ -196,26 +167,118 @@ function remove_merge_nodes()
 end
 
 """
-    visualize_tree(output_format::String="graphviz", filename::String="")
+    format_tree(format::String, node_shape::String, edge_style::String, graph_title::String, show_coefficients::Bool)
+
+Format the evolution tree into a string representation.
+Currently supports "graphviz" format.
+"""
+function format_tree(format::String,
+    node_shape::String="ellipse",
+    edge_style::String="solid",
+    graph_title::String="Pauli Propagation Graph",
+    show_coefficients::Bool=true)
+
+    if format == "graphviz"
+        # Create the DOT string with graph properties
+        dot_string = """digraph PauliEvolutionTree {
+            rankdir=TB;
+            node [shape=$node_shape, fontname="Arial"];
+            edge [fontname="Arial", fontsize=10];
+            label="$graph_title";
+            
+            // Nodes
+        """
+
+        # Add nodes
+        for (node_id, node) in EVOLUTION_TREE
+            label = node.pauli_string
+            if !isnothing(node.gate_applied)
+                label *= "\\n($(node.gate_applied))"
+            end
+            dot_string *= "    \"$node_id\" [label=\"$label\", fontsize=12];\n"
+        end
+
+        # Add edges
+        dot_string *= "\n    // Edges\n"
+        for edge in EVOLUTION_EDGES
+            if show_coefficients
+                label = edge.coefficient
+                dot_string *= "    \"$(edge.parent_id)\" -> \"$(edge.child_id)\" [label=\"$label\", style=$edge_style];\n"
+            else
+                dot_string *= "    \"$(edge.parent_id)\" -> \"$(edge.child_id)\" [style=$edge_style];\n"
+            end
+        end
+
+        dot_string *= "}\n"
+        return dot_string
+    else
+        throw(ArgumentError("Unsupported format: $format"))
+    end
+end
+
+
+"""
+    visualize_tree(output_format::String="graphviz"; 
+                  filename::Union{String,Nothing}=nothing, 
+                  show_merge_nodes::Bool=false,
+                  node_shape::String="ellipse",
+                  edge_style::String="solid",
+                  graph_title::String="Pauli Propagation Graph",
+                  show_coefficients::Bool=true)
 
 Main function for visualizing the evolution tree.
 Supports "graphviz", "json", and "summary" formats.
+If the filename is provided, the tree will be exported to the file.
+Otherwise, the tree will be plotted directly (graphviz) or printed (summary).
 """
-function visualize_tree(output_format::String="graphviz", filename::String="", show_merge_nodes::Bool=false)
+function visualize_tree(output_format::String="graphviz";
+    filename::Union{String,Nothing}=nothing,
+    show_merge_nodes::Bool=false,
+    node_shape::String="ellipse",
+    edge_style::String="solid",
+    graph_title::String="Pauli Propagation Graph",
+    show_coefficients::Bool=true,
+    scale::Int=18)
+
     if isempty(EVOLUTION_TREE)
         println("Warning: Evolution tree is empty. Run propagation with PauliTreeTracker coefficients first.")
         return
     end
 
     if output_format == "graphviz"
+        # Save current tree state
+        tree_edges_copy = deepcopy(EVOLUTION_EDGES)
+        tree_nodes_copy = deepcopy(EVOLUTION_TREE)
         if !show_merge_nodes
             remove_merge_nodes()
         end
-        default_filename = "pauli_evolution_tree.dot"
-        export_to_graphviz(isempty(filename) ? default_filename : filename)
+        dot_string = format_tree(output_format, node_shape, edge_style, graph_title, show_coefficients)
+        if !isnothing(filename)
+            open(filename, "w") do io
+                println(io, dot_string)
+            end
+            # restore the tree edge and node
+            global EVOLUTION_EDGES = deepcopy(tree_edges_copy)
+            global EVOLUTION_TREE = deepcopy(tree_nodes_copy)
+            println("Evolution tree exported to $filename")
+            println("To visualize, run: dot -Tpng $filename -o pauli_tree.png")
+        else
+            # save the string to a tmp file, load it and plot it
+            tmp_file = tempname() * ".dot"
+            open(tmp_file, "w") do io
+                println(io, dot_string)
+            end
+            # restore the tree edge and node
+            global EVOLUTION_EDGES = deepcopy(tree_edges_copy)
+            global EVOLUTION_TREE = deepcopy(tree_nodes_copy)
+            mk, attrs = read_dot_file(tmp_file)
+            plot_graphviz(mk, attrs; scale=scale)
+        end
     elseif output_format == "json"
-        default_filename = "pauli_evolution_tree.json"
-        export_to_json(isempty(filename) ? default_filename : filename)
+        if isnothing(filename)
+            throw(ArgumentError("filename is required for json output"))
+        end
+        export_to_json(filename)
     elseif output_format == "summary"
         print_tree_summary()
     else
@@ -231,10 +294,7 @@ Returns both the result and exports the tree visualization.
 Supports both PauliString and PauliSum inputs.
 """
 function propagate_with_tree_tracking(circ, input, thetas=nothing;
-    export_format::String="graphviz",
-    export_filename::String="",
     reset_tree_first::Bool=true,
-    show_merge_nodes::Bool=false,
     kwargs...)
 
     if reset_tree_first
@@ -260,10 +320,5 @@ function propagate_with_tree_tracking(circ, input, thetas=nothing;
 
     # Run propagation
     result = propagate(circ, tracked_input, thetas; kwargs...)
-
-    # Export visualization
-    visualize_tree(export_format, export_filename, show_merge_nodes)
-
-    # Return unwrapped result
     return unwrapcoefficients(result)
 end
