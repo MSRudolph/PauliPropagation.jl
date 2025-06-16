@@ -36,4 +36,6 @@ using Random
 
     include("test_visualization.jl")
 
+    include("test_gates_against_yao.jl")
+
 end

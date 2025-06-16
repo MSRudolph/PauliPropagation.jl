@@ -839,6 +839,6 @@ end
 
 function _checktermtype(pobj1, pobj2)
     if paulitype(pobj1) != paulitype(pobj2)
-        throw(ArgumentError("Pauli types do not match. Got $(TT1) and $(TT2)."))
+        throw(ArgumentError("Pauli types do not match. Got $(paulitype(pobj1)) and $(paulitype(pobj2))."))
     end
 end
