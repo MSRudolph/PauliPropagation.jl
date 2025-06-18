@@ -293,10 +293,12 @@ function _calculatesignexponent(pauli1::PauliType, pauli2::PauliType)
     # 01 |--|--|T |F |
     # 11 |--|F |--|T |
     # 10 |--|T |F |--|
-    negative_sign = not_commuting & ((~pauli1_2 & ~pauli2_1) 
-                                     | (pauli1_2 & pauli2_1 & pauli2_2) 
-                                     | (pauli1_1 & pauli1_2 & pauli2_1))
-    positive_sign = (~negative_sign) & not_commuting
+    # which gives (a & ~d) | (~a & d) | (~b & ~c)
+    # you can then recognize that (a & ~d) | (~a & d) = a ⊻ b
+    # where pauli1 = ab, and pauli2 = cd.
+    negative_sign = not_commuting & ((pauli1_1 ⊻ pauli2_2) 
+                                     | (~pauli1_2 & ~pauli2_1))
+    positive_sign = not_commuting & (~negative_sign) 
     # You can use modular addition to achieve addition of the exponent,
     # since it is cyclic, and the global phase can be determined by the number
     # of 1's in each expression.
