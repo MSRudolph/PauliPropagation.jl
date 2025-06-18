@@ -267,22 +267,39 @@ end
 
 # Calculate the sign of the product of two integer Pauli strings. Outcomes are either ±1 or ±i.
 function _calculatesignexponent(pauli1::PauliType, pauli2::PauliType)
+    # get left and right bits of a pauli    
     mask_right = alternatingmask(pauli1)
-    mask_left = mask_right << 1
-    
-    pauli1_1 = pauli1 & mask_left
-    pauli1_2 = (pauli1 & mask_right) << 1
-    pauli2_1 = pauli2 & mask_left
-    pauli2_2 = (pauli2 & mask_right) << 1
-    
+
+    pauli1_1 = (pauli1 >> 1) & mask_right
+    pauli1_2 = pauli1 & mask_right
+    pauli2_1 = (pauli2 >> 1) & mask_right
+    pauli2_2 = pauli2 & mask_right
+   
+    #make sure neither pauli is the identity
     not_identity_pauli1 = pauli1_1 | pauli1_2
     not_identity_pauli2 = pauli2_1 | pauli2_2
-    
+   
+    #make sure paulis aren't the same
     not_same = (pauli1_1 ⊻ pauli2_1) | (pauli1_2 ⊻ pauli2_2)
+
+    #determine if the paulis commute (should return 0 if they do)
     not_commuting = not_identity_pauli1 & not_identity_pauli2 & not_same
-    
-    negative_sign = not_commuting & ((~pauli1_1 & pauli2_1 & pauli2_2) | (~pauli1_2 & ~pauli2_1) | (pauli1_1 & pauli1_2 & ~pauli2_2))
+   
+    #use not_commuting as a mask to get the "don't cares" in the karnaugh map to always be 0
+    #while the right side of the next line came from karnaugh map of the truth table for
+    #the levi cevita symbol
+    #    |00|01|11|10
+    # 00 |--|--|--|--|
+    # 01 |--|--|T |F |
+    # 11 |--|F |--|T |
+    # 10 |--|T |F |--|
+    negative_sign = not_commuting & ((~pauli1_2 & ~pauli2_1) 
+                                     | (pauli1_2 & pauli2_1 & pauli2_2) 
+                                     | (pauli1_1 & pauli1_2 & pauli2_1))
     positive_sign = (~negative_sign) & not_commuting
-    
+    # You can use modular addition to achieve addition of the exponent,
+    # since it is cyclic, and the global phase can be determined by the number
+    # of 1's in each expression.
+    # i.e. -im = im^(3); im = im^(1); 1 = im^0.  
     return ((3 * count_ones(negative_sign) + count_ones(positive_sign)) % 4)
 end
