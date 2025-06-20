@@ -48,16 +48,18 @@ function applytoall!(gate::PauliRotation, theta, psum, aux_psum; kwargs...)
     return
 end
 
-"""
-    getnewpaulistring(gate::MaskedPauliRotation, pstr::PauliStringType)
 
-Get the new Pauli string after applying a `MaskedPauliRotation` to an integer Pauli string,
-as well as the corresponding ±1 coefficient.
-"""
 function getnewpaulistring(gate::MaskedPauliRotation, pstr::PauliStringType)
     new_pstr = _bitpaulimultiply(gate.generator_mask, pstr)
+
+    # this counts the exponent of the imaginary unit in the new Pauli string
     im_count = _calculatesignexponent(gate.generator_mask, pstr)
+
+    # now, instead of computing im^im_count followed by another im factor from the gate rules,
+    # we do this in one step via a cheeky trick:
     sign = (im_count & 2) - 1
+    # this is equivalent to sign = real( im * im^im_count)
+
     return new_pstr, sign
 end
 
