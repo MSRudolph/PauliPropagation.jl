@@ -261,7 +261,7 @@ Calculate the product of two integer Pauli strings.
 function pauliprod(pstr1::PauliStringType, pstr2::PauliStringType)
     # This function is for when we need to globally check the sign of the product (like in general products of Paulis, not local Pauli gates)
     pstr3 = _bitpaulimultiply(pstr1, pstr2)
-    sign = im ^ _calculatesignexponent(pstr1, pstr2)
+    sign = _impow(_calculatesignexponent(pstr1, pstr2))
     return pstr3, sign
 end
 
@@ -304,4 +304,11 @@ function _calculatesignexponent(pauli1::PauliType, pauli2::PauliType)
     # of 1's in each expression.
     # i.e. -im = im^(3); im = im^(1); 1 = im^0.  
     return ((3 * count_ones(negative_sign) + count_ones(positive_sign)) % 4)
+end
+
+#speeds up pauliprod by a factor of 2 since we know we only want integer powers
+const  impowers = [1, im, -1, -im]
+function _impow(power::Integer)
+    ind = (power % 4) + 1
+    return impowers[ind]
 end

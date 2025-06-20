@@ -55,8 +55,10 @@ Get the new Pauli string after applying a `MaskedPauliRotation` to an integer Pa
 as well as the corresponding ±1 coefficient.
 """
 function getnewpaulistring(gate::MaskedPauliRotation, pstr::PauliStringType)
-    new_pstr, sign = pauliprod(gate.generator_mask, pstr)
-    return new_pstr, real(1im * sign)
+    new_pstr = _bitpaulimultiply(gate.generator_mask, pstr)
+    im_count = _calculatesignexponent(gate.generator_mask, pstr)
+    sign = (im_count & 2) - 1
+    return new_pstr, sign
 end
 
 
