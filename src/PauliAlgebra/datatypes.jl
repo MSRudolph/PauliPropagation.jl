@@ -537,7 +537,7 @@ end
 Subtract two `PauliSum`s. Returns a `PauliSum`.
 """
 function -(psum1::PauliSum, psum2::PauliSum)
-    deepcopy(psum2)
+    psum2 = deepcopy(psum2)
     mult!(psum2, -1)
     return psum1 + psum2
 end
