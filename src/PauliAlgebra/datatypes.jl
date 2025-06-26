@@ -528,7 +528,7 @@ function -(psum::PauliSum, pstr::PauliString)
     return psum + (-1 * pstr)
 end
 
--(pstr::PauliString, psum::PauliSum) = psum - pstr
+-(pstr::PauliString, psum::PauliSum) = mult!(psum - pstr, -1)
 
 
 """
