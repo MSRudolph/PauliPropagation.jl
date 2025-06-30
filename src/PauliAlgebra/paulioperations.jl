@@ -5,6 +5,56 @@
 ##
 ###
 
+# LinearAlgebra dispatches
+
+"""
+    LinearAlgebra.tr(pstr::PauliString)
+
+Compute the trace of a `PauliString` operator.
+
+The trace of any non-identity Pauli operator (e.g., X, Y, Z, or their tensor products) is zero.
+The identity operator `I` has a trace equal to the dimension of the Hilbert space, `2^N`,
+where `N` is the number of qubits.
+
+A `PauliString` represents a single term, typically of the form `coeff * P_1 P_2 ... P_N`.
+If the `pstr.term` bitmask is `0x00`, it signifies the identity operator across all
+`pstr.nqubits`. In this case, the trace is `pstr.coeff * 2^pstr.nqubits`. For any other
+`pstr.term` value (representing a non-identity Pauli operator), the trace is `0.0`.
+
+# Arguments
+- `pstr::PauliString`: The Pauli string to trace. 
+
+# Returns
+- `Float64`: The trace value of the `PauliString`.
+"""
+function LinearAlgebra.tr(pstr::PauliString)
+    pstr.term == 0x00 ? pstr.coeff * (2.0^pstr.nqubits) : 0.
+end
+
+"""
+    LinearAlgebra.tr(psum::PauliSum)
+
+Compute the trace of a `PauliSum` operator.
+
+The trace is a linear operation: Tr(A + B) = Tr(A) + Tr(B). Since individual non-identity
+PauliString terms have a trace of zero (as per tr(::PauliString)), only the coefficient
+of the identity operator contributes to the total trace of a PauliSum.
+
+The coefficient of the identity term (0x00) is retrieved from this mapping using get(psum.terms, 0x00, 0). 
+This coefficient is then multiplied by 2^psum.nqubits (the dimension of the Hilbert space). 
+If the identity term (0x00) is not explicitly present in psum.terms, its coefficient is implicitly zero,
+resulting in a total trace of 0.0.
+
+# Arguments
+`psum::PauliSum`: The Pauli sum to trace.
+
+# Returns
+`Float64`: The trace value of the PauliSum.
+"""
+function LinearAlgebra.tr(psum::PauliSum)
+    get(psum.terms, 0x00, 0) * (2.0^psum.nqubits)
+end
+
 # TODO: generate these definitions with Macro's instead? Easier to maintain and less error-prone
 
 """
