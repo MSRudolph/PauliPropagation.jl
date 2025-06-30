@@ -22,13 +22,13 @@ If the `pstr.term` bitmask is `0x00`, it signifies the identity operator across 
 `pstr.term` value (representing a non-identity Pauli operator), the trace is `0.0`.
 
 # Arguments
-- `pstr::PauliString`: The Pauli string to trace. 
+- `pstr::PauliString{TT, CT}`: The Pauli string to trace. 
 
 # Returns
-- `Float64`: The trace value of the `PauliString`.
+- `CT`: The trace value of the `PauliString`.
 """
-function LinearAlgebra.tr(pstr::PauliString)
-    pstr.term == 0x00 ? pstr.coeff * (2.0^pstr.nqubits) : 0.
+function LinearAlgebra.tr(pstr::PauliString{TT, CT}) where {TT, CT}
+    pstr.term == zero(TT) ? pstr.coeff * CT(2.0^pstr.nqubits) : zero(CT)
 end
 
 """
@@ -49,10 +49,10 @@ resulting in a total trace of 0.0.
 `psum::PauliSum`: The Pauli sum to trace.
 
 # Returns
-`Float64`: The trace value of the PauliSum.
+`CT`: The trace value of the PauliSum.
 """
-function LinearAlgebra.tr(psum::PauliSum)
-    get(psum.terms, 0x00, 0) * (2.0^psum.nqubits)
+function LinearAlgebra.tr(psum::PauliSum{TT, CT}) where {TT, CT}
+    get(psum.terms, zero(TT), zero(CT)) * CT(2.0^psum.nqubits)
 end
 
 # TODO: generate these definitions with Macro's instead? Easier to maintain and less error-prone
