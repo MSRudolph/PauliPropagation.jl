@@ -9,7 +9,7 @@ abstract type CircuitNode end
 
 
 # Node type for the Pauli strings in the observable to be backpropagated.
-@kwdef mutable struct EvalEndNode <: CircuitNode
+Base.@kwdef mutable struct EvalEndNode <: CircuitNode
     pstr::Int
     coefficient::Float64
     cummulative_value::Float64 = 0.0
@@ -22,7 +22,7 @@ EvalEndNode(pstr::Integer) = EvalEndNode(pstr, 1.0)
 
 
 # Surrogate graph node for a Pauli rotation gate.
-@kwdef mutable struct PauliRotationNode <: CircuitNode
+Base.@kwdef mutable struct PauliRotationNode <: CircuitNode
     parents::Vector{Union{EvalEndNode,PauliRotationNode}}
     trig_inds::Vector{Int}
     signs::Vector{Int}
