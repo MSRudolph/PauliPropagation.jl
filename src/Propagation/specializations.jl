@@ -20,7 +20,10 @@ function applytoall!(gate::PauliRotation, theta, psum, aux_psum; kwargs...)
     # turn the (potentially) PauliRotation gate into a MaskedPauliRotation gate
     # this allows for faster operations
     gate = _tomaskedpaulirotation(gate, paulitype(psum))
+    applytoall!(gate, theta, psum, aux_psum; kwargs...)
+end
 
+function applytoall!(gate::MaskedPauliRotation, theta, psum, aux_psum; kwargs...)
     # pre-compute the sine and cosine values because the are used for every Pauli string that does not commute with the gate
     cos_val = cos(theta)
     sin_val = sin(theta)
