@@ -99,7 +99,7 @@ end
         psum1 = PauliSum(3)
         add!(psum1, [:I, :I, :Y], 1:3, 1.0)
         add!(psum1, :I, 1, 1.5)
-        psum2 = PauliSum(PauliString(3, :I, 1, 1.5))        
+        psum2 = PauliSum(PauliString(3, :I, 1, 1.5))
         result_psum = psum1 - psum2
 
         expected_psum = PauliSum(PauliString(3, [:I, :I, :Y], 1:3, 1.0))
@@ -119,10 +119,16 @@ end
         add!(psum1, :I, 1, 1.5)
         psum2 = PauliSum(PauliString(3, :I, 1, 1.5))
 
+        # test out-of-place
+        psum3 = deepcopy(psum1)
+        psum4 = deepcopy(psum2)
+
         result_psum = psum1 + psum2
         expected_psum = PauliSum(PauliString(3, [:I, :I, :Y], 1:3, 1.0))
         add!(expected_psum, :I, 1, 3.0)
         @test result_psum == expected_psum
+        @test psum1 == psum3
+        @test psum2 == psum4
     end
 
     @testset "- PauliSum" begin
@@ -130,9 +136,15 @@ end
         add!(psum1, :I, 1, 1.5im)
         psum2 = PauliSum(PauliString(3, :I, 1, 1.5im))
 
+        # test out-of-place
+        psum3 = deepcopy(psum1)
+        psum4 = deepcopy(psum2)
+
         result_psum = psum1 - psum2
         expected_psum = PauliSum(PauliString(3, [:I, :I, :Y], 1:3, 1im))
         @test result_psum == expected_psum
+        @test psum1 == psum3
+        @test psum2 == psum4
     end
 
     @testset "* PauliSum" begin
@@ -140,12 +152,15 @@ end
         psum1 = PauliSum(3)
         add!(psum1, [:I, :I, :Y], 1:3, 1.0)
         add!(psum1, :I, 1, 1.5)
-        
+
+        # test out-of-place
+        psum2 = deepcopy(psum1)
 
         result_psum = psum1 * c
         expected_psum = PauliSum(PauliString(3, [:I, :I, :Y], 1:3, 2.0))
         add!(expected_psum, :I, 1, 3.0)
         @test result_psum == expected_psum
+        @test psum1 == psum2
 
         c = 2.0 + 1im
         psum2 = PauliSum(PauliString(3, :I, 1, 1.5im))
@@ -160,10 +175,14 @@ end
         add!(psum1, [:I, :I, :Y], 1:3, 1.0)
         add!(psum1, :I, 1, 1.5)
 
+        # test out-of-place
+        psum2 = deepcopy(psum1)
+
         result_psum = psum1 / c
         expected_psum = PauliSum(PauliString(3, [:I, :I, :Y], 1:3, 0.5))
         add!(expected_psum, :I, 1, 0.75)
         @test result_psum == expected_psum
+        @test psum1 == psum2
     end
 
 end
