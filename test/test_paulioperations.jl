@@ -82,27 +82,60 @@ using Test
     end
 
     @testset "PauliSums" begin
-
-        psum1 = PauliSum(3)
+        nq = 3
+        psum1 = PauliSum(nq)
         add!(psum1, [:Z, :X], [1, 2])
 
-        psum2 = PauliSum(3)
+        psum2 = PauliSum(nq)
         add!(psum2, [:Y, :Y], [1, 3])
         add!(psum2, [:X, :Y], [1, 2])
 
         # Psum * I = Psum
-        @test pauliprod(psum2, PauliSum(3, [:I], [1])) == psum2
+        psum_identity = PauliSum(nq)
+        add!(psum_identity, [:I], [1], 1.0)
+        @test pauliprod(psum2, psum_identity) == psum2
 
         # Expected product
-        psum_expected = PauliSum(3)
+        psum_expected = PauliSum(nq, Dict{getinttype(psum1.nqubits), ComplexF64}())
         add!(psum_expected, [:Y, :Z], [1, 2], -1.)
         add!(psum_expected, [:X, :X, :Y], [1, 2, 3], -1im)
         @test pauliprod(psum1, psum2) == psum_expected
 
-        # Test real coefficients
-        psum2 = PauliSum(3, [:Y, :Y], [1, 3], 2.0)
-        psum_expected = PauliSum(3)
-        add!(psum_expected, [:Y, :Z], [1, 2], -2.0)
+        # Test real coefficients conversion
+        psum2 = PauliSum(nq)
+        add!(psum2, [:Y, :Y], [1, 2], 2.0)
+        psum_expected = PauliSum(nq)
+        add!(psum_expected, [:X, :Z], [1, 2], 2.0)
         @test pauliprod(psum1, psum2) == psum_expected
+    end
+
+    @testset "Commutators" begin
+        # [X, Y] = iZ
+        nq = 1
+        pstr1 = PauliString(nq, :X, 1, 1.0)
+        pstr2 = PauliString(nq, :Y, 1, 1.0)
+        #TODO(YT): currently the coeff type of the commutator is Int.
+        # Whereas intialization of PauliString with coeff 2im gives ComplexF64.
+        # @test commutator(pstr1, pstr2) == PauliString(nq, :Z, 1, 2im)
+
+        # [P, I] = 0
+        pstr_identity = PauliString(nq, :I, 1, 1.0)
+        for p in (:I, :X, :Y, :Z)
+            pstr = PauliString(nq, p, 1, 1.0)
+            #TODO(YT): the 0 pstr type is weird
+            @test commutator(pstr, pstr_identity) == PauliString(nq, :I, 1, 0im)
+        end
+
+        # [XX, ZY] = 0
+        nq = 2
+        pstr1 = PauliString(nq, [:X, :X], [1, 2], 1.0)
+        pstr2 = PauliString(nq, [:Z, :Y], [1, 2], 1.0)
+        @test commutator(pstr1, pstr2) == PauliString(nq, :I, 1, 0im)
+        
+        # [XY, YI] = -iYI
+        nq = 2
+        pstr1 = PauliString(nq, [:X, :Y], [1, 2], 1.0)
+        pstr2 = PauliString(nq, [:Y, :I], [1, 2], 1.0)
+        # @test commutator(pstr1, pstr2) == PauliString(nq, [:Z, :Y], [1, 2], 2im)
     end
 end
