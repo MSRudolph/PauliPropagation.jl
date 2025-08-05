@@ -253,6 +253,41 @@ function pauliprod(pstr1::PauliString, pstr2::PauliString)
     return PauliString(pstr1.nqubits, new_pstr, sign * pstr1.coeff * pstr2.coeff)
 end
 
+## Pauli product for PauliSums and PauliStrings
+"""
+    pauliprod(psum1::PauliSum, psum2::PauliSum)
+
+Calculate the product of two `PauliSum`s. 
+Default returns a `PauliSum{TT, ComplexF64}` where `TT` is the type of the Pauli Strings.
+If all coefficients are real, the result will be a `PauliSum{TT, Float64}`.
+"""    
+function pauliprod(psum1::PauliSum{TT, CT1}, psum2::PauliSum{TT, CT2}) where {TT, CT1, CT2}
+
+    _checknumberofqubits(psum1, psum2)
+    is_complex = false
+
+    psum = PauliSum(psum1.nqubits, Dict{TT, ComplexF64}())
+    for (p1, c1) in psum1
+        for (p2, c2) in psum2
+            pstr, sign = pauliprod(p1, p2)
+            add!(psum, PauliString(psum1.nqubits, pstr, sign * c1 * c2))
+
+            if imag(sign * c1 * c2) != 0
+                is_complex = true
+            end
+        end
+    end
+
+    if !is_complex
+        # If the coefficients are all real, convert the PauliSum to Float64
+        psum = PauliSum(psum.nqubits, 
+            Dict(k=>convert(Float64,v) for (k,v) in psum.terms)
+        )
+    end
+
+    return psum
+end
+
 """
     pauliprod(pstr1::Integer, pstr2::Integer)
 
