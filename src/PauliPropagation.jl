@@ -30,6 +30,7 @@ export
     inttostring,
     ispauli,
     getpauli,
+    getpauli_fast, 
     setpauli,
     show,
     countweight,
@@ -149,6 +150,10 @@ export
     NodePathProperties,
     evaluate!,
     reset!
+
+include("Symmetry/symmetries.jl")
+export 
+    translationmerging
 
 include("Visualization/Visualization.jl")
 export

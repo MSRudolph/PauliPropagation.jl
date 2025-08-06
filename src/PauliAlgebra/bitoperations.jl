@@ -158,6 +158,19 @@ function _getpaulibits(pstr::PauliStringType, index::Integer)
 end
 
 
+# This function extracts the Pauli from `index1` to `index2`.
+function _getpaulibit(pstr::PauliStringType, index1::Integer, index2::Integer)
+    bitindex = 2 * (index1 - 1)
+
+    # shift to the right
+    shifted_pstr = (pstr >> bitindex)
+
+    # n bits from index1 to index2: n = index2 - index1 + 1
+    # AND to get the first n bits or int repr (2^n -1) 
+    return shifted_pstr & typeof(pstr)(2^(2 *(index2 - index1 + 1)) - 1)
+end
+
+
 # Gets the bit at index `bitindex` in the integer Pauli string.
 function _getbit(pauli::Integer, bitindex::Integer)
     # return integer with ...000[bit].
@@ -182,6 +195,19 @@ function _setpaulibits(pstr::PauliStringType, target_pauli::PauliType, index::In
     # insert them into the pstr
     pstr = _setbit(pstr, b1, bitindex)
     pstr = _setbit(pstr, b2, bitindex + 1)
+    return pstr
+end
+
+
+# This function sets the Pauli from `index1` to `index2` to `target_pstr`.
+function _setpaulibits(pstr::PauliStringType, target_pstr::PauliStringType, index1::Integer, index2::Integer)
+   
+    bitindex = 2 * (index1 - 1)
+
+    shifted_mask =  (typeof(pstr)(2^(2 * (index2 - index1 + 1)) - 1) << bitindex)
+
+    # set bits to target pstr
+    pstr = (pstr & ~shifted_mask) | (target_pstr << bitindex)
     return pstr
 end
 

@@ -172,6 +172,7 @@ function getpauli(pstr::PauliStringType, index::Integer)
 end
 
 
+#TODO (YT): remove the old getpauli function
 """
     getpauli(pstr::PauliStringType, qinds::Vector{Integer})
 
@@ -188,6 +189,40 @@ function getpauli(pstr::PauliStringType, qinds)
 
 end
 
+
+"""
+    getpauli(pstr::PauliStringType, qinds::Vector{Integer})
+
+Gets the Paulis on indices `qinds` of a `pstr` in the integer representation.
+"""
+function getpauli_fast(pstr::PauliStringType, qinds)
+    pstr_new = zero(pstr)
+    for (i, qind) in enumerate(qinds)
+        shift = 2 * (qind - 1)
+        pair = (pstr >> shift) & 0b11
+        pstr_new |= (pair << (2 * (i - 1)))
+    end
+    return pstr_new
+end
+
+
+"""
+    getpauli(pstr::PauliStringType, qind1::Int, qind2::Int)
+
+Gets the Paulis from `qind1` to `qind2` of a `pstr` in the integer representation.
+This function is useful for extracting a continuous sub-PauliString.
+"""
+function getpauli(pstr::PauliStringType, qind1::Int, qind2::Int)
+    # Get the Paulis on the indices from `qind1` to `qind2`
+    if qind1 > qind2
+        throw(ArgumentError("`qind1` should be less than or equal to `qind2`. Got `qind1=$qind1` and `qind2=$qind2`."))
+    end
+
+    return _getpaulibit(pstr, qind1, qind2)
+
+end
+
+
 """
     setpauli(pstr::PauliStringType, target_pauli::PauliType, index::Integer)
 
@@ -197,6 +232,24 @@ That Pauli should be provided as integer (0, 1, 2, 3).
 function setpauli(pstr::PauliStringType, target_pauli::PauliType, index::Integer)
     return _setpaulibits(pstr, target_pauli, index)
 end
+
+
+"""
+    setpauli(pstr::PauliStringType, target_paulis::PauliStringType, index1::Integer, index2::Integer)
+
+Sets the Paulis from `index1` to `index2` of an integer Pauli string to `target_paulis`.
+"""
+function setpauli(pstr::PauliStringType, target_paulis::PauliStringType, index1::Integer, index2::Integer)
+
+    if index1 > index2
+        throw(ArgumentError("`index1` should be less than or equal to `index2`. Got `index1=$index1` and `index2=$index2`."))
+    end
+
+    # TODO: check that `target_paulis` is of the correct length
+    
+    return _setpaulibits(pstr, target_paulis, index1, index2)
+end
+
 
 """
     setpauli(pstr::PauliStringType, target_pauli::Symbol, index::Integer)

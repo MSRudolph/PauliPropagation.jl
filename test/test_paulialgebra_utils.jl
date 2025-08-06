@@ -112,6 +112,21 @@ end
 
 end
 
+@testset "Get Pauli Fast" begin
+    nq = 12
+    pstr = PauliString(nq, [:X, :Z], [3, 9])
+
+    @test getpauli(pstr.term, range(2, 10)) == getpauli_fast(pstr.term, range(2, 10))
+    @test getpauli(pstr.term, range(2, 10)) == getpauli(pstr.term, 2, 10)
+end
+
+@testset "Set Pauli Continuous" begin
+    nq = 12
+    pstr = PauliString(nq, [:X, :Z], [3, 9])
+    target_pstr = PauliString(nq, [:Y, :X], [4, 5])
+    @test setpauli(pstr.term, target_pstr.term, 2, 10) == setpauli(pstr.term, target_pstr.term, range(2, 10))
+end
+
 @testset "Set Pauli for `PauliString` type" begin
 
     # nqubits = 4
