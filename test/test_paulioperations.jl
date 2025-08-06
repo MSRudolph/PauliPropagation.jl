@@ -79,5 +79,23 @@ using Test
     @test pauliprod(pstr2, pstr1).coeff == pstr3.coeff
 end
 
+@testset "LinearAlgebra" begin
+    for nq in 1:10
+        λ = rand()
+        @test tr(λ * PauliString(nq, :I, rand(1:nq))) == λ * 2.0^nq
+        @test tr(λ * PauliString(nq, :X, rand(1:nq))) == 0.0
+        @test tr(λ * PauliString(nq, :Y, rand(1:nq))) == 0.0
+        @test tr(λ * PauliString(nq, :Z, rand(1:nq))) == 0.0
+    end
+
+    nq = 42
+    letters = [rand([:X, :Y, :Z]) for _ in 1:nq]
+    pstr = PauliString(nq, letters, 1:nq)
+    @test tr(pstr) == 0.0
+
+    psum = pstr + PauliString(nq, :I, 1) / 137.
+    @test tr(psum) == 2.0^nq / 137.
+end
+
 # TODO: Tests for PauliSum
 # TODO: Test for commutator
