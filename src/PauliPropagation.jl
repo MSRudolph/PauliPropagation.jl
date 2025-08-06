@@ -151,10 +151,6 @@ export
     evaluate!,
     reset!
 
-include("Symmetry/symmetries.jl")
-export 
-    translationmerging
-
 include("Visualization/Visualization.jl")
 export
     PauliTreeTracker,
