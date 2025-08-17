@@ -218,7 +218,7 @@ function getpauli(pstr::PauliStringType, qind1::Int, qind2::Int)
         throw(ArgumentError("`qind1` should be less than or equal to `qind2`. Got `qind1=$qind1` and `qind2=$qind2`."))
     end
 
-    return _getpaulibit(pstr, qind1, qind2)
+    return _getpaulibits(pstr, qind1, qind2)
 
 end
 
@@ -246,7 +246,7 @@ function setpauli(pstr::PauliStringType, target_paulis::PauliStringType, index1:
     end
 
     # TODO: check that `target_paulis` is of the correct length
-    
+
     return _setpaulibits(pstr, target_paulis, index1, index2)
 end
 
