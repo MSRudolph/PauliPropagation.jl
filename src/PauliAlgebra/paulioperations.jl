@@ -257,19 +257,6 @@ end
 
 ## Pauli product for PauliSums and PauliStrings
 """
-    pauliprod(psum::PauliSum, pstr::PauliString)
-
-Perform a Pauli product of a `PauliString` with a `PauliSum`.
-Returns a `PauliSum` with complex coefficients.
-"""
-function pauliprod(psum::PauliSum, pstr::PauliString)
-
-    psum2 = PauliSum(pstr)
-    return pauliprod(psum, psum2)
-end
-
-
-"""
     pauliprod(psum1::PauliSum, psum2::PauliSum)
 
 Calculate the product of two `PauliSum`s. 
