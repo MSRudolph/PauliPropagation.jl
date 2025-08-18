@@ -172,35 +172,16 @@ function getpauli(pstr::PauliStringType, index::Integer)
 end
 
 
-#TODO (YT): remove the old getpauli function
 """
     getpauli(pstr::PauliStringType, qinds::Vector{Integer})
 
 Gets the Paulis on indices `qinds` of a `pstr` in the integer representation.
 """
 function getpauli(pstr::PauliStringType, qinds)
-    new_pstr = identitylike(pstr)
-    # Get the Paulis on the indices `qinds`
-    for (ii, qind) in enumerate(qinds)
-        pauli = getpauli(pstr, qind)
-        new_pstr = setpauli(new_pstr, pauli, ii)
-    end
-    return new_pstr
-
-end
-
-
-"""
-    getpauli(pstr::PauliStringType, qinds::Vector{Integer})
-
-Gets the Paulis on indices `qinds` of a `pstr` in the integer representation.
-"""
-function getpauli_fast(pstr::PauliStringType, qinds)
     pstr_new = zero(pstr)
     for (i, qind) in enumerate(qinds)
-        shift = 2 * (qind - 1)
-        pair = (pstr >> shift) & 0b11
-        pstr_new |= (pair << (2 * (i - 1)))
+        pair = _getpaulibits(pstr, qind) # get two bits for pauli at qind
+        pstr_new |= (pair << (2 * (i - 1))) # append pair using bitwise OR at 2i
     end
     return pstr_new
 end
@@ -218,7 +199,7 @@ function getpauli(pstr::PauliStringType, qind1::Int, qind2::Int)
         throw(ArgumentError("`qind1` should be less than or equal to `qind2`. Got `qind1=$qind1` and `qind2=$qind2`."))
     end
 
-    return _getpaulibit(pstr, qind1, qind2)
+    return _getpaulibits(pstr, qind1, qind2)
 
 end
 

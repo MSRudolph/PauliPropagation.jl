@@ -112,11 +112,11 @@ end
 
 end
 
-@testset "Get Pauli Fast" begin
+@testset "Get Pauli for a range of indices" begin
     nq = 12
     pstr = PauliString(nq, [:X, :Z], [3, 9])
 
-    @test getpauli(pstr.term, range(2, 10)) == getpauli_fast(pstr.term, range(2, 10))
+    @test getpauli(pstr.term, range(2, 10)) == getpauli(pstr.term, range(2, 10))
     @test getpauli(pstr.term, range(2, 10)) == getpauli(pstr.term, 2, 10)
 end
 
