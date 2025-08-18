@@ -114,15 +114,12 @@ using Test
         nq = 1
         pstr1 = PauliString(nq, :X, 1, 1.0)
         pstr2 = PauliString(nq, :Y, 1, 1.0)
-        #TODO(YT): currently the coeff type of the commutator is Int.
-        # Whereas intialization of PauliString with coeff 2im gives ComplexF64.
-        # @test commutator(pstr1, pstr2) == PauliString(nq, :Z, 1, 2im)
+        @test commutator(pstr1, pstr2) == PauliString(nq, :Z, 1, 2im)
 
         # [P, I] = 0
         pstr_identity = PauliString(nq, :I, 1, 1.0)
         for p in (:I, :X, :Y, :Z)
             pstr = PauliString(nq, p, 1, 1.0)
-            #TODO(YT): the 0 pstr type is weird
             @test commutator(pstr, pstr_identity) == PauliString(nq, :I, 1, 0im)
         end
 
@@ -136,6 +133,6 @@ using Test
         nq = 2
         pstr1 = PauliString(nq, [:X, :Y], [1, 2], 1.0)
         pstr2 = PauliString(nq, [:Y, :I], [1, 2], 1.0)
-        # @test commutator(pstr1, pstr2) == PauliString(nq, [:Z, :Y], [1, 2], 2im)
+        @test commutator(pstr1, pstr2) == PauliString(nq, [:Z, :Y], [1, 2], 2im)
     end
 end

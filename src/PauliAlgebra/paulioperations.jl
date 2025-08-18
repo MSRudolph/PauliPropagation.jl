@@ -212,7 +212,7 @@ function commutator(pstr1::PauliStringType, pstr2::PauliStringType)
         new_pstr, total_sign = pauliprod(pstr1, pstr2)
     end
     # commutator is [A, B] = AB - BA = 2AB for non-commuting (meaning anti-commuting) Paulis
-    return new_pstr, 2 * total_sign
+    return new_pstr, 2. * total_sign
 end
 
 
