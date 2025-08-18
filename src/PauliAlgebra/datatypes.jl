@@ -550,8 +550,6 @@ end
 Perform a Pauli product of two `PauliString`s. 
 """
 function *(pstr1::PauliString, pstr2::PauliString)
-    _checktermtype(pstr1, pstr2)
-    _checknumberofqubits(pstr1, pstr2)
 
     return pauliprod(pstr1, pstr2)
 end
@@ -564,32 +562,15 @@ Perform a Pauli product of a `PauliString` with a `PauliSum`.
 Returns a `PauliSum` with complex coefficients.
 """
 function *(psum::PauliSum, pstr::PauliString)
-    _checktermtype(psum, pstr)
-    nq = _checknumberofqubits(psum, pstr)
 
-    new_psum = PauliSum(ComplexF64, nq)
-    sizehint!(new_psum, length(psum))
-
-    for (term, coeff) in psum
-        new_pstr = pauliprod(PauliString(nq, term, coeff), pstr)
-        add!(new_psum, new_pstr)
-    end
-    return new_psum
+    psum2 = PauliSum(pstr)
+    return pauliprod(psum, psum2)
 end
 
 function *(pstr::PauliString, psum::PauliSum)
-    _checktermtype(psum, pstr)
-    nq = _checknumberofqubits(psum, pstr)
 
-    # TODO: this is literally the same, just argument oder reversed in pauliprod()
-    new_psum = PauliSum(ComplexF64, nq)
-    sizehint!(new_psum, length(psum))
-
-    for (term, coeff) in psum
-        new_pstr = pauliprod(pstr, PauliString(nq, term, coeff))
-        add!(new_psum, new_pstr)
-    end
-    return new_psum
+    psum2 = PauliSum(pstr)
+    return pauliprod(psum2, psum)
 end
 
 
@@ -600,21 +581,8 @@ Perform a Pauli product of two `PauliSum`s.
 Returns a `PauliSum` with complex coefficients.
 """
 function *(psum1::PauliSum, psum2::PauliSum)
-    _checktermtype(psum1, psum2)
-    nq = _checknumberofqubits(psum1, psum2)
-
-    psum = PauliSum(ComplexF64, nq)
-    sizehint!(psum, length(psum1))
-
-    for (pstr1, coeff1) in psum1
-        for (pstr2, coeff2) in psum2
-            pstr, sign = pauliprod(pstr1, pstr2)
-            coeff = coeff1 * coeff2 * sign
-            add!(psum, pstr, coeff)
-        end
-    end
-    return psum
-
+   
+    return pauliprod(psum1, psum2)
 end
 
 
