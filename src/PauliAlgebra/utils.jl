@@ -291,3 +291,40 @@ function _getprettystr(psum::Dict, nqubits::Int; max_lines=20)
     return str
 
 end
+
+
+# Convert the a Pauli String to a different coefficient type
+"""
+    converttype(ctype::Type, pstr::PauliString)
+
+Convert a `PauliString` to a different coefficient type `ctype`.
+
+# Examples
+```julia
+converttype(Float64, PauliString(2, :X, 1, 1+0im))
+```
+"""
+function converttype(ctype::CT, pstr::PauliString) where {CT}
+    return PauliString(pstr.nqubits, pstr.term, ctype(pstr.coeff))
+end
+
+"""
+    convert(ctype::Type, psum::PauliSum)
+
+Convert a `PauliSum` to a different coefficient type `ctype`.
+
+# Examples
+```julia
+psum = PauliSum(PauliString(2, :X, 1, 1+0im))
+converttype(Float64, psum)
+```
+"""
+function converttype(ctype::CT, psum::PauliSum) where {CT}
+
+    new_psum =PauliSum(ctype, psum.nqubits)
+
+    for (pstr, coeff) in psum
+        add!(new_psum, pstr, ctype(coeff))
+    end
+    return new_psum
+end
