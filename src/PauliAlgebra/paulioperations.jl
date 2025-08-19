@@ -245,7 +245,12 @@ end
 """
     pauliprod(pstr1::PauliString, pstr2::PauliString)
 
-Calculate the product of two `PauliString`s. For example `X*Y = iZ`.
+Calculate the product of two `PauliString`s. 
+
+# Examples
+```
+julia> pauliprod(PauliString(1, [:X], [1]), PauliString(1, [:Y], [1])) # X*Y=iZ
+```
 """
 function pauliprod(pstr1::PauliString, pstr2::PauliString)
     _checktermtype(pstr1, pstr2)
@@ -260,10 +265,17 @@ end
     pauliprod(psum1::PauliSum, psum2::PauliSum)
 
 Calculate the product of two `PauliSum`s. 
-Default returns a `PauliSum{TT, ComplexF64}` where `TT` is the type of the Pauli Strings.
-If all coefficients are real, the result will be a `PauliSum{TT, Float64}`.
+Default returns a `PauliSum{TT, ComplexF64}` where `TT` is the type of the new Pauli Strings.
+
+# Examples
+```julia
+psum = PauliSum(PauliString(3, [:Y], [2])) 
+psum_identity = PauliSum(PauliString(3, [:I], [1]))
+pauliprod(psum, psum_identity) # Psum * I = Psum
+```
+
 """    
-function pauliprod(psum1::PauliSum{TT, CT1}, psum2::PauliSum{TT, CT2}) where {TT, CT1, CT2}
+function pauliprod(psum1::PauliSum, psum2::PauliSum)
 
     _checktermtype(psum1, psum2)
     nq = _checknumberofqubits(psum1, psum2)
@@ -274,8 +286,7 @@ function pauliprod(psum1::PauliSum{TT, CT1}, psum2::PauliSum{TT, CT2}) where {TT
     for (pstr1, coeff1) in psum1
         for (pstr2, coeff2) in psum2
             pstr, sign = pauliprod(pstr1, pstr2)
-            coeff = coeff1 * coeff2 * sign
-            add!(psum, pstr, coeff)
+            add!(psum, pstr, coeff1 * coeff2 * sign)
         end
     end
     return psum
