@@ -309,7 +309,7 @@ function converttype(ctype::CT, pstr::PauliString) where {CT}
 end
 
 """
-    convert(ctype::Type, psum::PauliSum)
+    converttype(ctype::Type, psum::PauliSum)
 
 Convert a `PauliSum` to a different coefficient type `ctype`.
 
@@ -321,7 +321,7 @@ converttype(Float64, psum)
 """
 function converttype(ctype::CT, psum::PauliSum) where {CT}
 
-    new_psum =PauliSum(ctype, psum.nqubits)
+    new_psum = PauliSum(ctype, psum.nqubits)
 
     for (pstr, coeff) in psum
         add!(new_psum, pstr, ctype(coeff))
