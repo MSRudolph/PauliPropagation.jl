@@ -32,7 +32,7 @@ function vectorpropagate(circuit, strings::Vector; kwargs...)
     return vectorpropagate(circuit, PropagationCache(strings); kwargs...).terms
 end
 
-function vectorpropagate(circuit, prop_cache::PropagationCache; min_abs_coeff=1e-10, kwargs)
+function vectorpropagate(circuit, prop_cache::PropagationCache; min_abs_coeff=1e-10, kwargs...)
     # assume circuit contains the parameters via freezing, or is parameter-free
     @assert countparameters(circuit) == 0 "'circuit' must be parameter-free. Consider using 'freeze()'."
 
@@ -55,7 +55,6 @@ function vectorpropagate(circuit, prop_cache::PropagationCache; min_abs_coeff=1e
 end
 
 ## The apply functions
-
 
 function applygate!(gate, pstrings::Vector)
     prop_cache = PropagationCache(pstrings)
