@@ -139,11 +139,12 @@ end
 _bitpaulimultiply(pstr1::PauliStringType, pstr2::PauliStringType) = pstr1 ⊻ pstr2
 
 
-
 # Shift to the right and truncate the first encoded Pauli string. Just a utility function.
 _paulishiftright(pstr::PauliStringType) = pstr >> 2
 
 
+# A mask 111...1 of n bits or int repr (2^n -1) 
+_nbitsmask(type, n::Integer) = type(2^(2 * n) - 1)
 
 # This function extracts the Pauli at position `index` from the integer Pauli string.
 function _getpaulibits(pstr::PauliStringType, index::Integer)
@@ -155,6 +156,18 @@ function _getpaulibits(pstr::PauliStringType, index::Integer)
 
     # AND with 3 (00000011) to get the first two bits
     return shifted_pstr & typeof(pstr)(3)
+end
+
+
+# This function extracts the Pauli from `index1` to `index2`.
+function _getpaulibits(pstr::PauliStringType, index1::Integer, index2::Integer)
+    bitindex = 2 * (index1 - 1)
+
+    # shift to the right
+    shifted_pstr = (pstr >> bitindex)
+    
+    # n bits from index1 to index2: n = index2 - index1 + 1
+    return shifted_pstr & _nbitsmask(typeof(pstr), index2-index1+1)
 end
 
 
@@ -182,6 +195,20 @@ function _setpaulibits(pstr::PauliStringType, target_pauli::PauliType, index::In
     # insert them into the pstr
     pstr = _setbit(pstr, b1, bitindex)
     pstr = _setbit(pstr, b2, bitindex + 1)
+    return pstr
+end
+
+
+# This function sets the Pauli from `index1` to `index2` to `target_pstr`.
+function _setpaulibits(pstr::PauliStringType, target_pstr::PauliStringType, index1::Integer, index2::Integer)
+   
+    bitindex = 2 * (index1 - 1)
+
+    # Create a shifted n-bit mask: n = index2 - index1 + 1
+    shifted_mask =  (_nbitsmask(typeof(pstr), index2-index1+1) << bitindex)
+
+    # set bits to target pstr
+    pstr = (pstr & ~shifted_mask) | (target_pstr << bitindex)
     return pstr
 end
 
