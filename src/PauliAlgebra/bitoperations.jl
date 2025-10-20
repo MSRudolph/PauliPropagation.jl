@@ -138,119 +138,55 @@ end
 # XOR between two Pauli different non-identity strings gives the third one. Ignores signs or any coefficient.
 _bitpaulimultiply(pstr1::PauliStringType, pstr2::PauliStringType) = pstr1 ⊻ pstr2
 
-
-
 # Shift to the right and truncate the first encoded Pauli string. Just a utility function.
 _paulishiftright(pstr::PauliStringType) = pstr >> 2
 
+# Computing bit shift index from Pauli site index
+# this is is the amount we need to shift to get to the target Pauli
+_bitshiftfromsiteindex(siteindex::Integer) = 2 * (siteindex - 1)
 
+# a site is represented by two bits
+# using Bits.jl implementation of mask
+_paulis1mask(::Type{T}, n_sites) where T = mask(T, 2 * n_sites)
+
+_paulis1windowmask(::Type{T}, index1::Integer, index2::Integer) where T = _paulis1mask(T, index2 - index1 + 1) << _bitshiftfromsiteindex(index1)
 
 # This function extracts the Pauli at position `index` from the integer Pauli string.
 function _getpaulibits(pstr::PauliStringType, index::Integer)
-    # we need to shift the integer by 2 * (index - 1), then the first two bits are target Pauli
-    bitindex = 2 * (index - 1)
-
-    # shift to the right
-    shifted_pstr = (pstr >> bitindex)
-
-    # AND with 3 (00000011) to get the first two bits
-    return shifted_pstr & typeof(pstr)(3)
+    return _getpaulibits(pstr, index, index)
 end
-
 
 # This function extracts the Pauli from `index1` to `index2`.
 function _getpaulibits(pstr::PauliStringType, index1::Integer, index2::Integer)
-    bitindex = 2 * (index1 - 1)
+    T = typeof(pstr)
+
+    bitindex = _bitshiftfromsiteindex(index1)
 
     # shift to the right
     shifted_pstr = (pstr >> bitindex)
 
-    # n bits from index1 to index2: n = index2 - index1 + 1
-    # AND to get the first n bits or int repr (2^n -1) 
-    return shifted_pstr & typeof(pstr)(2^(2 * (index2 - index1 + 1)) - 1)
-end
-
-
-# Gets the bit at index `bitindex` in the integer Pauli string.
-function _getbit(pauli::Integer, bitindex::Integer)
-    # return integer with ...000[bit].
-
-    # shift by bitindex
-    shifted_pauli = (pauli >> bitindex)
-
-    # AND with 1 to get first bit
-    return shifted_pauli & typeof(pauli)(1)
+    # creates all 1s mask of length n bits
+    # AND to get the first n bits
+    return shifted_pstr & _paulis1mask(T, index2 - index1 + 1)
 end
 
 
 # This function sets the Pauli at position `index` in the integer Pauli string to `target_pauli`.
 function _setpaulibits(pstr::PauliStringType, target_pauli::PauliType, index::Integer)
-    # we need to shift the integer by 2 * (index - 1), then the first two bits are target Pauli
-    bitindex = 2 * (index - 1)
-
-    # read bits of the pauli
-    b1 = _getbit(target_pauli, 0)
-    b2 = _getbit(target_pauli, 1)
-
-    # insert them into the pstr
-    pstr = _setbit(pstr, b1, bitindex)
-    pstr = _setbit(pstr, b2, bitindex + 1)
-    return pstr
+    return _setpaulibits(pstr, target_pauli, index, index)
 end
 
 
 # This function sets the Pauli from `index1` to `index2` to `target_pstr`.
 function _setpaulibits(pstr::PauliStringType, target_pstr::PauliStringType, index1::Integer, index2::Integer)
+    T = typeof(pstr)
 
-    bitindex = 2 * (index1 - 1)
+    bitindex = _bitshiftfromsiteindex(index1)
 
-    shifted_mask = (typeof(pstr)(2^(2 * (index2 - index1 + 1)) - 1) << bitindex)
+    window_mask = _paulis1windowmask(T, index1, index2)
 
     # set bits to target pstr
-    pstr = (pstr & ~shifted_mask) | (target_pstr << bitindex)
-    return pstr
-end
-
-
-# Sets a bit at index `bitindex` in the integer Pauli string to the value of `target_bit`.
-function _setbit(pstr::PauliStringType, target_bit::Integer, bitindex::Integer)
-    # set bit at bitindex to bit
-
-    if target_bit == true  # set to one
-        pstr = _setbittoone(pstr, bitindex)
-    else
-        pstr = _setbittozero(pstr, bitindex)
-    end
-    return pstr
-end
-
-
-# Sets a bit at index `bitindex` in the integer Pauli string to 1.
-function _setbittoone(pstr::Integer, bitindex::Integer)
-    # set bit at bitindex to 1
-
-    # shift ...00100...  to bitindex
-    shifted_onebit = (typeof(pstr)(1) << bitindex)
-
-    # OR with pauli string to make sure that that bit is 1
-    return pstr | shifted_onebit
-end
-
-
-
-# Sets a bit at index `bitindex` in the integer Pauli string to 0.
-function _setbittozero(pstr::Integer, bitindex::Integer)
-    # set bit at bitindex to 0
-
-    # flip all bits
-    pstr = ~pstr
-
-    # set target bit to one
-    pstr = _setbittoone(pstr, bitindex)
-
-    # flip all bits back, only the target bit is 0
-    pstr = ~pstr
-    return pstr
+    return (pstr & ~window_mask) | (T(target_pstr) << bitindex)
 end
 
 
@@ -260,10 +196,10 @@ end
 
     # length is the number of bits in the integer
     n_bits = min(bitsize(pstr), 2_048)  # for max 1024 qubits.
-    mask = zero(pstr)
+    mask = zero(T)
     for ii in 0:(n_bits-1)
         if ii % 2 == 0
-            mask = _setbittoone(mask, ii)
+            mask = mask | (T(1) << ii)
         end
     end
     return mask
