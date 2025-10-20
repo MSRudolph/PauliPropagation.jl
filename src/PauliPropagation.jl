@@ -30,7 +30,6 @@ export
     inttostring,
     ispauli,
     getpauli,
-    getpauli_fast, 
     setpauli,
     show,
     countweight,
