@@ -293,38 +293,37 @@ function _getprettystr(psum::Dict, nqubits::Int; max_lines=20)
 end
 
 
-# Convert the a Pauli String to a different coefficient type
-"""
-    converttype(ctype::Type, pstr::PauliString)
-
-Convert a `PauliString` to a different coefficient type `ctype`.
-
-# Examples
-```julia
-converttype(Float64, PauliString(2, :X, 1, 1+0im))
-```
-"""
-function converttype(ctype::CT, pstr::PauliString) where {CT}
-    return PauliString(pstr.nqubits, pstr.term, ctype(pstr.coeff))
+# Conversion of PauliString and PauliSum to different coefficient types
+function Base.convert(::Type{PauliString{TT1,CT1}}, pstr::PauliString{TT2,CT2}) where {TT1,TT2,CT1,CT2}
+    if TT1 != TT2
+        throw(ArgumentError("Cannot change term type from $TT2 to $TT1"))
+    end
+    return PauliString(pstr.nqubits, convert(TT1, pstr.term), convert(CT1, pstr.coeff))
 end
 
-"""
-    converttype(ctype::Type, psum::PauliSum)
-
-Convert a `PauliSum` to a different coefficient type `ctype`.
-
-# Examples
-```julia
-psum = PauliSum(PauliString(2, :X, 1, 1+0im))
-converttype(Float64, psum)
-```
-"""
-function converttype(ctype::CT, psum::PauliSum) where {CT}
-
-    new_psum = PauliSum(ctype, psum.nqubits)
-
-    for (pstr, coeff) in psum
-        add!(new_psum, pstr, ctype(coeff))
+function Base.convert(::Type{PauliSum{TT1,CT1}}, psum::PauliSum{TT2,CT2}) where {TT1,TT2,CT1,CT2}
+    if TT1 != TT2
+        throw(ArgumentError("Cannot change term type from $TT2 to $TT1"))
     end
-    return new_psum
+    return PauliSum(pstr.nqubits, convert(Dict{TT1,CT1}, psum.terms))
+
+end
+
+# # Examples
+# ```julia
+# convertcoefftype(Float64, PauliString(2, :X, 1, 1+0im))
+# ```
+# """
+function convertcoefftype(::Type{CT1}, pstr::PauliString{TT,CT2}) where {TT,CT1,CT2}
+    return PauliString(pstr.nqubits, pstr.term, convert(CT1, pstr.coeff))
+end
+
+# # Examples
+# ```julia
+# psum = PauliSum(PauliString(2, :X, 1, 1+0im))
+# convertcoefftype(Float64, psum)
+# ```
+# """
+function convertcoefftype(::Type{CT1}, psum::PauliSum{TT,CT2}) where {TT,CT1,CT2}
+    return PauliSum(psum.nqubits, convert(Dict{TT,CT1}, psum.terms))
 end

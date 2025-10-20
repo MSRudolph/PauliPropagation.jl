@@ -117,10 +117,10 @@ end
 
     @testset "PauliString" begin
         pstr = PauliString(2, :X, 1, 1+0im)
-        @test converttype(Float64, pstr) == PauliString(2, :X, 1, 1.)
+        @test convertcoefftype(Float64, pstr) == PauliString(2, :X, 1, 1.)
 
         pstr = PauliString(2, [:X, :Y], [1, 2], 1)
-        @test converttype(ComplexF64, pstr) == PauliString(2, [:X, :Y], [1, 2], 1+0im)
+        @test convertcoefftype(ComplexF64, pstr) == PauliString(2, [:X, :Y], [1, 2], 1+0im)
     end
 
     @testset "PauliSum" begin
@@ -130,7 +130,7 @@ end
         expected_psum = PauliSum(2)
         add!(expected_psum, [:X, :Y], [1, 2], 2)
         add!(expected_psum, :Z, 1, 1)
-        @test converttype(Float64, psum) == expected_psum
+        @test convertcoefftype(Float64, psum) == expected_psum
     end
 
 end
