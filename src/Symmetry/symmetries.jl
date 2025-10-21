@@ -36,7 +36,7 @@ function translationmerging(psum::PauliSum, nx, ny)
 
     if shifted_psum.nqubits != nx * ny
         throw(
-            ArgumentError("Number of qubits $(shifted_psum.nqubits) does not \n
+            ArgumentError("Number of qubits $(shifted_psum.nqubits) does not 
                 match grid size $(nx) x $(ny)"
             )
         )
@@ -61,7 +61,7 @@ function _translatetolowestinteger(pstr::PauliStringType, nq)
     lowest_pstr = pstr
     for ii in 1:nq
         # shift periodically by one
-        pstr = _periodictshiftright(pstr, nq)
+        pstr = _periodicshiftright(pstr, nq)
 
         # if the shifted Pauli is lower, break shifting loop
         if pstr < lowest_pstr
@@ -99,7 +99,7 @@ function _translatetolowestinteger(pstr::PauliStringType, nx, ny)
     return lowest_pstr
 end
 
-function _periodictshiftright(pstr::PauliStringType, nq)
+function _periodicshiftright(pstr::PauliStringType, nq)
     first_pauli = getpauli(pstr, 1)
     pstr = PauliPropagation._paulishiftright(pstr)
     pstr = setpauli(pstr, first_pauli, nq)
@@ -155,7 +155,7 @@ function greedytranslationmerging(pstr::PauliStringType, nq)
 
     # shift until the first non-zero Pauli
     while getpauli(pstr, 1) == 0
-        pstr = _periodictshiftright(pstr, nq)
+        pstr = _periodicshiftright(pstr, nq)
     end
 
     return pstr
