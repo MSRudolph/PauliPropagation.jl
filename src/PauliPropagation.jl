@@ -145,6 +145,11 @@ export
     estimatemse,
     estimatemse!
 
+include("Symmetry/Symmetry.jl")
+export
+    greedytranslationmerging,
+    translationmerging
+
 include("Surrogate/Surrogate.jl")
 export
     NodePathProperties,
