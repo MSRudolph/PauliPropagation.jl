@@ -291,3 +291,39 @@ function _getprettystr(psum::Dict, nqubits::Int; max_lines=20)
     return str
 
 end
+
+
+# Conversion of PauliString and PauliSum to different coefficient types
+function Base.convert(::Type{PauliString{TT1,CT1}}, pstr::PauliString{TT2,CT2}) where {TT1,TT2,CT1,CT2}
+    if TT1 != TT2
+        throw(ArgumentError("Cannot change term type from $TT2 to $TT1"))
+    end
+    return PauliString(pstr.nqubits, convert(TT1, pstr.term), convert(CT1, pstr.coeff))
+end
+
+function Base.convert(::Type{PauliSum{TT1,CT1}}, psum::PauliSum{TT2,CT2}) where {TT1,TT2,CT1,CT2}
+    if TT1 != TT2
+        throw(ArgumentError("Cannot change term type from $TT2 to $TT1"))
+    end
+    return PauliSum(pstr.nqubits, convert(Dict{TT1,CT1}, psum.terms))
+
+end
+
+# # Examples
+# ```julia
+# convertcoefftype(Float64, PauliString(2, :X, 1, 1+0im))
+# ```
+# """
+function convertcoefftype(::Type{CT1}, pstr::PauliString{TT,CT2}) where {TT,CT1,CT2}
+    return PauliString(pstr.nqubits, pstr.term, convert(CT1, pstr.coeff))
+end
+
+# # Examples
+# ```julia
+# psum = PauliSum(PauliString(2, :X, 1, 1+0im))
+# convertcoefftype(Float64, psum)
+# ```
+# """
+function convertcoefftype(::Type{CT1}, psum::PauliSum{TT,CT2}) where {TT,CT1,CT2}
+    return PauliSum(psum.nqubits, convert(Dict{TT,CT1}, psum.terms))
+end
