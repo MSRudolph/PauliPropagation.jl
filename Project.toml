@@ -1,7 +1,7 @@
 name = "PauliPropagation"
 uuid = "293282d5-3c99-4fb6-92d0-fd3280a19750"
 authors = ["Manuel S. Rudolph"]
-version = "0.5.0"
+version = "0.5.1"
 
 [deps]
 BitIntegers = "c3b6d118-76ef-56ca-8cc7-ebb389d030a1"
