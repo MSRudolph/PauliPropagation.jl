@@ -168,4 +168,6 @@ export
     visualize_tree,
     propagate_with_tree_tracking
 
+include("OpenQASMInterface.jl")
+
 end
