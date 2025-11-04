@@ -161,7 +161,7 @@ function applytoall!(gate::AmplitudeDampingNoise, gamma, psum, aux_psum; kwargs.
 
         elseif pauli == 1 || pauli == 2
             # Pauli is X or Y, so the gate will give a sqrt(1-gamma) prefactor
-            new_coeff = sqrt(1 - gamma)
+            new_coeff = sqrt(1 - gamma) * coeff
             # set the coefficient of the Pauli string in the psum to the new coefficient
             set!(psum, pstr, new_coeff)
 

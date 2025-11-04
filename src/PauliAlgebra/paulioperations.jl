@@ -212,7 +212,7 @@ function commutator(pstr1::PauliStringType, pstr2::PauliStringType)
         new_pstr, total_sign = pauliprod(pstr1, pstr2)
     end
     # commutator is [A, B] = AB - BA = 2AB for non-commuting (meaning anti-commuting) Paulis
-    return new_pstr, 2 * total_sign
+    return new_pstr, 2. * total_sign
 end
 
 
@@ -245,12 +245,52 @@ end
 """
     pauliprod(pstr1::PauliString, pstr2::PauliString)
 
-Calculate the product of two `PauliString`s. For example `X*Y = iZ`.
+Calculate the product of two `PauliString`s. 
+
+# Examples
+```
+julia> pauliprod(PauliString(1, [:X], [1]), PauliString(1, [:Y], [1])) # X*Y=iZ
+```
 """
 function pauliprod(pstr1::PauliString, pstr2::PauliString)
+    _checktermtype(pstr1, pstr2)
     _checknumberofqubits(pstr1, pstr2)
     new_pstr, sign = pauliprod(pstr1.term, pstr2.term)
     return PauliString(pstr1.nqubits, new_pstr, sign * pstr1.coeff * pstr2.coeff)
+end
+
+
+## Pauli product for PauliSums and PauliStrings
+"""
+    pauliprod(psum1::PauliSum, psum2::PauliSum)
+
+Calculate the product of two `PauliSum`s. 
+Default returns a `PauliSum{TT, ComplexF64}` where `TT` is the type of the new Pauli Strings.
+
+# Examples
+```julia
+psum = PauliSum(PauliString(3, [:Y], [2])) 
+psum_identity = PauliSum(PauliString(3, [:I], [1]))
+pauliprod(psum, psum_identity) # Psum * I = Psum
+```
+
+"""    
+function pauliprod(psum1::PauliSum, psum2::PauliSum)
+
+    _checktermtype(psum1, psum2)
+    nq = _checknumberofqubits(psum1, psum2)
+
+    psum = PauliSum(ComplexF64, nq)
+    sizehint!(psum, length(psum1))
+
+    for (pstr1, coeff1) in psum1
+        for (pstr2, coeff2) in psum2
+            pstr, sign = pauliprod(pstr1, pstr2)
+            add!(psum, pstr, coeff1 * coeff2 * sign)
+        end
+    end
+    return psum
+
 end
 
 """
