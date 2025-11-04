@@ -147,9 +147,9 @@ _bitshiftfromsiteindex(siteindex::Integer) = 2 * (siteindex - 1)
 
 # a site is represented by two bits
 # using Bits.jl implementation of mask
-_paulis1mask(::Type{T}, n_sites) where T = mask(T, 2 * n_sites)
+_paulimask(::Type{T}, n_sites) where T = mask(T, 2 * n_sites)
 
-_paulis1windowmask(::Type{T}, index1::Integer, index2::Integer) where T = _paulis1mask(T, index2 - index1 + 1) << _bitshiftfromsiteindex(index1)
+_pauliwindowmask(::Type{T}, index1::Integer, index2::Integer) where T = _paulimask(T, index2 - index1 + 1) << _bitshiftfromsiteindex(index1)
 
 # This function extracts the Pauli at position `index` from the integer Pauli string.
 function _getpaulibits(pstr::PauliStringType, index::Integer)
@@ -167,7 +167,7 @@ function _getpaulibits(pstr::PauliStringType, index1::Integer, index2::Integer)
 
     # creates all 1s mask of length n bits
     # AND to get the first n bits
-    return shifted_pstr & _paulis1mask(T, index2 - index1 + 1)
+    return shifted_pstr & _paulimask(T, index2 - index1 + 1)
 end
 
 
@@ -183,7 +183,7 @@ function _setpaulibits(pstr::PauliStringType, target_pstr::PauliStringType, inde
 
     bitindex = _bitshiftfromsiteindex(index1)
 
-    window_mask = _paulis1windowmask(T, index1, index2)
+    window_mask = _pauliwindowmask(T, index1, index2)
 
     # set bits to target pstr
     return (pstr & ~window_mask) | (T(target_pstr) << bitindex)
