@@ -147,7 +147,7 @@ export
 
 include("Symmetry/Symmetry.jl")
 export
-    greedytranslationmerging,
+    symmetrymerge,
     translationmerge
 
 include("Surrogate/Surrogate.jl")
