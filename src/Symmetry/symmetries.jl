@@ -7,11 +7,26 @@
 
 
 """
-    symmetrymerge(psum::PauliSum, mapfunc::Function)
+    symmetrymerge(psum::PauliSum, mapfunc::Function) -> PauliSum
 
-General symmetry-merging for a PauliSum `psum` using `mapfunc` to transform each 
-Pauli string into its representative. 
-The expected format for that function is pstr -> mapfunc(pstr).
+Merge equivalent Pauli strings in `psum` under a symmetry mapping.
+Each Pauli string is transformed using `mapfunc(pstr)` to its canonical
+representative, and identical representatives are combined.
+
+# Arguments
+- `psum`: A `PauliSum` containing Pauli strings and coefficients.
+- `mapfunc`: A function mapping each `PauliString` to its canonical representative.
+
+# Returns
+A new `PauliSum` where symmetric terms have been merged.
+
+# Example
+```julia
+psum = PauliSum(6)
+add!(psum, :Z, 3)
+add!(psum, :Z, 6)
+symmetrymerge(psum, pstr -> _translatetolowestinteger(pstr, psum.nqubits))
+```
 """
 function symmetrymerge(psum::PauliSum, mapfunc::F) where F<:Function
     merged_psum = PauliPropagation.similar(psum)
@@ -44,6 +59,17 @@ translationmerge(psum::PauliSum) = symmetrymerge(
 )
 
 
+"""
+    translationmerge(psum::PauliSum, nx::Integer, ny::Integer)
+
+Shift and merge of a `psum` in a system with 2D translational symmetry.
+```
+psum = PauliSum(6)
+add!(psum, :Z, 3)
+add!(psum, :Z, 6)
+translationmerge(psum, 2, 3)
+```
+"""
 function translationmerge(psum::PauliSum, nx::Integer, ny::Integer)
     if psum.nqubits != nx * ny
         throw(
@@ -54,6 +80,8 @@ function translationmerge(psum::PauliSum, nx::Integer, ny::Integer)
     end
 
     # precompute masks once to accelerate shifting
+    # main_mask: mask for all bits except the first column
+    # wrap_mask: mask for the first column    
     main_mask, wrap_mask = _computeshiftleftmasks(paulitype(psum), nx, ny)
 
     mergefunc(pstr) = _translatetolowestinteger(
@@ -64,8 +92,8 @@ function translationmerge(psum::PauliSum, nx::Integer, ny::Integer)
 end
 
 function _computeshiftleftmasks(::Type{TT}, nx::Integer, ny::Integer) where TT
-    main_mask = zero(TT)
-    wrap_mask = zero(TT)
+    main_mask = zero(TT)  # main_mask: mask for all bits except the first column
+    wrap_mask = zero(TT)  # wrap_mask: mask for the first column    
 
     for col in 1:nx
         for row in 1:ny
@@ -73,7 +101,7 @@ function _computeshiftleftmasks(::Type{TT}, nx::Integer, ny::Integer) where TT
             bit_index = 2 * (site_index - 1)
 
             if col == 1
-                # first column
+                # first column -> wrap mask
                 wrap_mask |= (TT(3) << bit_index)
             else
                 main_mask |= (TT(3) << bit_index)
@@ -93,14 +121,12 @@ function _translatetolowestinteger(pstr::PauliStringType, nq)
     end
 
     lowest_pstr = pstr
-    for ii in 1:nq
+    for _ in 1:nq
         # shift periodically by one
         pstr = _periodicshiftright(pstr, nq)
 
-        # if the shifted Pauli is lower, break shifting loop
-        if pstr < lowest_pstr
-            lowest_pstr = pstr
-        end
+        # if the shifted Pauli is lower, record lowest int
+        lowest_pstr = min(lowest_pstr, pstr)
     end
 
     return lowest_pstr
@@ -113,40 +139,36 @@ function _translatetolowestinteger(pstr::PauliStringType, nx, ny, main_mask, wra
     end
 
     lowest_pstr = pstr
-    for ii in 1:ny
-        for jj in 1:nx
+    for _ in 1:ny
+        for _ in 1:nx
             # shift periodically by one column
-            pstr = _periodicshiftleft(pstr, nx, ny, main_mask, wrap_mask)
+            pstr = _periodicshiftleft(pstr, nx, main_mask, wrap_mask)
 
-            # if the shifted Pauli is lower, break shifting loop
-            if pstr < lowest_pstr
-                lowest_pstr = pstr
-            end
+            # if the shifted Pauli is lower, record lowest int
+            lowest_pstr = min(lowest_pstr, pstr)
         end
-        # shift periodically by one row
-        if ii < ny
-            # shift up one row
-            pstr = _periodicshiftup(pstr, nx, ny)
-        end
+
+        pstr = _periodicshiftup(pstr, nx, ny) # shift periodically by one row
+      
     end
 
     return lowest_pstr
 end
 
+
+# For 1d case, it is easier to shift right and set the first pauli to the last position
 function _periodicshiftright(pstr::PauliStringType, nq)
     first_pauli = getpauli(pstr, 1)
     pstr = PauliPropagation._paulishiftright(pstr)
     pstr = setpauli(pstr, first_pauli, nq)
-
     return pstr
 end
 
 
-
-# Shifts a `pstr` left one column in a (`nx`, `ny`) 2D grid of `nq` qubits.
+# Shifts a `pstr` left one column in a (`nx`, _ ) 2D grid of `nq` qubits.
 # This function shifts the entire bitstring left one column, 
 # and sets the first column of Paulis to the last column of the Paulis.
-function _periodicshiftleft(pstr::PauliStringType, nx, ny, main_mask, wrap_mask)
+function _periodicshiftleft(pstr::PauliStringType, nx, main_mask, wrap_mask)
     # main_mask: mask for all bits except the first column
     # wrap_mask: mask for the first column
 
