@@ -169,4 +169,7 @@ export
     visualize_tree,
     propagate_with_tree_tracking
 
+# experimental vector propagation 
+include("Propagation/VectorPropagate/VectorPropagate.jl")
+
 end

@@ -1,105 +1,32 @@
-using Base.Threads
-using AcceleratedKernels
-const AK = AcceleratedKernels
-using PauliPropagation
-
-
-mutable struct PropagationCache{VT,VC,VB,VI}
-    terms::VT
-    coeffs::VC
-    aux_terms::VT
-    aux_coeffs::VC
-    flags::VB
-    indices::VI
-
-    # we will over-allocate the arrays and keep track of the non-empty size
-    active_size::Int
+function PauliPropagation.propagate!(circuit, prop_cache::PropagationCache, thetas; kwargs...)
+    return propagate!(freeze(circuit, thetas), prop_cache; kwargs...)
 end
 
-function Base.resize!(prop_cache::PropagationCache, n_new::Int)
-    resize!(prop_cache.terms, n_new)
-    resize!(prop_cache.coeffs, n_new)
-    resize!(prop_cache.aux_terms, n_new)
-    resize!(prop_cache.aux_coeffs, n_new)
-    resize!(prop_cache.flags, n_new)
-    resize!(prop_cache.indices, n_new)
-    return prop_cache
-end
-
-function PropagationCache(terms, coeffs)
-    aux_terms = similar(terms)
-    aux_coeffs = similar(coeffs)
-    flags = similar(terms, Bool)
-    indices = similar(terms, Int)
-    return PropagationCache(terms, coeffs, aux_terms, aux_coeffs, flags, indices, length(terms))
-end
-
-function PropagationCache(pstrings::AbstractVector{PauliString{TT,CT}}) where {TT,CT}
-    terms = similar(pstrings, TT)
-    coeffs = similar(pstrings, CT)
-    for (i, pstr) in enumerate(pstrings)
-        terms[i] = pstr.term
-        coeffs[i] = pstr.coeff
-    end
-    return PropagationCache(terms, coeffs)
-end
-
-function Base.show(io::IO, prop_cache::PropagationCache)
-    println(io, "PropagationCache with $(prop_cache.active_size) terms:")
-    for i in 1:prop_cache.active_size
-        if i > 20
-            println(io, "  ...")
-            break
-        end
-        println(io, prop_cache.coeffs[i], " * $(prop_cache.terms[i])")
-    end
-end
-
-termtype(prop_cache::PropagationCache{VT,VC,VB,VI}) where {VT,VC,VB,VI} = eltype(VT)
-coefftype(prop_cache::PropagationCache{VT,VC,VB,VI}) where {VT,VC,VB,VI} = eltype(VC)
-
-viewterms(prop_cache::PropagationCache) = view(prop_cache.terms, 1:prop_cache.active_size)
-viewcoeffs(prop_cache::PropagationCache) = view(prop_cache.coeffs, 1:prop_cache.active_size)
-viewauxterms(prop_cache::PropagationCache) = view(prop_cache.aux_terms, 1:prop_cache.active_size)
-viewauxcoeffs(prop_cache::PropagationCache) = view(prop_cache.aux_coeffs, 1:prop_cache.active_size)
-viewflags(prop_cache::PropagationCache) = view(prop_cache.flags, 1:prop_cache.active_size)
-viewindices(prop_cache::PropagationCache) = view(prop_cache.indices, 1:prop_cache.active_size)
-
-term(trm::Integer) = trm
-term(pstr::PauliString) = term(pstr.term)
-
-
-Base.length(prop_cache::PropagationCache) = length(prop_cache.terms)
-Base.isempty(prop_cache::PropagationCache) = prop_cache.active_size == 0
-
-
-function vectorpropagate(circuit, strings::AbstractVector{<:PauliString}, args...; kwargs...)
-    return vectorpropagate(circuit, PropagationCache(strings), args...; kwargs...).terms
-end
-
-function vectorpropagate(circuit, prop_cache::PropagationCache, thetas; kwargs...)
-    return vectorpropagate(freeze(circuit, thetas), prop_cache; kwargs...)
-end
-
-function vectorpropagate(circuit, prop_cache::PropagationCache; min_abs_coeff=1e-10, max_weight=Inf, kwargs...)
+function PauliPropagation.propagate!(circuit, prop_cache::PropagationCache; min_abs_coeff=1e-10, max_weight=Inf,)
     # assume circuit contains the parameters via freezing, or is parameter-free
-    @assert countparameters(circuit) == 0 "'circuit' must be parameter-free. Consider using 'freeze()'."
+    @assert countparameters(circuit) == 0 "circuit requires parameters."
 
     for (i, gate) in enumerate(reverse(circuit))
 
-        prop_cache = applygate!(gate, prop_cache)
-
-        prop_cache = mergeterms!(prop_cache)
-
-        prop_cache = truncate!(prop_cache; min_abs_coeff, max_weight)
+        prop_cache = vectorapplymergetruncate!(gate, prop_cache; min_abs_coeff=min_abs_coeff, max_weight=max_weight)
 
     end
+    return prop_cache
+end
+
+function vectorapplymergetruncate!(gate, prop_cache::PropagationCache; min_abs_coeff=1e-10, max_weight=Inf)
+    prop_cache = applytoall!(gate, prop_cache)
+
+    prop_cache = mergeterms!(prop_cache)
+
+    prop_cache = truncate!(prop_cache; min_abs_coeff, max_weight)
+
     return prop_cache
 end
 
 ## The apply functions
 
-function applygate!(gate::CliffordGate, prop_cache::PropagationCache)
+function applytoall!(gate::CliffordGate, prop_cache::PropagationCache)
 
     # everything is done in place
     terms_view = viewterms(prop_cache)
@@ -120,21 +47,7 @@ function applygate!(gate::CliffordGate, prop_cache::PropagationCache)
 end
 
 
-function _paulirotationproduct(gate_mask::TT, pstr::TT) where TT
-    new_pstr = PauliPropagation._bitpaulimultiply(gate_mask, pstr)
-
-    # this counts the exponent of the imaginary unit in the new Pauli string
-    im_count = PauliPropagation._calculatesignexponent(gate_mask, pstr)
-
-    # now, instead of computing im^im_count followed by another im factor from the gate rules,
-    # we do this in one step via a cheeky trick:
-    sign = (im_count & 2) - 1
-    # this is equivalent to sign = real( im * im^im_count)
-
-    return new_pstr, sign
-end
-
-function applygate!(frozen_gate::FrozenGate{PauliRotation,PT}, prop_cache::PropagationCache{VT,VC,VB,VI}) where {PT,VT,VC,VB,VI}
+function applytoall!(frozen_gate::FrozenGate{PauliRotation,PT}, prop_cache::PropagationCache{VT,VC,VB,VI}) where {PT,VT,VC,VB,VI}
 
     TT = eltype(VT)
 
@@ -176,12 +89,15 @@ function _applypaulirotation!(prop_cache::PropagationCache, gate_mask::TT, theta
     sin_val = sin(theta)
 
     n = prop_cache.active_size
+    n_max = prop_cache.indices[prop_cache.active_size] + n
 
     terms_view = viewterms(prop_cache)
     coeffs = prop_cache.coeffs
     terms = prop_cache.terms
     flags = prop_cache.flags
     indices = prop_cache.indices
+    @assert length(terms) >= n_max "PropagationCache terms array is not large enough to hold new terms."
+    @assert length(coeffs) >= n_max "PropagationCache coeffs array is not large enough to hold new coeffs."
     AK.foreachindex(terms_view) do ii
         # here it anticommutes
         if flags[ii]
@@ -213,6 +129,20 @@ function _flaganticommuting!(prop_cache::PropagationCache, gate_mask::TT) where 
     return
 end
 
+function _paulirotationproduct(gate_mask::TT, pstr::TT) where TT
+    new_pstr = PauliPropagation._bitpaulimultiply(gate_mask, pstr)
+
+    # this counts the exponent of the imaginary unit in the new Pauli string
+    im_count = PauliPropagation._calculatesignexponent(gate_mask, pstr)
+
+    # now, instead of computing im^im_count followed by another im factor from the gate rules,
+    # we do this in one step via a cheeky trick:
+    sign = (im_count & 2) - 1
+    # this is equivalent to sign = real( im * im^im_count)
+
+    return new_pstr, sign
+end
+
 _flagstoindices!(prop_cache::PropagationCache) = _flagstoindices!(prop_cache.indices, viewflags(prop_cache))
 _flagstoindices!(indices_dst, flags) = AK.accumulate!(+, indices_dst, flags; init=0)
 
@@ -222,6 +152,7 @@ function mergeterms!(prop_cache::PropagationCache)
     end
 
     # Sort the vector to group identical keys together.
+    # TODO: dispatch this in dedicated functions
     AK.sortperm!(viewindices(prop_cache), viewterms(prop_cache), by=term)
 
     # shuffle the terms and coeffs according to the sorted indices into their aux arrays
@@ -404,31 +335,4 @@ function zeroinactive!(prop_cache::PropagationCache)
         end
     end
     return prop_cache
-end
-
-function topaulisum(nq, prop_cache::PropagationCache)
-    TT = termtype(prop_cache)
-    CT = coefftype(prop_cache)
-
-    psum = PauliSum(nq, Dict{TT,CT}(zip(viewterms(prop_cache), viewcoeffs(prop_cache))))
-    return psum
-end
-
-
-function PauliPropagation.overlapwithzero(strings::Vector)
-    total = zero(numcoefftype(strings[1]))
-    for pstr in strings
-
-        total += tonumber(pstr.coeff) * !containsXorY(pstr.term)
-    end
-    return total
-end
-
-
-function PauliPropagation.overlapwithcomputational(prop_cache::PropagationCache, onebitinds)
-    val = zero(coefftype(prop_cache))
-    for i in eachindex(viewterms(prop_cache))
-        val += tonumber(prop_cache.coeffs[i]) * PauliPropagation._calcsignwithones(prop_cache.terms[i], onebitinds)
-    end
-    return val
 end
