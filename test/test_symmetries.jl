@@ -15,9 +15,9 @@ function get_psum(nq)
     add!(input_psum, [:Z, :X], [2, 5], 0.5)
     add!(input_psum, [:X, :Y, :Z], [1, 3, 6])
     add!(input_psum, [:Y, :X, :Z], [1, 2, 4])
-    
+
     return input_psum
-end    
+end
 
 
 @testset "Translation 1d merging" begin
@@ -31,28 +31,10 @@ end
     add!(expected_psum, [:Y, :X, :Z], [1, 2, 4], 1)
     add!(expected_psum, [:Z, :X, :Y], [1, 2, 4], 1)
 
-    merged_psum = translationmerging(input_psum)
+    merged_psum = translationmerge(input_psum)
     @test merged_psum == expected_psum
 
 end
-
-@testset "Greedy translation 1d merging" begin
-    nq = 7
-    input_psum = get_psum(nq)
-
-    expected_psum = PauliSum(nq)
-    add!(expected_psum, :Z, 1, 3)
-    add!(expected_psum, [:Z, :X], [1, 4], 0.5)
-    add!(expected_psum, [:X, :Z], [1, 4], 1)
-    add!(expected_psum, :X, 1, 0.5)
-    add!(expected_psum, [:Y, :X, :Z], [1, 2, 4], 1)
-    add!(expected_psum, [:X, :Y, :Z], [1, 3, 6], 1)
-
-    merged_psum = greedytranslationmerging(input_psum)
-    @test merged_psum == expected_psum
-
-end
-
 
 @testset "Full shiftup 2D translation merging" begin
     nx, ny = 3, 2
@@ -66,6 +48,6 @@ end
     add!(expected_psum, [:Y, :X, :Z], [1, 2, 4], 2)
 
     # test merging with shiftup
-    @test translationmerging(input_psum, nx, ny) == expected_psum
+    @test translationmerge(input_psum, nx, ny) == expected_psum
 
 end
