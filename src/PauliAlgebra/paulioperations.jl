@@ -55,6 +55,36 @@ function LinearAlgebra.tr(psum::PauliSum{TT, CT}) where {TT, CT}
     get(psum.terms, zero(TT), zero(CT)) * CT(2.0^psum.nqubits)
 end
 
+"""
+    trace(pstr::PauliString)
+
+Wrapper for `LinearAlgebra.tr(pstr::PauliString)`.
+
+# Arguments
+- `pstr::PauliString{TT, CT}`: The Pauli string to trace. 
+
+# Returns
+- `CT`: The trace value of the `PauliString`.
+"""
+function trace(pstr::PauliString{TT, CT}) where {TT, CT}
+    LinearAlgebra.tr(pstr)
+end
+
+"""
+    trace(psum::PauliSum)
+
+Wrapper for `LinearAlgebra.tr(psum::PauliSum)`.
+
+# Arguments
+`psum::PauliSum`: The Pauli sum to trace.
+
+# Returns
+`CT`: The trace value of the PauliSum.
+"""
+function trace(psum::PauliSum{TT, CT}) where {TT, CT}
+    LinearAlgebra.tr(psum)
+end
+
 # TODO: generate these definitions with Macro's instead? Easier to maintain and less error-prone
 
 """

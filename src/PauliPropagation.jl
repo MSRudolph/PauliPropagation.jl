@@ -40,7 +40,8 @@ export
     pauliprod,
     commutes,
     commutator,
-    getinttype
+    getinttype,
+    trace
 
 include("PauliTransferMatrix/PauliTransferMatrix.jl")
 export
