@@ -11,16 +11,6 @@ Pauli propagation is related to the so-called (extended) stabilizer simulation, 
 
 Implemented in Julia, `PauliPropagation.jl` combines high-performance computation (using features such as multiple dispatch) with an accessible and high-level interface.  
 
-## UnitaryHACK 2025 - May 28th to June 11th
-From **May 28th to June 11th** we are participating in the 5th edition of the hackathon. Solve [these GitHub Issues](https://unitaryhack.dev/projects/pauli-propagation/) and collect real money bounties &#128176;&#128176;&#128176;!
-
-The relevant Issues are:
-- For $200: https://github.com/MSRudolph/PauliPropagation.jl/issues/88
-- For $150: https://github.com/MSRudolph/PauliPropagation.jl/issues/86
-- For $100: https://github.com/MSRudolph/PauliPropagation.jl/issues/87
-- For $50: https://github.com/MSRudolph/PauliPropagation.jl/issues/89
-
-
 ## Installation
 
 > Note the current package requires `Julia 1.10+`.

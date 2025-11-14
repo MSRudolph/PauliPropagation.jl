@@ -40,8 +40,9 @@ export
     pauliprod,
     commutes,
     commutator,
-    getinttype,
-    trace
+    trace,
+    convertcoefftype,
+    getinttype
 
 include("PauliTransferMatrix/PauliTransferMatrix.jl")
 export
@@ -150,5 +151,23 @@ export
     NodePathProperties,
     evaluate!,
     reset!
+
+include("Visualization/Visualization.jl")
+export
+    PauliTreeTracker,
+    TreeNode,
+    TreeEdge,
+    EVOLUTION_TREE,
+    EVOLUTION_EDGES,
+    reset_tree!,
+    add_node!,
+    add_edge!,
+    create_child_tracker,
+    format_pauli_string,
+    export_to_graphviz,
+    export_to_json,
+    print_tree_summary,
+    visualize_tree,
+    propagate_with_tree_tracking
 
 end

@@ -66,6 +66,10 @@ If |x><x| is a computational basis state, it we compute Tr[psum * |x><x|] = <x|p
 For example, `overlapwithcomputational(psum, [1,2,4])` returns the overlap with `|1101000...>`.
 """
 function overlapwithcomputational(psum::PauliSum, onebitinds)
+    if length(psum) == 0
+        return 0.0
+    end
+
     val = zero(numcoefftype(psum))
     for (pstr, coeff) in psum
         val += tonumber(coeff) * _calcsignwithones(pstr, onebitinds)
