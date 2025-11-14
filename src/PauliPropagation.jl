@@ -146,6 +146,11 @@ export
     estimatemse,
     estimatemse!
 
+include("Symmetry/Symmetry.jl")
+export
+    symmetrymerge,
+    translationmerge
+
 include("Surrogate/Surrogate.jl")
 export
     NodePathProperties,
