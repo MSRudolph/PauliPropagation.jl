@@ -289,6 +289,21 @@ The characters of the string from left to right are the Paulis on the qubits fro
 inttostring(pstr::PauliType, nqubits::Integer) = prod("$(inttosymbol(getpauli(pstr, ii)))" for ii in 1:nqubits)
 
 
+## visualization tool for 2D
+function inttostring(pstr::PauliType, nx::Integer, ny::Integer)
+    str = ""
+
+    for ii in 1:ny
+        row_paulis = getpauli(pstr, (ii-1)*nx+1:ii*nx)
+        for pauli in row_paulis
+            str *= inttostring(pauli, nx)
+        end
+        str *= "\n"
+    end
+    return str
+end
+
+
 # Pretty string function.
 function _getprettystr(psum::Dict, nqubits::Int; max_lines=20)
     # TODO: rework this pretty print to not build the string but keep streaming via show(io, ...)
