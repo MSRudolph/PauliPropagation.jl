@@ -129,6 +129,102 @@ Check if an integer Pauli string contains a Y or Z Pauli.
 containsYorZ(pstr::PauliStringType) = countyz(pstr) > 0
 
 
+### Counting functions for integer Pauli strings ###
+
+"""
+    countx(pstr::PauliString)
+
+Function to count the number of X Paulis in a `PauliString`.
+"""
+function countx(pstr::PauliString)
+    return countx(pstr.term)
+end
+
+"""
+    countx(pstr::Integer)
+
+Function to count the number of X Paulis in an integer Pauli string.
+"""
+function countx(pstr::PauliStringType)
+    return _countbitx(pstr)
+end
+
+"""
+    countx(psum::PauliSum)
+Function to count the number of X Paulis in a `PauliSum`. Returns an array of counts.
+"""
+function countx(psum::PauliSum)
+    return countx(psum.terms)
+end
+
+function countx(psum::AbstractDict)
+    return [countx(pstr) for pstr in keys(psum)]
+end
+
+
+"""
+    county(pstr::PauliString)
+
+Function to count the number of Y Paulis in a `PauliString`.
+"""
+function county(pstr::PauliString)
+    return county(pstr.term)
+end
+
+"""
+    county(pstr::Integer)
+
+Function to count the number of Y Paulis in an integer Pauli string.
+"""
+function county(pstr::PauliStringType)
+    return _countbity(pstr)
+end
+
+"""
+    county(psum::PauliSum)
+Function to count the number of Y Paulis in a `PauliSum`. Returns an array of counts.
+"""
+function county(psum::PauliSum)
+    return county(psum.terms)
+end
+
+function county(psum::AbstractDict)
+    return [county(pstr) for pstr in keys(psum)]
+end
+
+
+"""
+    countz(pstr::PauliString)
+
+Function to count the number of Z Paulis in a `PauliString`.
+"""
+function countz(pstr::PauliString)
+    return countz(pstr.term)
+end
+
+"""
+    countz(pstr::Integer)
+
+Function to count the number of Z Paulis in an integer Pauli string.
+"""
+function countz(pstr::PauliStringType)
+    return _countbitz(pstr)
+end
+
+"""
+    countz(psum::PauliSum)
+    
+Function to count the number of Z Paulis in a `PauliSum`. Returns an array of counts.
+"""
+function countz(psum::PauliSum)
+    return countz(psum.terms)
+end
+
+function countz(psum::AbstractDict)
+    return [countz(pstr) for pstr in keys(psum)]
+end
+
+
 ### All the commutation check functions
 """
     commutes(pstr1::PauliString, pstr2::PauliString)
