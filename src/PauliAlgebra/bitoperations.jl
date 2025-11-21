@@ -111,6 +111,47 @@ function _countbityz(pstr::PauliStringType)
 end
 
 
+### Count X, Y, Z occurrences in Pauli strings and sums ###
+function _countbitx(pstr::PauliStringType)
+
+    # super bit mask 
+    mask_x = alternatingmask(pstr) # ....1010101 representing XXX...
+    mask_y = mask_x << 1  # ...101010 representing YYY...
+
+    # AND with NOT of Y to get only X
+    xs = (pstr & mask_x) & ((~pstr & mask_y) >> 1) # Shift right to align
+
+    # count 0 pairs to get the number of X Paulis
+    return count_ones(xs)
+end
+
+function _countbity(pstr::PauliStringType)
+
+    # super bit mask 
+    mask_x = alternatingmask(pstr) # ....1010101 representing XXX...
+    mask_y = mask_x << 1  # ...101010 representing YYY...
+
+    # And with NOT of X to get only Y
+    op = ((pstr & mask_y) >> 1 ) & (~pstr & mask_x)  # Shift right to align
+    
+    # count 1's to get the number of Y Paulis
+    return count_ones(op)
+end
+
+function _countbitz(pstr::PauliStringType)
+
+    # super bit mask 
+    mask_x = alternatingmask(pstr) # ....1010101 representing XXX...
+    mask_y = mask_x << 1  # ...101010 representing YYY...
+
+    # AND with both masks to extract the 1's on both bits
+    op = ((pstr & mask_y) >> 1 ) & (pstr & mask_x)  
+
+    # count 1's to get the number of Z Paulis
+    return count_ones(op)
+end
+
+
 # This function checks if two integer Pauli strings commute.
 function _bitcommutes(pstr1::PauliStringType, pstr2::PauliStringType)
 
