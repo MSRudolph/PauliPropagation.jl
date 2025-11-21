@@ -213,6 +213,7 @@ end
 
 """
     countz(psum::PauliSum)
+    
 Function to count the number of Z Paulis in a `PauliSum`. Returns an array of counts.
 """
 function countz(psum::PauliSum)

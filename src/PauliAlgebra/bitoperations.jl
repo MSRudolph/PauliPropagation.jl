@@ -111,7 +111,7 @@ function _countbityz(pstr::PauliStringType)
 end
 
 
-### Count X, Y, Z occurrences in Pauli strings and sums ###
+### Count X, Y, Z occurrences in PauliString ###
 function _countbitx(pstr::PauliStringType)
 
     # super bit mask 
@@ -121,7 +121,7 @@ function _countbitx(pstr::PauliStringType)
     # AND with NOT of Y to get only X
     xs = (pstr & mask_x) & ((~pstr & mask_y) >> 1) # Shift right to align
 
-    # count 0 pairs to get the number of X Paulis
+    # count 1 pairs to get the number of X Paulis
     return count_ones(xs)
 end
 

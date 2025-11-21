@@ -143,11 +143,11 @@ end
 
     # Verify counting functions for X, Y, Z, X|Y, Y|Z and overlall weight
     function _count_verification(pstr, expected_counts)
-        countx(pstr) == expected_counts.X || error("countx failed")
-        county(pstr) == expected_counts.Y || error("county failed")
-        countz(pstr) == expected_counts.Z || error("countz failed")
-        countxy(pstr) == expected_counts.XY || error("countxy failed")
-        countyz(pstr) == expected_counts.YZ || error("countyz failed")
+        countx(pstr) == expected_counts.X
+        county(pstr) == expected_counts.Y
+        countz(pstr) == expected_counts.Z
+        countxy(pstr) == expected_counts.XY
+        countyz(pstr) == expected_counts.YZ
         countweight(pstr) == (
             expected_counts.X + expected_counts.Y + expected_counts.Z
         ) || error("countweight failed")
@@ -161,19 +161,19 @@ end
     end
 
     @testset "Counting Single Pauli X" begin
-        pstr = PauliString(nq, [:X, :X, ], [2, 3])
+        pstr = PauliString(nq, [:X, :X ], [2, 3])
         expected_counts = (X=2, Y=0, Z=0, XY=2, YZ=0)
         _count_verification(pstr, expected_counts)
     end
 
     @testset "Counting Single Pauli Y" begin
-        pstr = PauliString(nq, [:Y, :Y, ], [1, 5])
+        pstr = PauliString(nq, [:Y, :Y ], [1, 5])
         expected_counts = (X=0, Y=2, Z=0, XY=2, YZ=2)
         _count_verification(pstr, expected_counts)    
     end
 
     @testset "Counting Single Pauli Z" begin
-        pstr = PauliString(nq, [:Z, :Z, ], [4, 6])
+        pstr = PauliString(nq, [:Z, :Z ], [4, 6])
         expected_counts = (X=0, Y=0, Z=2, XY=0, YZ=2)
         _count_verification(pstr, expected_counts)    
     end
