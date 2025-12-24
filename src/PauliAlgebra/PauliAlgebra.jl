@@ -1,5 +1,10 @@
 using Bits
 using BitIntegers
+import Base: *
+import Base: /
+import Base: +
+import Base: -
+import Base: ==
 
 """
     PauliStringType
@@ -17,7 +22,9 @@ Paulis, also known as Pauli operators, are objects like I, X, Y, Z acting on a s
 """
 const PauliType = PauliStringType
 
-include("datatypes.jl")
+include("PauliString.jl")
+include("PauliSum.jl")
+include("VectorPauliSum.jl")
 include("bitoperations.jl")
 include("paulioperations.jl")
 include("utils.jl")

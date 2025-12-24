@@ -1,4 +1,14 @@
-function PauliPropagation.propagate!(circuit, prop_cache::PropagationCache, thetas; kwargs...)
+function PauliPropagation.propagate(circuit, vecpsum::VectorPauliSum, thetas=nothing; kwargs...)
+    prop_cache = PropagationCache(deepcopy(vecpsum))
+    return propagate!(circuit, prop_cache, thetas; kwargs...)
+end
+
+function PauliPropagation.propagate!(circuit, vecpsum::VectorPauliSum, thetas=nothing; kwargs...)
+    prop_cache = PropagationCache(vecpsum)
+    return propagate!(circuit, prop_cache, thetas; kwargs...)
+end
+
+function PauliPropagation.propagate!(circuit, prop_cache::PropagationCache, thetas=nothing; kwargs...)
     return propagate!(freeze(circuit, thetas), prop_cache; kwargs...)
 end
 
@@ -244,8 +254,7 @@ function _deduplicate!(prop_cache::PropagationCache)
 end
 
 function swapterms!(prop_cache::PropagationCache)
-    prop_cache.terms, prop_cache.aux_terms = prop_cache.aux_terms, prop_cache.terms
-    prop_cache.coeffs, prop_cache.aux_coeffs = prop_cache.aux_coeffs, prop_cache.coeffs
+    prop_cache.vecpsum, prop_cache.aux_vecpsum = prop_cache.aux_vecpsum, prop_cache.vecpsum
     return prop_cache
 end
 
@@ -275,11 +284,11 @@ end
 
 function _moveflagged!(prop_cache::PropagationCache{TT,CT}) where {TT,CT}
     terms_view = viewterms(prop_cache)
-    coeffs = prop_cache.coeffs
-    aux_terms = prop_cache.aux_terms
-    aux_coeffs = prop_cache.aux_coeffs
-    flags = prop_cache.flags
-    indices = prop_cache.indices
+    coeffs = viewcoeffs(prop_cache)
+    aux_terms = viewauxterms(prop_cache)
+    aux_coeffs = viewauxcoeffs(prop_cache)
+    flags = viewflags(prop_cache)
+    indices = viewindices(prop_cache)
     AK.foreachindex(terms_view) do ii
         if flags[ii]
             aux_terms[indices[ii]] = terms_view[ii]
@@ -318,21 +327,3 @@ end
 #     resize!(prop_cache.indices, max_terms)
 #     return prop_cache
 # end
-
-function zeroinactive!(prop_cache::PropagationCache)
-    TT = termtype(prop_cache)
-    CT = coefftype(prop_cache)
-
-    @assert length(prop_cache.terms) == length(prop_cache.coeffs)
-
-    terms = prop_cache.terms
-    coeffs = prop_cache.coeffs
-    active_size = prop_cache.active_size
-    AK.foreachindex(terms) do ii
-        if ii > active_size
-            terms[ii] = zero(TT)
-            coeffs[ii] = zero(CT)
-        end
-    end
-    return prop_cache
-end

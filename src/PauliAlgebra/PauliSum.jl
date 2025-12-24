@@ -1,116 +1,3 @@
-import Base: *
-import Base: /
-import Base: +
-import Base: -
-import Base: ==
-import Base.length
-import Base.show
-import Base.sizehint!
-
-"""
-    PauliString(nqubits::Int, term::TermType, coeff::CoeffType)
-
-`PauliString` is a `struct` that represents a Pauli string on `nqubits` qubits.
-Commonly `term` is an unsigned Integer. 
-See the other `PauliString` constructors for higher-level usage. 
-"""
-struct PauliString{TT<:PauliStringType,CT}
-    nqubits::Int
-    term::TT
-    coeff::CT
-
-    function PauliString(nqubits::Int, term::TT, coeff::CT) where {TT<:PauliStringType,CT}
-        if nqubits <= 0
-            throw(ArgumentError("Number of qubits must be a positive integer."))
-        end
-
-        return new{TT,CT}(nqubits, term, coeff)
-    end
-end
-
-"""
-    PauliString(nqubits::Int, pauli::Symbol, qind::Integer, coeff=1.0)
-    PauliString(nqubits::Int, paulis::Vector{Symbol}, qinds::Vector{Integer}, coeff=1.0)
-
-Constructor for a `PauliString` on `nqubits` qubits from a `Symbol` (:I, :X, :Y, :Z) or `Vector{Symbol}`.
-Provide the index or indices for those symbols as `qind` or `qinds`.
-The coefficient of the Pauli string in the Pauli sum defaults to 1.0.
-"""
-function PauliString(nqubits::Int, paulis, qinds, coeff=1.0)
-
-    # `symboltoint()` also does checks, but we want to catch them here.
-    term = symboltoint(nqubits, paulis, qinds)
-
-    # In case an integer is passed, we probably want it to be a float.
-    coeff = float(coeff)
-
-    return PauliString(nqubits, term, coeff)
-end
-
-"""
-    paulitype(pstr::PauliString)
-
-Get the Pauli integer type of a `PauliString`.
-"""
-function paulitype(pstr::PauliString)
-    return typeof(pstr.term)
-end
-
-"""
-    coefftype(pstr::PauliString)
-
-Get the coefficient type of a `PauliString`.
-"""
-function coefftype(pstr::PauliString)
-    return typeof(pstr.coeff)
-end
-
-"""
-    numcoefftype(pstr::PauliString)
-
-Get the type of the numerical coefficient of a `PauliString`. 
-Will return the type of the output of  `tonumber(pstr.coeff)`.
-"""
-function numcoefftype(pstr::PauliString)
-    return typeof(tonumber(pstr.coeff))
-end
-
-"""
-    *(pstr::PauliString, c::Number)
-
-Multiply a `PauliString` by a scalar `c`. Returns a new `PauliString`.
-"""
-*(pstr::PauliString, c::Number) = PauliString(pstr.nqubits, pstr.term, pstr.coeff * c)
-*(c::Number, pstr::PauliString) = pstr * c
-
-"""
-    /(pstr::PauliString, c::Number)
-
-Divide a `PauliString` by a scalar `c`. Returns a new `PauliString`.
-"""
-/(pstr::PauliString, c::Number) = pstr * (1 / c)
-
-
-# Pretty print for `PauliString`.
-function show(io::IO, pstr::PauliString)
-    pauli_string = inttostring(pstr.term, pstr.nqubits)
-    if length(pauli_string) > 20
-        pauli_string = pauli_string[1:20] * "..."
-    end
-    if isa(pstr.coeff, Number)
-        coeff_str = round(pstr.coeff, sigdigits=5)
-    elseif isa(pstr.coeff, PathProperties) && hasfield(typeof(pstr.coeff), :coeff)
-        PProp = string(typeof(pstr.coeff).name.name)
-        if isa(pstr.coeff.coeff, Number)
-            coeff_str = "$PProp($(round(pstr.coeff.coeff, sigdigits=5)))"
-        else
-            coeff_str = "$PProp($(typeof(pstr.coeff.coeff)))"
-        end
-    else
-        coeff_str = "$(typeof(pstr.coeff))"
-    end
-    print(io, "PauliString(nqubits: $(pstr.nqubits), $(coeff_str) * $(pauli_string))")
-end
 
 
 """
@@ -351,14 +238,14 @@ end
 
 Number of terms in the `PauliSum`.
 """
-length(psum::PauliSum) = length(psum.terms)
+Base.length(psum::PauliSum) = length(psum.terms)
 
 """
     sizehint!(psum::PauliSum, n)
 
 Hint to the `PauliSum` to reserve space for `n` terms.
 """
-sizehint!(psum::PauliSum, n) = sizehint!(psum.terms, n)
+Base.sizehint!(psum::PauliSum, n) = sizehint!(psum.terms, n)
 
 
 """
@@ -544,15 +431,6 @@ end
 
 
 # Pauli products
-"""
-    *(pstr1::PauliString, pstr2::PauliString)
-
-Perform a Pauli product of two `PauliString`s. 
-"""
-function *(pstr1::PauliString, pstr2::PauliString)
-
-    return pauliprod(pstr1, pstr2)
-end
 
 """
     *(pstr::PauliString, psum::PauliSum)
@@ -581,7 +459,7 @@ Perform a Pauli product of two `PauliSum`s.
 Returns a `PauliSum` with complex coefficients.
 """
 function *(psum1::PauliSum, psum2::PauliSum)
-   
+
     return pauliprod(psum1, psum2)
 end
 
@@ -747,66 +625,3 @@ function Base.similar(psum::Dict{TT,CT}) where {TT,CT}
     return new_psum
 end
 
-
-
-# Checks whether the number of qubits `nqubits` is the same between our datatypes.
-function _checknumberofqubits(nqubits::Int, pobj::Union{PauliString,PauliSum})
-    if nqubits != pobj.nqubits
-        throw(
-            ArgumentError(
-                "Number of qubits ($(nqubits)) must equal number of qubits ($(pobj.nqubits)) in $(typeof(pobj))"
-            )
-        )
-    end
-    return nqubits
-end
-
-
-# Checks whether the number of qubits `nqubits` is the same between as the length of the vector `pstr`.
-function _checknumberofqubits(nqubits::Int, pstr)
-    if nqubits != length(pstr)
-        throw(
-            ArgumentError(
-                "Number of qubits ($(op1.nqubits)) must equal number of qubits ($(length(pstr))) in $(typeof(pstr))"
-            )
-        )
-    end
-    return nqubits
-end
-
-
-# Checks whether the number of qubits `nqubits` is the same between our datatypes.
-function _checknumberofqubits(pobj1::Union{PauliString,PauliSum}, pobj2::Union{PauliString,PauliSum})
-    if pobj1.nqubits != pobj2.nqubits
-        throw(
-            ArgumentError(
-                "Number of qubits ($(pobj1.nqubits)) in $(typeof(pobj1)) must equal number of qubits ($(pobj2.nqubits)) in $(typeof(pobj2))"
-            )
-        )
-    end
-    return pobj1.nqubits
-end
-
-"""
-Checks whether the number of qubits `nqubits` is the same between in some collection.
-"""
-function _checknumberofqubits(pobjects::Union{AbstractArray,Tuple,Base.Generator})
-
-    if !allequal(pobj.nqubits for pobj in pobjects)
-        throw(
-            ArgumentError(
-                "Number of qubits in passed collection of type $(typeof(pobjects)) is not consistent."
-            )
-        )
-    end
-    return first(pobjects).nqubits
-end
-
-
-# throw error for miss-matched term/Pauli types
-
-function _checktermtype(pobj1, pobj2)
-    if paulitype(pobj1) != paulitype(pobj2)
-        throw(ArgumentError("Pauli types do not match. Got $(paulitype(pobj1)) and $(paulitype(pobj2))."))
-    end
-end
