@@ -194,5 +194,6 @@ Some of the developers of this package are co-authors in the following papers us
 - [Classically estimating observables of noiseless quantum circuits](https://arxiv.org/abs/2409.01706)
 - [Efficient quantum-enhanced classical simulation for patches of quantum landscapes](https://arxiv.org/abs/2411.19896)
 - [Simulating quantum circuits with arbitrary local noise using Pauli Propagation](https://arxiv.org/abs/2501.13101)
+- [Leveraging Symmetry Merging in Pauli Propagation](https://arxiv.org/abs/2512.12094)
   
 And more are coming up.

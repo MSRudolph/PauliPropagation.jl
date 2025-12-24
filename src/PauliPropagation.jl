@@ -35,11 +35,15 @@ export
     countweight,
     countxy,
     countyz,
+    countx,
+    county,
+    countz,
     containsXorY,
     containsYorZ,
     pauliprod,
     commutes,
     commutator,
+    trace,
     convertcoefftype,
     getinttype
 
@@ -144,6 +148,11 @@ include("numericalcertificates.jl")
 export
     estimatemse,
     estimatemse!
+
+include("Symmetry/Symmetry.jl")
+export
+    symmetrymerge,
+    translationmerge
 
 include("Surrogate/Surrogate.jl")
 export

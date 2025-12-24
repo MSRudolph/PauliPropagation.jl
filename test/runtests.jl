@@ -30,6 +30,8 @@ using Random
 
     include("test_pathproperties.jl")
 
+    include("test_symmetries.jl")
+
     include("test_truncations.jl")
 
     include("test_numericalcertificates.jl")

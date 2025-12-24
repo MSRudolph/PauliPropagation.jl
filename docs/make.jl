@@ -64,6 +64,7 @@ makedocs(
             "api/PathProperties.md",
             "api/PauliTransferMatrix.md",
             "api/Surrogate.md",
+            "api/Symmetry.md",
             "api/NumericalCertificates.md",
             "api/Truncations.md"
         ]

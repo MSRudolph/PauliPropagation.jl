@@ -5,6 +5,86 @@
 ##
 ###
 
+# LinearAlgebra dispatches
+
+"""
+    LinearAlgebra.tr(pstr::PauliString)
+
+Compute the trace of a `PauliString` operator.
+
+The trace of any non-identity Pauli operator (e.g., X, Y, Z, or their tensor products) is zero.
+The identity operator `I` has a trace equal to the dimension of the Hilbert space, `2^N`,
+where `N` is the number of qubits.
+
+A `PauliString` represents a single term, typically of the form `coeff * P_1 P_2 ... P_N`.
+If the `pstr.term` bitmask is `0x00`, it signifies the identity operator across all
+`pstr.nqubits`. In this case, the trace is `pstr.coeff * 2^pstr.nqubits`. For any other
+`pstr.term` value (representing a non-identity Pauli operator), the trace is `0.0`.
+
+# Arguments
+- `pstr::PauliString{TT, CT}`: The Pauli string to trace. 
+
+# Returns
+- `CT`: The trace value of the `PauliString`.
+"""
+function LinearAlgebra.tr(pstr::PauliString{TT, CT}) where {TT, CT}
+    pstr.term == zero(TT) ? pstr.coeff * CT(2.0^pstr.nqubits) : zero(CT)
+end
+
+"""
+    LinearAlgebra.tr(psum::PauliSum)
+
+Compute the trace of a `PauliSum` operator.
+
+The trace is a linear operation: Tr(A + B) = Tr(A) + Tr(B). Since individual non-identity
+PauliString terms have a trace of zero (as per tr(::PauliString)), only the coefficient
+of the identity operator contributes to the total trace of a PauliSum.
+
+The coefficient of the identity term (0x00) is retrieved from this mapping using get(psum.terms, 0x00, 0). 
+This coefficient is then multiplied by 2^psum.nqubits (the dimension of the Hilbert space). 
+If the identity term (0x00) is not explicitly present in psum.terms, its coefficient is implicitly zero,
+resulting in a total trace of 0.0.
+
+# Arguments
+`psum::PauliSum`: The Pauli sum to trace.
+
+# Returns
+`CT`: The trace value of the PauliSum.
+"""
+function LinearAlgebra.tr(psum::PauliSum{TT, CT}) where {TT, CT}
+    get(psum.terms, zero(TT), zero(CT)) * CT(2.0^psum.nqubits)
+end
+
+"""
+    trace(pstr::PauliString)
+
+Wrapper for `LinearAlgebra.tr(pstr::PauliString)`.
+
+# Arguments
+- `pstr::PauliString{TT, CT}`: The Pauli string to trace. 
+
+# Returns
+- `CT`: The trace value of the `PauliString`.
+"""
+function trace(pstr::PauliString{TT, CT}) where {TT, CT}
+    LinearAlgebra.tr(pstr)
+end
+
+"""
+    trace(psum::PauliSum)
+
+Wrapper for `LinearAlgebra.tr(psum::PauliSum)`.
+
+# Arguments
+`psum::PauliSum`: The Pauli sum to trace.
+
+# Returns
+`CT`: The trace value of the PauliSum.
+"""
+function trace(psum::PauliSum{TT, CT}) where {TT, CT}
+    LinearAlgebra.tr(psum)
+end
+
 # TODO: generate these definitions with Macro's instead? Easier to maintain and less error-prone
 
 """
@@ -127,6 +207,102 @@ containsYorZ(pstr::PauliString) = containsYorZ(pstr.term)
 Check if an integer Pauli string contains a Y or Z Pauli.
 """
 containsYorZ(pstr::PauliStringType) = countyz(pstr) > 0
+
+
+### Counting functions for integer Pauli strings ###
+
+"""
+    countx(pstr::PauliString)
+
+Function to count the number of X Paulis in a `PauliString`.
+"""
+function countx(pstr::PauliString)
+    return countx(pstr.term)
+end
+
+"""
+    countx(pstr::Integer)
+
+Function to count the number of X Paulis in an integer Pauli string.
+"""
+function countx(pstr::PauliStringType)
+    return _countbitx(pstr)
+end
+
+"""
+    countx(psum::PauliSum)
+Function to count the number of X Paulis in a `PauliSum`. Returns an array of counts.
+"""
+function countx(psum::PauliSum)
+    return countx(psum.terms)
+end
+
+function countx(psum::AbstractDict)
+    return [countx(pstr) for pstr in keys(psum)]
+end
+
+
+"""
+    county(pstr::PauliString)
+
+Function to count the number of Y Paulis in a `PauliString`.
+"""
+function county(pstr::PauliString)
+    return county(pstr.term)
+end
+
+"""
+    county(pstr::Integer)
+
+Function to count the number of Y Paulis in an integer Pauli string.
+"""
+function county(pstr::PauliStringType)
+    return _countbity(pstr)
+end
+
+"""
+    county(psum::PauliSum)
+Function to count the number of Y Paulis in a `PauliSum`. Returns an array of counts.
+"""
+function county(psum::PauliSum)
+    return county(psum.terms)
+end
+
+function county(psum::AbstractDict)
+    return [county(pstr) for pstr in keys(psum)]
+end
+
+
+"""
+    countz(pstr::PauliString)
+
+Function to count the number of Z Paulis in a `PauliString`.
+"""
+function countz(pstr::PauliString)
+    return countz(pstr.term)
+end
+
+"""
+    countz(pstr::Integer)
+
+Function to count the number of Z Paulis in an integer Pauli string.
+"""
+function countz(pstr::PauliStringType)
+    return _countbitz(pstr)
+end
+
+"""
+    countz(psum::PauliSum)
+    
+Function to count the number of Z Paulis in a `PauliSum`. Returns an array of counts.
+"""
+function countz(psum::PauliSum)
+    return countz(psum.terms)
+end
+
+function countz(psum::AbstractDict)
+    return [countz(pstr) for pstr in keys(psum)]
+end
 
 
 ### All the commutation check functions
