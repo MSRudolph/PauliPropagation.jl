@@ -3,3 +3,5 @@ include("generics.jl")
 
 # specializations.jl contains specialized implementations of lower level propagation functions for specific gates. 
 include("specializations.jl")
+
+include("vectorspecializations.jl")

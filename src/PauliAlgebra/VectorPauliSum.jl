@@ -33,3 +33,37 @@ function Base.resize!(vpsum::VectorPauliSum, n_new::Int)
     resize!(vpsum.coeffs, n_new)
     return vpsum
 end
+
+Base.length(vpsum::VectorPauliSum) = length(vpsum.terms)
+
+function numcoefftype(psum::VectorPauliSum)
+    if length(psum) == 0
+        throw(
+            "Numeric coefficient type cannot be inferred from an empty VectorPauliSum." *
+            "Consider defining a `numcoefftype(psum::$(typeof(psum)))` method.")
+    end
+    return typeof(tonumber(first(coefficients(psum))))
+end
+
+function Base.iterate(vecpsum::VectorPauliSum)
+    # 1. Create the iterator we are delegating to
+    iter = zip(paulis(vecpsum), coefficients(vecpsum))
+
+    # 2. Start its iteration
+    next = iterate(iter)
+
+    # 3. Return the first item and a new state tuple: (iterator, iterator_state)
+    #    We use a ternary operator for compactness.
+    return next === nothing ? nothing : (next[1], (iter, next[2]))
+end
+
+function Base.iterate(vecpsum::VectorPauliSum, state)
+    # 1. Unpack the state tuple
+    (iter, inner_state) = state
+
+    # 2. Continue the delegated iteration
+    next = iterate(iter, inner_state)
+
+    # 3. Return the next item and the updated state tuple
+    return next === nothing ? nothing : (next[1], (iter, next[2]))
+end

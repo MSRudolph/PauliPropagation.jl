@@ -9,6 +9,7 @@ export
     PauliType,
     PauliSum,
     PauliString,
+    VectorPauliSum,
     paulis,
     coefficients,
     norm,
@@ -178,7 +179,7 @@ export
     visualize_tree,
     propagate_with_tree_tracking
 
-# experimental vector propagation 
-include("Propagation/VectorPropagate/VectorPropagate.jl")
+# # experimental vector propagation 
+# include("Propagation/VectorPropagate/VectorPropagate.jl")
 
 end

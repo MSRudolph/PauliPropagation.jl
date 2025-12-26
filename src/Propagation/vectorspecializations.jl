@@ -1,30 +1,113 @@
-function PauliPropagation.propagate(circuit, vecpsum::VectorPauliSum, thetas=nothing; kwargs...)
-    prop_cache = PropagationCache(deepcopy(vecpsum))
-    return propagate!(circuit, prop_cache, thetas; kwargs...)
+## PROBLEMS:
+# - We need to reuse more code from PauliPropagation.jl
+# - Use truncation function that returns true or false for truncate 
+# 
+
+###
+##
+# A PropagationCache carries two VectorPauliSums
+# and flags and indices for propagation.
+##
+###
+
+mutable struct PropagationCache{VT,VC,VB,VI}
+    vecpsum::VectorPauliSum{VT,VC}
+    aux_vecpsum::VectorPauliSum{VT,VC}
+    flags::VB
+    indices::VI
+
+    # we will over-allocate the arrays and keep track of the non-empty size
+    active_size::Int
 end
 
-function PauliPropagation.propagate!(circuit, vecpsum::VectorPauliSum, thetas=nothing; kwargs...)
+function PropagationCache(vecpsum::VectorPauliSum{VT,VC}) where {VT,VC}
+    aux_vecpsum = similar(vecpsum)
+    flags = similar(vecpsum.terms, Bool)
+    indices = similar(vecpsum.terms, Int)
+    return PropagationCache(vecpsum, aux_vecpsum, flags, indices, length(vecpsum.terms))
+end
+
+PropagationCache(pstr::PauliString) = PropagationCache(VectorPauliSum(pstr))
+
+function PropagationCache(psum::PauliSum)
+    return PropagationCache(VectorPauliSum(psum))
+end
+
+function Base.show(io::IO, prop_cache::PropagationCache)
+    println(io, "PropagationCache with $(prop_cache.active_size) terms:")
+    for i in 1:prop_cache.active_size
+        if i > 20
+            println(io, "  ...")
+            break
+        end
+        println(io, prop_cache.coeffs[i], " * $(bits(prop_cache.terms[i]))")
+    end
+end
+
+
+function Base.resize!(prop_cache::PropagationCache, n_new::Int)
+    resize!(prop_cache.vecpsum, n_new)
+    resize!(prop_cache.aux_vecpsum, n_new)
+    resize!(prop_cache.flags, n_new)
+    resize!(prop_cache.indices, n_new)
+    return prop_cache
+end
+
+PauliPropagation.paulitype(prop_cache::PropagationCache{VT,VC,VB,VI}) where {VT,VC,VB,VI} = eltype(VT)
+PauliPropagation.coefftype(prop_cache::PropagationCache{VT,VC,VB,VI}) where {VT,VC,VB,VI} = eltype(VC)
+
+viewterms(prop_cache::PropagationCache) = view(prop_cache.vecpsum.terms, 1:prop_cache.active_size)
+viewcoeffs(prop_cache::PropagationCache) = view(prop_cache.vecpsum.coeffs, 1:prop_cache.active_size)
+viewauxterms(prop_cache::PropagationCache) = view(prop_cache.aux_vecpsum.terms, 1:prop_cache.active_size)
+viewauxcoeffs(prop_cache::PropagationCache) = view(prop_cache.aux_vecpsum.coeffs, 1:prop_cache.active_size)
+viewflags(prop_cache::PropagationCache) = view(prop_cache.flags, 1:prop_cache.active_size)
+viewindices(prop_cache::PropagationCache) = view(prop_cache.indices, 1:prop_cache.active_size)
+
+term(trm::Integer) = trm
+term(pstr::PauliString) = term(pstr.term)
+
+
+Base.length(prop_cache::PropagationCache) = length(prop_cache.vecpsum)
+Base.isempty(prop_cache::PropagationCache) = prop_cache.active_size == 0
+
+
+###
+##
+# The main propagation functions
+##
+###
+
+using AcceleratedKernels
+const AK = AcceleratedKernels
+
+
+function propagate(circuit, vecpsum::VectorPauliSum, thetas=nothing; kwargs...)
+    return propagate!(circuit, deepcopy(vecpsum), thetas; kwargs...)
+end
+
+
+function propagate!(circuit, vecpsum::VectorPauliSum, thetas=nothing; kwargs...)
     prop_cache = PropagationCache(vecpsum)
-    return propagate!(circuit, prop_cache, thetas; kwargs...)
+    prop_cache = propagate!(freeze(circuit, thetas), prop_cache; kwargs...)
+    vecpsum = prop_cache.vecpsum
+    resize!(vecpsum, prop_cache.active_size)
+    return vecpsum
 end
 
-function PauliPropagation.propagate!(circuit, prop_cache::PropagationCache, thetas=nothing; kwargs...)
-    return propagate!(freeze(circuit, thetas), prop_cache; kwargs...)
-end
 
-function PauliPropagation.propagate!(circuit, prop_cache::PropagationCache; min_abs_coeff=1e-10, max_weight=Inf,)
+function propagate!(circuit, prop_cache::PropagationCache; min_abs_coeff=1e-10, max_weight=Inf)
     # assume circuit contains the parameters via freezing, or is parameter-free
     @assert countparameters(circuit) == 0 "circuit requires parameters."
 
     for (i, gate) in enumerate(reverse(circuit))
 
-        prop_cache = vectorapplymergetruncate!(gate, prop_cache; min_abs_coeff=min_abs_coeff, max_weight=max_weight)
+        prop_cache = applymergetruncate!(gate, prop_cache; min_abs_coeff=min_abs_coeff, max_weight=max_weight)
 
     end
     return prop_cache
 end
 
-function vectorapplymergetruncate!(gate, prop_cache::PropagationCache; min_abs_coeff=1e-10, max_weight=Inf)
+function applymergetruncate!(gate, prop_cache::PropagationCache; min_abs_coeff=1e-10, max_weight=Inf)
     prop_cache = applytoall!(gate, prop_cache)
 
     prop_cache = mergeterms!(prop_cache)
@@ -82,7 +165,7 @@ function applytoall!(frozen_gate::FrozenGate{PauliRotation,PT}, prop_cache::Prop
 
     # potential resize factor
     resize_factor = 2
-    if length(prop_cache.terms) < n_new
+    if length(prop_cache.vecpsum.terms) < n_new
         resize!(prop_cache, n_new * resize_factor)
     end
 
@@ -102,8 +185,8 @@ function _applypaulirotation!(prop_cache::PropagationCache, gate_mask::TT, theta
     n_max = prop_cache.indices[prop_cache.active_size] + n
 
     terms_view = viewterms(prop_cache)
-    coeffs = prop_cache.coeffs
-    terms = prop_cache.terms
+    coeffs = prop_cache.vecpsum.coeffs
+    terms = prop_cache.vecpsum.terms
     flags = prop_cache.flags
     indices = prop_cache.indices
     @assert length(terms) >= n_max "PropagationCache terms array is not large enough to hold new terms."
@@ -220,9 +303,9 @@ end
 function _deduplicate!(prop_cache::PropagationCache)
 
     term_view = viewterms(prop_cache)
-    coeffs = prop_cache.coeffs
-    aux_terms = prop_cache.aux_terms
-    aux_coeffs = prop_cache.aux_coeffs
+    coeffs = prop_cache.vecpsum.coeffs
+    aux_terms = prop_cache.aux_vecpsum.terms
+    aux_coeffs = prop_cache.aux_vecpsum.coeffs
     flags = prop_cache.flags
     indices = prop_cache.indices
     active_size = prop_cache.active_size
@@ -327,3 +410,4 @@ end
 #     resize!(prop_cache.indices, max_terms)
 #     return prop_cache
 # end
+
