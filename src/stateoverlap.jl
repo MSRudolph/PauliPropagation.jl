@@ -9,7 +9,7 @@
 # If a Pauli string is orthogonal, it does not contribute, otherwise it contributes with its coefficient.
 # This is particularly useful for overlaps with stabilizer states.
 # An example `orthogonalfunc` is `containsXorY` which returns true if a Pauli string contains an X or Y Pauli.
-function overlapbyorthogonality(orthogonalfunc::F, psum::PauliSum) where {F<:Function}
+function overlapbyorthogonality(orthogonalfunc::F, psum) where {F<:Function}
     if length(psum) == 0
         return 0.0
     end
@@ -65,7 +65,7 @@ which has one-bits at all specified `indices` and zero-bits elsewhere.
 If |x><x| is a computational basis state, it we compute Tr[psum * |x><x|] = <x|psum|x> or Tr[pstr * |x><x|] = <x|pstr|x>.
 For example, `overlapwithcomputational(psum, [1,2,4])` returns the overlap with `|1101000...>`.
 """
-function overlapwithcomputational(psum::PauliSum, onebitinds)
+function overlapwithcomputational(psum, onebitinds)
     if length(psum) == 0
         return 0.0
     end
@@ -100,14 +100,14 @@ end
 Calculates the overlap of a `PauliSum` with the maximally mixed state I/2^n,
 i.e., Tr[psum * I/2^n].
 """
-function overlapwithmaxmixed(psum::PauliSum{TT,CT}) where {TT,CT}
+function overlapwithmaxmixed(psum::PauliSum)
     if length(psum) == 0
         return 0.0
     end
 
     NumType = numcoefftype(psum)
 
-    return get(psum.terms, identitypauli(TT), zero(NumType))
+    return getcoeff(psum, 0)
 end
 
 """
@@ -131,6 +131,7 @@ Important: This is not equivalent to the trace `Tr[psum1 * psum2]` but instead  
 and equivalently for Pauli strings.
 """
 function scalarproduct(psum1::PauliSum, psum2::PauliSum)
+    # TODO: make this more generic for VectorPauliSum
 
     _checknumberofqubits(psum1, psum2)
 
