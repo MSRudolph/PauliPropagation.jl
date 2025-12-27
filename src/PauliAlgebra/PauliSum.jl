@@ -223,7 +223,7 @@ Base.iterate(psum::PauliSum, state=1) = iterate(psum.terms, state)
 
 
 # Pretty print for `PauliSum`.
-function show(io::IO, psum::PauliSum)
+function Base.show(io::IO, psum::PauliSum)
     if length(psum.terms) == 0
         dict_string = "(no Pauli strings)"
     else
