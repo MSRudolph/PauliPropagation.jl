@@ -354,7 +354,7 @@ function Base.convert(::Type{PauliSum{TT1,CT1}}, psum::PauliSum{TT2,CT2}) where 
     if TT1 != TT2
         throw(ArgumentError("Cannot change term type from $TT2 to $TT1"))
     end
-    return PauliSum(pstr.nqubits, convert(Dict{TT1,CT1}, psum.terms))
+    return PauliSum(psum.nqubits, convert(Dict{TT1,CT1}, psum.terms))
 
 end
 
