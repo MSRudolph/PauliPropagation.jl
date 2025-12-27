@@ -1,6 +1,10 @@
 ## PROBLEMS:
 # - We need to reuse more code from PauliPropagation.jl
 # - Use truncation function that returns true or false for truncate 
+# - Implement symmetry merging 
+# - Implement state overlaps
+# - Add docstrings
+# - Add tests
 # 
 
 ###
