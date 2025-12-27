@@ -186,3 +186,9 @@ term(pstr::PauliString) = term(pstr.term)
 
 Base.length(prop_cache::PropagationCache) = length(prop_cache.vecpsum)
 Base.isempty(prop_cache::PropagationCache) = prop_cache.active_size == 0
+
+function VectorPauliSum(prop_cache::PropagationCache)
+    vecpsum = deepcopy(prop_cache.vecpsum)
+    resize!(vecpsum, prop_cache.active_size)
+    return vecpsum
+end
