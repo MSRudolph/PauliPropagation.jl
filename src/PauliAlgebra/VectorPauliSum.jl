@@ -157,7 +157,7 @@ function Base.show(io::IO, prop_cache::PropagationCache)
         if length(pauli_string) > 20
             pauli_string = pauli_string[1:20] * "..."
         end
-        println(io, prop_cache.coeffs[i], " * $(pauli_string)")
+        println(io, prop_cache.vecpsum.coeffs[i], " * $(pauli_string)")
     end
 end
 
