@@ -6,7 +6,7 @@
 `PauliSum` is a `struct` that represents a sum of Pauli strings acting on `nqubits` qubits.
 It is a wrapper around a dictionary Dict(Pauli string => coefficient}, where the Pauli strings are typically unsigned Integers for efficiency reasons.
 """
-struct PauliSum{TT,CT}
+struct PauliSum{TT,CT} <: AbstractPauliSum
     nqubits::Int
     terms::Dict{TT,CT}
 
@@ -26,52 +26,13 @@ Contructor for an empty `PauliSum` on `nqubits` qubits. Element type defaults fo
 """
 PauliSum(nqubits::Int) = PauliSum(Float64, nqubits)
 
-"""
-    PauliSum(CoeffType, nq::Int)
-
-Contructor for an empty `PauliSum` on `nqubits` qubits. The type of the coefficients can be provided.
-"""
-function PauliSum(::Type{CT}, nq::Int) where {CT}
-    TT = getinttype(nq)
-    return PauliSum(nq, Dict{TT,CT}())
-end
-
 
 """
-    PauliSum(pstr::PauliString)
+    nqubits(psum::PauliSum)
 
-Constructor for a `PauliSum` on `nqubits` qubits from a `PauliString`.
+Get the number of qubits that the `PauliSum` is defined on.
 """
-PauliSum(pstr::PauliString) = PauliSum(pstr.nqubits, pstr)
-
-"""
-    PauliSum(nq::Integer, pstr::PauliString)
-
-Constructor for a `PauliSum` on `nqubits` qubits from a `PauliString`.
-"""
-function PauliSum(nq::Integer, pstr::PauliString{TT,CT}) where {TT,CT}
-    _checknumberofqubits(nq, pstr)
-    return PauliSum(nq, Dict{TT,CT}(pstr.term => pstr.coeff))
-end
-
-"""
-    PauliSum(pstrs::Vector{PauliString})
-
-Constructor for a `PauliSum` on `nqubits` qubits from a `PauliString`.
-"""
-function PauliSum(pstrs::Union{AbstractArray,Tuple,Base.Generator})
-    nq = _checknumberofqubits(pstrs)
-
-    CType = promote_type(coefftype.(pstrs)...)
-    psum = PauliSum(CType, nq)
-
-    sizehint!(psum, length(pstrs))
-
-    for pstr in pstrs
-        add!(psum, pstr)
-    end
-    return psum
-end
+nqubits(psum::PauliSum) = psum.nqubits
 
 """
     paulis(psum::PauliSum)
@@ -109,21 +70,6 @@ Get the coefficient type of a `PauliSum`.
 """
 function coefftype(psum::PauliSum)
     return valtype(psum.terms)
-end
-
-"""
-    numcoefftype(psum::PauliSum)
-
-Get the type of the numerical coefficient of a `PauliSum` by calling `numcoefftype()` on the coefficients.
-If the `PauliSum` is empty, an error is thrown because the type cannot be inferred.
-"""
-function numcoefftype(psum::PauliSum)
-    if length(psum) == 0
-        throw(
-            "Numeric coefficient type cannot be inferred from an empty PauliSum." *
-            "Consider defining a `numcoefftype(psum::$(typeof(psum)))` method.")
-    end
-    return typeof(tonumber(first(coefficients(psum))))
 end
 
 
@@ -181,28 +127,6 @@ function getcoeff(psum::PauliSum, pstr::Vector{Symbol})
     return getcoeff(psum, symboltoint(pstr))
 end
 
-"""
-    tonumber(val::Number)
-
-Trivial function returning a numerical value of a number.
-Will be overloaded for custom wrapper types like `PathProperties`.
-"""
-function tonumber(val::Number)
-    return val
-end
-
-"""
-    norm(psum::PauliSum, L=2)
-
-Calculate the norm of a `PauliSum` with respect to the `L`-norm. 
-Calls LinearAlgebra.norm on the coefficients of the `PauliSum`.
-"""
-function LinearAlgebra.norm(psum::PauliSum, L::Real=2)
-    if length(psum) == 0
-        return 0.0
-    end
-    return LinearAlgebra.norm((tonumber(coeff) for coeff in coefficients(psum)), L)
-end
 
 """
     topaulistrings(psum::PauliSum)
@@ -232,13 +156,6 @@ function Base.show(io::IO, psum::PauliSum)
     print(io, "PauliSum(nqubits: $(psum.nqubits), $dict_string)")
 end
 
-
-"""
-    length(psum::PauliSum)
-
-Number of terms in the `PauliSum`.
-"""
-Base.length(psum::PauliSum) = length(psum.terms)
 
 """
     sizehint!(psum::PauliSum, n)

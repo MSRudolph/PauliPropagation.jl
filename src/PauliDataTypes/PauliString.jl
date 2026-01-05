@@ -38,6 +38,14 @@ function PauliString(nqubits::Int, paulis, qinds, coeff=1.0)
     return PauliString(nqubits, term, coeff)
 end
 
+
+"""
+    nqubits(pstr::PauliString)
+    
+Get the number of qubits that the `PauliString` is defined on.
+"""
+nqubits(pstr::PauliString) = pstr.nqubits
+
 """
     paulitype(pstr::PauliString)
 

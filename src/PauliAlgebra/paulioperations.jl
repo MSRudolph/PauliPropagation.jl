@@ -27,7 +27,7 @@ If the `pstr.term` bitmask is `0x00`, it signifies the identity operator across 
 # Returns
 - `CT`: The trace value of the `PauliString`.
 """
-function LinearAlgebra.tr(pstr::PauliString{TT, CT}) where {TT, CT}
+function LinearAlgebra.tr(pstr::PauliString{TT,CT}) where {TT,CT}
     pstr.term == zero(TT) ? pstr.coeff * CT(2.0^pstr.nqubits) : zero(CT)
 end
 
@@ -41,7 +41,7 @@ PauliString terms have a trace of zero (as per tr(::PauliString)), only the coef
 of the identity operator contributes to the total trace of a PauliSum.
 
 The coefficient of the identity term (0x00) is retrieved from this mapping using get(psum.terms, 0x00, 0). 
-This coefficient is then multiplied by 2^psum.nqubits (the dimension of the Hilbert space). 
+This coefficient is then multiplied by 2^nqubits(psum) (the dimension of the Hilbert space). 
 If the identity term (0x00) is not explicitly present in psum.terms, its coefficient is implicitly zero,
 resulting in a total trace of 0.0.
 
@@ -51,8 +51,8 @@ resulting in a total trace of 0.0.
 # Returns
 `CT`: The trace value of the PauliSum.
 """
-function LinearAlgebra.tr(psum::PauliSum{TT, CT}) where {TT, CT}
-    get(psum.terms, zero(TT), zero(CT)) * CT(2.0^psum.nqubits)
+function LinearAlgebra.tr(psum::PauliSum{TT,CT}) where {TT,CT}
+    return getcoeff(psum, zero(TT)) * CT(2.0^nqubits(psum))
 end
 
 """
@@ -66,8 +66,8 @@ Wrapper for `LinearAlgebra.tr(pstr::PauliString)`.
 # Returns
 - `CT`: The trace value of the `PauliString`.
 """
-function trace(pstr::PauliString{TT, CT}) where {TT, CT}
-    LinearAlgebra.tr(pstr)
+function trace(pstr::PauliString{TT,CT}) where {TT,CT}
+    return LinearAlgebra.tr(pstr)
 end
 
 """
@@ -81,8 +81,8 @@ Wrapper for `LinearAlgebra.tr(psum::PauliSum)`.
 # Returns
 `CT`: The trace value of the PauliSum.
 """
-function trace(psum::PauliSum{TT, CT}) where {TT, CT}
-    LinearAlgebra.tr(psum)
+function trace(psum::PauliSum{TT,CT}) where {TT,CT}
+    return LinearAlgebra.tr(psum)
 end
 
 # TODO: generate these definitions with Macro's instead? Easier to maintain and less error-prone
@@ -450,7 +450,7 @@ psum_identity = PauliSum(PauliString(3, [:I], [1]))
 pauliprod(psum, psum_identity) # Psum * I = Psum
 ```
 
-"""    
+"""
 function pauliprod(psum1::PauliSum, psum2::PauliSum)
 
     _checktermtype(psum1, psum2)
@@ -490,17 +490,17 @@ function _calculatesignexponent(pauli1::PauliType, pauli2::PauliType)
     pauli1_2 = pauli1 & mask_right
     pauli2_1 = (pauli2 >> 1) & mask_right
     pauli2_2 = pauli2 & mask_right
-   
+
     #make sure neither pauli is the identity
     not_identity_pauli1 = pauli1_1 | pauli1_2
     not_identity_pauli2 = pauli2_1 | pauli2_2
-   
+
     #make sure paulis aren't the same
     not_same = (pauli1_1 ⊻ pauli2_1) | (pauli1_2 ⊻ pauli2_2)
 
     #determine if the paulis commute (should return 0 if they do)
     not_commuting = not_identity_pauli1 & not_identity_pauli2 & not_same
-   
+
     #use not_commuting as a mask to get the "don't cares" in the karnaugh map to always be 0
     #while the right side of the next line came from karnaugh map of the truth table for
     #the levi cevita symbol
@@ -512,9 +512,10 @@ function _calculatesignexponent(pauli1::PauliType, pauli2::PauliType)
     # which gives (a & ~d) | (~a & d) | (~b & ~c)
     # you can then recognize that (a & ~d) | (~a & d) = a ⊻ b
     # where pauli1 = ab, and pauli2 = cd.
-    negative_sign = not_commuting & ((pauli1_1 ⊻ pauli2_2) 
-                                     | (~pauli1_2 & ~pauli2_1))
-    positive_sign = not_commuting & (~negative_sign) 
+    negative_sign = not_commuting & ((pauli1_1 ⊻ pauli2_2)
+                                     |
+                                     (~pauli1_2 & ~pauli2_1))
+    positive_sign = not_commuting & (~negative_sign)
     # You can use modular addition to achieve addition of the exponent,
     # since it is cyclic, and the global phase can be determined by the number
     # of 1's in each expression.
@@ -523,7 +524,7 @@ function _calculatesignexponent(pauli1::PauliType, pauli2::PauliType)
 end
 
 #speeds up pauliprod by a factor of 2 since we know we only want integer powers
-const  impowers = [1, im, -1, -im]
+const impowers = [1, im, -1, -im]
 function _impow(power::Integer)
     ind = (power % 4) + 1
     return impowers[ind]

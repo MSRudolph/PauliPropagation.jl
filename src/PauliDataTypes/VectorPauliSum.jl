@@ -10,7 +10,7 @@ using AcceleratedKernels
 const AK = AcceleratedKernels
 
 
-struct VectorPauliSum{TV,CV}
+struct VectorPauliSum{TV,CV} <: AbstractPauliSum
     nqubits::Int
     terms::TV
     coeffs::CV
@@ -23,13 +23,44 @@ end
 
 VectorPauliSum(nqubits::Int) = VectorPauliSum(Float64, nqubits)
 VectorPauliSum(::Type{CT}, nqubits::Int) where {CT} = VectorPauliSum(nqubits, getinttype(nqubits)[], CT[])
-VectorPauliSum(pstr::PauliString) = VectorPauliSum(pstr.nqubits, [pstr.term], [pstr.coeff])
-VectorPauliSum(psum::PauliSum) = VectorPauliSum(psum.nqubits, collect(paulis(psum)), collect(coefficients(psum)))
 
+
+"""
+    nqubits(vpsum::VectorPauliSum)
+
+Get the number of qubits that the `VectorPauliSum` is defined on.
+"""
+nqubits(vpsum::VectorPauliSum) = vpsum.nqubits
+
+"""
+    paulis(vpsum::VectorPauliSum)
+
+Get the vector of Pauli strings from a `VectorPauliSum`.
+"""
 paulis(vpsum::VectorPauliSum) = vpsum.terms
+
+"""
+    coefficients(vpsum::VectorPauliSum)
+    
+Get the vector of coefficients from a `VectorPauliSum`.
+"""
 coefficients(vpsum::VectorPauliSum) = vpsum.coeffs
+
+"""
+    paulitype(vpsum::VectorPauliSum)
+
+Get the Pauli integer type of a `VectorPauliSum`.
+"""
 paulitype(vpsum::VectorPauliSum) = eltype(vpsum.terms)
+
+"""
+    coefftype(vpsum::VectorPauliSum)
+
+Get the coefficient type of a `VectorPauliSum`.
+"""
 coefftype(vpsum::VectorPauliSum) = eltype(vpsum.coeffs)
+
+
 
 Base.similar(vpsum::VectorPauliSum) = VectorPauliSum(vpsum.nqubits, similar(vpsum.terms), similar(vpsum.coeffs))
 
@@ -39,52 +70,6 @@ function Base.resize!(vpsum::VectorPauliSum, n_new::Int)
     return vpsum
 end
 
-Base.length(vpsum::VectorPauliSum) = length(vpsum.terms)
-
-function numcoefftype(psum::VectorPauliSum)
-    if length(psum) == 0
-        throw(
-            "Numeric coefficient type cannot be inferred from an empty VectorPauliSum." *
-            "Consider defining a `numcoefftype(psum::$(typeof(psum)))` method.")
-    end
-    return typeof(tonumber(first(coefficients(psum))))
-end
-
-function Base.iterate(vecpsum::VectorPauliSum)
-    # 1. Create the iterator we are delegating to
-    iter = zip(paulis(vecpsum), coefficients(vecpsum))
-
-    # 2. Start its iteration
-    next = iterate(iter)
-
-    # 3. Return the first item and a new state tuple: (iterator, iterator_state)
-    #    We use a ternary operator for compactness.
-    return next === nothing ? nothing : (next[1], (iter, next[2]))
-end
-
-function Base.iterate(vecpsum::VectorPauliSum, state)
-    # 1. Unpack the state tuple
-    (iter, inner_state) = state
-
-    # 2. Continue the delegated iteration
-    next = iterate(iter, inner_state)
-
-    # 3. Return the next item and the updated state tuple
-    return next === nothing ? nothing : (next[1], (iter, next[2]))
-end
-
-"""
-    norm(vecpsum::VectorPauliSum, L=2)
-
-Calculate the norm of a `VectorPauliSum` with respect to the `L`-norm. 
-Calls LinearAlgebra.norm on the coefficients of the `VectorPauliSum`.
-"""
-function LinearAlgebra.norm(vecpsum::VectorPauliSum, L::Real=2)
-    if length(vecpsum) == 0
-        return 0.0
-    end
-    return LinearAlgebra.norm((tonumber(coeff) for coeff in coefficients(vecpsum)), L)
-end
 
 function Base.show(io::IO, vecpsum::VectorPauliSum)
     n_paulis = length(vecpsum)
@@ -159,6 +144,26 @@ function PropagationCache(psum::PauliSum)
     return PropagationCache(VectorPauliSum(psum))
 end
 
+# convert back
+function VectorPauliSum(prop_cache::PropagationCache)
+    vecpsum = deepcopy(prop_cache.vecpsum)
+    resize!(vecpsum, prop_cache.active_size)
+    return vecpsum
+end
+
+function PauliSum(prop_cache::PropagationCache)
+    mergeterms!(prop_cache)
+    return PauliSum(prop_cache.vecpsum.nqubits, Dict(zip(viewterms(prop_cache), viewcoeffs(prop_cache))))
+end
+
+"""
+    nqubits(prop_cache::PropagationCache)
+
+Get the number of qubits that the `PropagationCache` is defined on.
+"""
+nqubits(prop_cache::PropagationCache) = prop_cache.vecpsum.nqubits
+
+
 function Base.show(io::IO, prop_cache::PropagationCache)
     println(io, "PropagationCache with $(prop_cache.active_size) terms:")
     for i in 1:prop_cache.active_size
@@ -183,8 +188,11 @@ function Base.resize!(prop_cache::PropagationCache, n_new::Int)
     return prop_cache
 end
 
-PauliPropagation.paulitype(prop_cache::PropagationCache{VT,VC,VB,VI}) where {VT,VC,VB,VI} = eltype(VT)
-PauliPropagation.coefftype(prop_cache::PropagationCache{VT,VC,VB,VI}) where {VT,VC,VB,VI} = eltype(VC)
+
+paulis(prop_cache) = viewterms(prop_cache)
+coefficients(prop_cache) = viewcoeffs(prop_cache)
+paulitype(prop_cache::PropagationCache{VT,VC,VB,VI}) where {VT,VC,VB,VI} = eltype(VT)
+coefftype(prop_cache::PropagationCache{VT,VC,VB,VI}) where {VT,VC,VB,VI} = eltype(VC)
 
 viewterms(prop_cache::PropagationCache) = view(prop_cache.vecpsum.terms, 1:prop_cache.active_size)
 viewcoeffs(prop_cache::PropagationCache) = view(prop_cache.vecpsum.coeffs, 1:prop_cache.active_size)
@@ -200,8 +208,3 @@ term(pstr::PauliString) = term(pstr.term)
 Base.length(prop_cache::PropagationCache) = length(prop_cache.vecpsum)
 Base.isempty(prop_cache::PropagationCache) = prop_cache.active_size == 0
 
-function VectorPauliSum(prop_cache::PropagationCache)
-    vecpsum = deepcopy(prop_cache.vecpsum)
-    resize!(vecpsum, prop_cache.active_size)
-    return vecpsum
-end
