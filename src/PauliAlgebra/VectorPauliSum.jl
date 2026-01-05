@@ -73,6 +73,19 @@ function Base.iterate(vecpsum::VectorPauliSum, state)
     return next === nothing ? nothing : (next[1], (iter, next[2]))
 end
 
+"""
+    norm(vecpsum::VectorPauliSum, L=2)
+
+Calculate the norm of a `VectorPauliSum` with respect to the `L`-norm. 
+Calls LinearAlgebra.norm on the coefficients of the `VectorPauliSum`.
+"""
+function LinearAlgebra.norm(vecpsum::VectorPauliSum, L::Real=2)
+    if length(vecpsum) == 0
+        return 0.0
+    end
+    return LinearAlgebra.norm((tonumber(coeff) for coeff in coefficients(vecpsum)), L)
+end
+
 function Base.show(io::IO, vecpsum::VectorPauliSum)
     n_paulis = length(vecpsum)
     if n_paulis == 0
