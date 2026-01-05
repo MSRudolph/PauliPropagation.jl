@@ -79,6 +79,10 @@ end
 
 function applytoall!(frozen_gate::FrozenGate{PauliRotation,PT}, prop_cache::PropagationCache{VT,VC,VB,VI}) where {PT,VT,VC,VB,VI}
 
+    if prop_cache.active_size == 0
+        return prop_cache
+    end
+
     TT = eltype(VT)
 
     n_old = prop_cache.active_size

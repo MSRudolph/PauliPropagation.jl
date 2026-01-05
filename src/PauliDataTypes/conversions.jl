@@ -35,7 +35,7 @@ function PauliSum(pstrs::Union{AbstractArray,Tuple,Base.Generator})
 end
 
 
-PauliSum(vpsum::VectorPauliSum) = PauliSum(vpsum.nqubits, topaulistrings(vpsum))
+PauliSum(vpsum::VectorPauliSum) = PauliSum(topaulistrings(vpsum))
 
 VectorPauliSum(pstr::PauliString) = VectorPauliSum(pstr.nqubits, [pstr.term], [pstr.coeff])
 VectorPauliSum(psum::PauliSum) = VectorPauliSum(psum.nqubits, collect(paulis(psum)), collect(coefficients(psum)))

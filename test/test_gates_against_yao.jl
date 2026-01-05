@@ -9,7 +9,7 @@ using PauliPropagation
 rng = MersenneTwister()
 println("Global Yao.jl comparison test seed: $(rng.seed)")
 
-_Rzz(θ) = put(2, 1:2 => matblock(Diagonal([exp(-im * θ/2), exp(im * θ/2), exp(im * θ/2), exp(-im * θ/2)])))
+_Rzz(θ) = put(2, 1:2 => matblock(Diagonal([exp(-im * θ / 2), exp(im * θ / 2), exp(im * θ / 2), exp(-im * θ / 2)])))
 
 function _clifford_to_yao(g::CliffordGate)
     gate_dict = Dict(
@@ -17,13 +17,13 @@ function _clifford_to_yao(g::CliffordGate)
         :Y => Y,
         :Z => Z,
         :H => H,
-        :S => chain(1, Rz(π/2)),
-        :SX => chain(1, Rx(π/2)),
-        :SY => chain(1, Ry(π/2)),
-        :CNOT => control(2, 1, 2=>X),
-        :CZ => control(2, 1, 2=>Z),
+        :S => chain(1, Rz(π / 2)),
+        :SX => chain(1, Rx(π / 2)),
+        :SY => chain(1, Ry(π / 2)),
+        :CNOT => control(2, 1, 2 => X),
+        :CZ => control(2, 1, 2 => Z),
         :SWAP => SWAP,
-        :ZZpihalf => _Rzz(π/2)
+        :ZZpihalf => _Rzz(π / 2)
     )
     get(gate_dict, g.symbol) do
         error("Unsupported CliffordGate symbol: $(g.symbol)")
@@ -77,7 +77,7 @@ function _build_evolution_step!(circ, nqubits, ops::Pair{Symbol,Float64}...)
     for (op_symbol, coeff) in ops
         op = op_symbol == :X ? kron(X, X) : op_symbol == :Y ? kron(Y, Y) : op_symbol == :Z ? kron(Z, Z) : error("Unsupported operator")
         for i in 1:nqubits-1
-            push!(circ, put(nqubits, (i, i+1) => time_evolve(op, -coeff/2)))
+            push!(circ, put(nqubits, (i, i + 1) => time_evolve(op, -coeff / 2)))
         end
     end
 end
@@ -85,7 +85,7 @@ end
 function _yao_heisenberg_circ(nqubits::Int, nsteps::Int, Jx::Float64, Jy::Float64, Jz::Float64, dt::Float64)
     circ = chain(nqubits)
     for _ in 1:nsteps
-        _build_evolution_step!(circ, nqubits, :X => Jx*dt, :Y => Jy*dt, :Z => Jz*dt)
+        _build_evolution_step!(circ, nqubits, :X => Jx * dt, :Y => Jy * dt, :Z => Jz * dt)
     end
     return circ
 end
@@ -93,9 +93,9 @@ end
 function _yao_tfi_circ(nqubits::Int, nsteps::Int, J::Float64, h::Float64, dt::Float64)
     circ = chain(nqubits)
     for _ in 1:nsteps
-        _build_evolution_step!(circ, nqubits, :Z => J*dt)
+        _build_evolution_step!(circ, nqubits, :Z => J * dt)
         for i in 1:nqubits
-            push!(circ, put(nqubits, i => Rx(-h*dt)))
+            push!(circ, put(nqubits, i => Rx(-h * dt)))
         end
     end
     return circ
@@ -103,8 +103,13 @@ end
 
 function _insert_gate!(gate_type, nqubits, rng, custom_gates, yao_ops, θs)
     rand_qubit() = rand(rng, 1:nqubits)
-    rand_angle() = rand(rng) * π/2
-    distinct_pair() = (c = rand_qubit(); t = rand_qubit(); while t == c; t = rand_qubit(); end; (c, t))
+    rand_angle() = rand(rng) * π / 2
+    distinct_pair() = (c = rand_qubit();
+    t = rand_qubit();
+    while t == c
+        t = rand_qubit()
+    end;
+    (c, t))
     gate_handlers = Dict(
         :H => () -> let q = rand_qubit()
             push!(custom_gates, CliffordGate(:H, [q]))
@@ -162,7 +167,7 @@ function _insert_gate!(gate_type, nqubits, rng, custom_gates, yao_ops, θs)
                     op = p == :X ? X : p == :Y ? Y : Z
                     push!(blk, put(nqubits, q => op))
                 end
-                return time_evolve(blk, θ/2)
+                return time_evolve(blk, θ / 2)
             end
         end
     )
@@ -190,12 +195,16 @@ const two_obs = [Tuple(inttosymbol(p, 2)) for p in 0:15]
                 pauli_obs = PauliSum(n)
                 add!(pauli_obs, [obs], [1], 1)
                 propagated = propagate(circ, pauli_obs)
+                vector_propagated = propagate(circ, VectorPauliSum(pauli_obs))
                 test_val = overlapwithzero(propagated)
+                vector_test_val = overlapwithzero(vector_propagated)
+                @test isapprox(test_val, vector_test_val, atol=1e-10)
+
                 state = zero_state(n)
                 evolved = apply(state, yao_gate)
                 yao_obs = _build_yao_observable([obs], [1], n)
                 ref_val = real(expect(yao_obs, evolved))
-                
+
                 @test isapprox(test_val, ref_val, atol=1e-10)
             end
         end
@@ -207,7 +216,11 @@ const two_obs = [Tuple(inttosymbol(p, 2)) for p in 0:15]
                 pauli_obs = PauliSum(2)
                 add!(pauli_obs, [obs1, obs2], [1, 2], 1)
                 propagated = propagate(circ, pauli_obs)
+                vector_propagated = propagate(circ, VectorPauliSum(pauli_obs))
                 test_val = overlapwithzero(propagated)
+                vector_test_val = overlapwithzero(vector_propagated)
+                @test isapprox(test_val, vector_test_val, atol=1e-10)
+
                 state = zero_state(2)
                 evolved = apply(state, yao_gate)
                 yao_obs = _build_yao_observable([obs1, obs2], [1, 2], 2)
@@ -222,8 +235,8 @@ end
 
 @testset "PauliRotation Gates" begin
     @testset "Basic Properties" begin
-      @test tomatrix(PauliRotation(:Z, 1), 0) ≈ Matrix(I, 2, 2) && tomatrix(PauliRotation(:Z, 1), π/2) ≈ [exp(-im*π/4) 0; 0 exp(im*π/4)]
-      @test tomatrix(PauliRotation(:Z, 1), π) ≈ -im * mat(Z) && tomatrix(PauliRotation(:X, 1), π) ≈ -im * mat(X) && tomatrix(PauliRotation(:Y, 1), π) ≈ -im * mat(Y)
+        @test tomatrix(PauliRotation(:Z, 1), 0) ≈ Matrix(I, 2, 2) && tomatrix(PauliRotation(:Z, 1), π / 2) ≈ [exp(-im * π / 4) 0; 0 exp(im * π / 4)]
+        @test tomatrix(PauliRotation(:Z, 1), π) ≈ -im * mat(Z) && tomatrix(PauliRotation(:X, 1), π) ≈ -im * mat(X) && tomatrix(PauliRotation(:Y, 1), π) ≈ -im * mat(Y)
     end
     @testset "Against Yao Rotations" begin
         for (axis, yao_rot) in [(:X, Rx), (:Y, Ry), (:Z, Rz)]
@@ -237,7 +250,7 @@ end
         for (symbols, op) in [([:X, :X], kron(X, X)), ([:Y, :Y], kron(Y, Y)), ([:Z, :Z], kron(Z, Z))]
             θ = randn()
             pr = PauliRotation(symbols, [1, 2])
-            yao = put(2, (1,2) => time_evolve(op, θ/2))
+            yao = put(2, (1, 2) => time_evolve(op, θ / 2))
             @test tomatrix(pr, θ) ≈ mat(yao)
         end
     end
@@ -268,17 +281,25 @@ end
             obs = PauliSum(nqubits)
             add!(obs, obs_symbols, obs_qubits, 1.0)
             propagated = propagate(custom_gates, obs, θs)
+            vector_propagated = propagate(custom_gates, VectorPauliSum(obs), θs)
             custom_val = overlapwithzero(propagated)
+            vector_test_val = overlapwithzero(vector_propagated)
+            @test isapprox(custom_val, vector_test_val, atol=1e-10)
+
             zero_st = zero_state(nqubits)
             evolved_state = apply(zero_st, chain(yao_ops...))
             yao_obs = _build_yao_observable(obs_symbols, obs_qubits, nqubits)
             yao_val = real(expect(yao_obs, evolved_state))
             @test isapprox(custom_val, yao_val; atol=1e-10)
+
             rev_gates, rev_θs = _invert_gates(custom_gates, θs)
             roundtrip_obs = propagate(rev_gates, propagated, rev_θs)
+            vector_roundtrip_obs = propagate(rev_gates, vector_propagated, rev_θs)
             orig_val_zero = overlapwithzero(obs)
             roundtrip_val_zero = overlapwithzero(roundtrip_obs)
+            vector_roundtrip_val_zero = overlapwithzero(vector_roundtrip_obs)
             @test isapprox(roundtrip_val_zero, orig_val_zero; atol=1e-10)
+            @test isapprox(vector_roundtrip_val_zero, orig_val_zero; atol=1e-10)
         end
     end
 end
@@ -308,11 +329,14 @@ end
             if nqubits ≥ 2
                 for q1 in 1:nqubits-1
                     obs = PauliSum(nqubits)
-                    add!(obs, [:Z, :Z], [q1, q1+1], 1.0)
+                    add!(obs, [:Z, :Z], [q1, q1 + 1], 1.0)
                     our_val = overlapwithzero(propagate(circ, obs, θs))
-                    yao_obs = _build_yao_observable([:Z, :Z], [q1, q1+1], nqubits)
+                    vector_propagated = propagate(circ, VectorPauliSum(obs), θs)
+                    vector_test_val = overlapwithzero(vector_propagated)
+                    yao_obs = _build_yao_observable([:Z, :Z], [q1, q1 + 1], nqubits)
                     yao_val = real(expect(yao_obs, state))
                     @test isapprox(our_val, yao_val; atol=1e-10)
+                    @test isapprox(our_val, vector_test_val, atol=1e-10)
                 end
             end
         end
@@ -338,17 +362,21 @@ end
                 obs = PauliSum(nqubits)
                 add!(obs, [p], [q], 1.0)
                 our_val = overlapwithzero(propagate(circ, obs, θs))
+                vec_val = overlapwithzero(propagate(circ, VectorPauliSum(obs), θs))
+                @test isapprox(our_val, vec_val; atol=1e-10)
                 yao_obs = _build_yao_observable([p], [q], nqubits)
                 yao_val = real(expect(yao_obs, state))
-                
+
                 @test isapprox(our_val, yao_val; atol=1e-2)
             end
             if nqubits ≥ 2
                 for (p1, p2) in [(:X, :X), (:Y, :Y), (:Z, :Z)]
                     obs = PauliSum(nqubits)
                     add!(obs, [p1, p2], [1, 2], 1.0)
-                    
+
                     our_val = overlapwithzero(propagate(circ, obs, θs))
+                    vec_val = overlapwithzero(propagate(circ, VectorPauliSum(obs), θs))
+                    @test isapprox(our_val, vec_val; atol=1e-10)
                     yao_obs = _build_yao_observable([p1, p2], [1, 2], nqubits)
                     yao_val = real(expect(yao_obs, state))
                     @test isapprox(our_val, yao_val; atol=1e-2)
@@ -367,63 +395,70 @@ end
     XYZ = kron(X, kron(Y, Z))
     circs = [
         (
-            nqubits = 2,
-            custom_gates = [PauliRotation(:X, 1)],
-            yao_circ  = chain(put(2, 1 => Rx(π/4))),
-            obs          = ([:Z], [1])
-          ),
-        (
-            nqubits = 2,
-            custom_gates = [CliffordGate(:CNOT, [1, 2])],
-            yao_circ  = chain(control(2, 1, 2 => X)),
-            obs          = ([:Z], [2])
+            nqubits=2,
+            custom_gates=[PauliRotation(:X, 1)],
+            yao_circ=chain(put(2, 1 => Rx(π / 4))),
+            obs=([:Z], [1])
         ),
         (
-            nqubits = 2,
-            custom_gates = [PauliRotation(:Z, 1)],
-            yao_circ  = chain(put(2, 1 => Rz(π/4))),
-            obs          = ([:X], [1])
+            nqubits=2,
+            custom_gates=[CliffordGate(:CNOT, [1, 2])],
+            yao_circ=chain(control(2, 1, 2 => X)),
+            obs=([:Z], [2])
         ),
         (
-            nqubits = 2,
-            custom_gates = [PauliRotation([:X, :X], [1, 2])],
-            yao_circ  = chain(put(2, (1,2) => time_evolve(XX, π/8))),
-            obs          = ([:Z, :Z], [1, 2])
+            nqubits=2,
+            custom_gates=[PauliRotation(:Z, 1)],
+            yao_circ=chain(put(2, 1 => Rz(π / 4))),
+            obs=([:X], [1])
         ),
         (
-            nqubits = 2,
-            custom_gates = [PauliRotation([:Y, :Y], [1, 2])],
-            yao_circ  = chain(put(2, (1,2) => time_evolve(YY, π/8))),
-            obs          = ([:X, :X], [1, 2])
+            nqubits=2,
+            custom_gates=[PauliRotation([:X, :X], [1, 2])],
+            yao_circ=chain(put(2, (1, 2) => time_evolve(XX, π / 8))),
+            obs=([:Z, :Z], [1, 2])
         ),
         (
-            nqubits = 2,
-            custom_gates = [PauliRotation([:Z, :Z], [1, 2])],
-            yao_circ  = chain(put(2, (1,2) => time_evolve(ZZ, π/8))),
-            obs          = ([:Y, :Y], [1, 2])
+            nqubits=2,
+            custom_gates=[PauliRotation([:Y, :Y], [1, 2])],
+            yao_circ=chain(put(2, (1, 2) => time_evolve(YY, π / 8))),
+            obs=([:X, :X], [1, 2])
         ),
         (
-            nqubits = 3,
-            custom_gates = [PauliRotation([:X, :Y, :Z], [1, 2, 3])],
-            yao_circ  = chain(put(3, (1,2,3) => time_evolve(XYZ, π/8))),
-            obs          = ([:Z, :Y, :X], [1, 2, 3])
+            nqubits=2,
+            custom_gates=[PauliRotation([:Z, :Z], [1, 2])],
+            yao_circ=chain(put(2, (1, 2) => time_evolve(ZZ, π / 8))),
+            obs=([:Y, :Y], [1, 2])
+        ),
+        (
+            nqubits=3,
+            custom_gates=[PauliRotation([:X, :Y, :Z], [1, 2, 3])],
+            yao_circ=chain(put(3, (1, 2, 3) => time_evolve(XYZ, π / 8))),
+            obs=([:Z, :Y, :X], [1, 2, 3])
         ),
     ]
     for circ in circs
         @testset "nqubits=$(circ.nqubits), obs=$(circ.obs)" begin
-            θs = fill(π/4, count(g -> g isa PauliRotation, circ.custom_gates))
+            θs = fill(π / 4, count(g -> g isa PauliRotation, circ.custom_gates))
             obs = PauliSum(circ.nqubits)
             obs_symbols, obs_qubits = circ.obs
             add!(obs, obs_symbols, obs_qubits, 1.0)
             propagated = propagate(circ.custom_gates, obs, θs)
+            vector_propagated = propagate(circ.custom_gates, VectorPauliSum(obs), θs)
+            vector_test_val = overlapwithzero(vector_propagated)
             custom_val = overlapwithzero(propagated)
+            @test isapprox(custom_val, vector_test_val; atol=1e-10)
+
             zero_st = zero_state(circ.nqubits)
             evolved_state = apply(zero_st, circ.yao_circ)
             yao_obs = _build_yao_observable(obs_symbols, obs_qubits, circ.nqubits)
             yao_val = real(expect(yao_obs, evolved_state))
             @test isapprox(custom_val, yao_val; atol=1e-10)
+
             rev_gates, rev_θs = _invert_gates(circ.custom_gates, θs)
             roundtrip_obs = propagate(rev_gates, propagated, rev_θs)
+            vector_roundtrip_obs = propagate(rev_gates, vector_propagated, rev_θs)
+            @test PauliSum(vector_roundtrip_obs) == obs
             @test roundtrip_obs == obs
         end
     end

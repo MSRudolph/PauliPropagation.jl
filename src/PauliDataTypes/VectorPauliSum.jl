@@ -77,7 +77,7 @@ end
 
 Returns the Pauli strings in a `PauliSum` and their coefficients as a list of `PauliString`.
 """
-topaulistrings(vpsum::VectorPauliSum) = [PauliString(vpsum.nqubits, pauli, coeff) for (pauli, coeff) in zip(vpsum.terms, psum.coeffs)]
+topaulistrings(vpsum::VectorPauliSum) = [PauliString(vpsum.nqubits, pauli, coeff) for (pauli, coeff) in zip(vpsum.terms, vpsum.coeffs)]
 
 
 Base.similar(vpsum::VectorPauliSum) = VectorPauliSum(vpsum.nqubits, similar(vpsum.terms), similar(vpsum.coeffs))
