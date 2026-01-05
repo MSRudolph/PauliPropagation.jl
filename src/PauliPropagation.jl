@@ -3,13 +3,14 @@ module PauliPropagation
 using Base.Threads
 using LinearAlgebra
 
-include("./PauliAlgebra/PauliAlgebra.jl")
+include("./PauliDataTypes/PauliDataTypes.jl")
 export
     PauliStringType,
     PauliType,
     PauliSum,
     PauliString,
     VectorPauliSum,
+    PropagationCache,
     paulis,
     coefficients,
     norm,
@@ -24,6 +25,10 @@ export
     mult!,
     empty!,
     similar,
+    convertcoefftype
+
+include("./PauliAlgebra/PauliAlgebra.jl")
+export
     identitypauli,
     identitylike,
     inttosymbol,
@@ -32,7 +37,6 @@ export
     ispauli,
     getpauli,
     setpauli,
-    show,
     countweight,
     countxy,
     countyz,
@@ -45,7 +49,6 @@ export
     commutes,
     commutator,
     trace,
-    convertcoefftype,
     getinttype
 
 include("PauliTransferMatrix/PauliTransferMatrix.jl")
