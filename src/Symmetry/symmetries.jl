@@ -7,7 +7,7 @@
 
 
 """
-    symmetrymerge(psum::PauliSum, mapfunc::Function) -> PauliSum
+    symmetrymerge(psum::AbstractPauliSum, mapfunc::Function) -> AbstractPauliSum
 
 Merge equivalent Pauli strings in `psum` under a symmetry mapping.
 Each Pauli string is transformed using `mapfunc(pstr)` to its canonical
@@ -39,9 +39,20 @@ function symmetrymerge(psum::PauliSum, mapfunc::F) where F<:Function
     return merged_psum
 end
 
+function symmetrymerge(psum::VectorPauliSum, mapfunc::F) where F<:Function
+    cache = symmetrymerge!(PropagationCache(psum), mapfunc)
+    return VectorPauliSum(cache)
+end
+
+function symmetrymerge!(prop_cache::PropagationCache, mapfunc::F) where F<:Function
+    AK.map!(pstr -> mapfunc(pstr), viewterms(prop_cache), viewterms(prop_cache))
+    mergeterms!(prop_cache)
+    return prop_cache
+end
+
 
 """
-    translationmerge(psum::PauliSum)
+    translationmerge(psum::AbstractPauliSum)
 
 Shift and merge of a `psum` in a system with 1D translational symmetry.
 ```
@@ -54,13 +65,13 @@ translationmerge(psum)
 )
 ```
 """
-translationmerge(psum::PauliSum) = symmetrymerge(
-    psum, (pstr -> _translatetolowestinteger(pstr, psum.nqubits))
+translationmerge(psum::AbstractPauliSum) = symmetrymerge(
+    psum, (pstr -> _translatetolowestinteger(pstr, nqubits(psum)))
 )
 
 
 """
-    translationmerge(psum::PauliSum, nx::Integer, ny::Integer)
+    translationmerge(psum::AbstractPauliSum, nx::Integer, ny::Integer)
 
 Shift and merge of a `psum` in a system with 2D translational symmetry.
 ```
@@ -70,10 +81,10 @@ add!(psum, :Z, 6)
 translationmerge(psum, 2, 3)
 ```
 """
-function translationmerge(psum::PauliSum, nx::Integer, ny::Integer)
-    if psum.nqubits != nx * ny
+function translationmerge(psum::AbstractPauliSum, nx::Integer, ny::Integer)
+    if nqubits(psum) != nx * ny
         throw(
-            ArgumentError("Number of qubits $(psum.nqubits) does not 
+            ArgumentError("Number of qubits $(nqubits(psum)) does not 
                 match grid size $(nx) x $(ny)"
             )
         )
@@ -149,7 +160,7 @@ function _translatetolowestinteger(pstr::PauliStringType, nx, ny, main_mask, wra
         end
 
         pstr = _periodicshiftup(pstr, nx, ny) # shift periodically by one row
-      
+
     end
 
     return lowest_pstr
