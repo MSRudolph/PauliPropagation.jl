@@ -67,7 +67,7 @@ For example, `overlapwithcomputational(psum, [1,2,4])` returns the overlap with 
 """
 function overlapwithcomputational(psum, onebitinds)
     if length(psum) == 0
-        return 0.0
+        return zero(numcoefftype(psum))
     end
 
     val = zero(numcoefftype(psum))
@@ -95,14 +95,14 @@ function _calcsignwithones(pstr::PauliStringType, onebitinds)
 end
 
 """
-    overlapwithmaxmixed(psum::PauliSum)
+    overlapwithmaxmixed(psum::AbstractPauliSum)
 
-Calculates the overlap of a `PauliSum` with the maximally mixed state I/2^n,
+Calculates the overlap of an `AbstractPauliSum` with the maximally mixed state I/2^n,
 i.e., Tr[psum * I/2^n].
 """
-function overlapwithmaxmixed(psum::PauliSum)
+function overlapwithmaxmixed(psum::AbstractPauliSum)
     if length(psum) == 0
-        return 0.0
+        return zero(numcoefftype(psum))
     end
 
     NumType = numcoefftype(psum)
@@ -115,23 +115,25 @@ end
 
 Calculate the overlap of a Pauli sum `psum` and a quantum state `rho` represented in the Pauli basis via another `PauliSum`.
 This is equivalent to the trace `Tr[rho * psum]`.
-Calls `scalarproduct(rho, psum) * (2^rho.nqubits)` to calculate the overlap.
+Calls `scalarproduct(rho, psum) * (2^nqubits(rho))` to calculate the overlap.
 """
 function overlapwithpaulisum(rho, psum)
-    return scalarproduct(rho, psum) * (2^rho.nqubits)
+    return scalarproduct(rho, psum) * (2^nqubits(rho))
 end
 
 
 """
-    scalarproduct(pobj1::Union{PauliSum,PauliString}, pobj2::Union{PauliSum,PauliString})
+    scalarproduct(psum1::AbstractPauliSum, psum2::AbstractPauliSum)
+    scalarproduct(pstr::PauliString, psum::AbstractPauliSum)
+    scalarproduct(psum::AbstractPauliSum, pstr::PauliString)
+    scalarproduct(pstr1::PauliString, pstr2::PauliString)
 
 Calculates the scalar product between any combination of `PauliSum` and `PauliString`.
 This  calculates the sum of the products of their coefficients for all Pauli strings that are present .
 Important: This is not equivalent to the trace `Tr[psum1 * psum2]` but instead  `Tr[psum1 * psum2]/2^n`,
 and equivalently for Pauli strings.
 """
-function scalarproduct(psum1::PauliSum, psum2::PauliSum)
-    # TODO: make this more generic for VectorPauliSum
+function scalarproduct(psum1::AbstractPauliSum, psum2::AbstractPauliSum)
 
     _checknumberofqubits(psum1, psum2)
 
@@ -143,8 +145,8 @@ function scalarproduct(psum1::PauliSum, psum2::PauliSum)
         return val
     end
 
-    longer_psum = psum1.terms
-    shorter_psum = psum2.terms
+    longer_psum = psum1
+    shorter_psum = psum2
 
     # swap psums around if the other one is sparser
     if length(longer_psum) < length(shorter_psum)
@@ -152,21 +154,21 @@ function scalarproduct(psum1::PauliSum, psum2::PauliSum)
     end
 
     # looping over the shorter psum because we are only looking for collisions
-    for pstr in keys(shorter_psum)
-        val += tonumber(get(longer_psum, pstr, zero(CType))) * tonumber(get(shorter_psum, pstr, zero(CType)))
+    for (pstr, coeff) in shorter_psum
+        val += tonumber(getcoeff(longer_psum, pstr)) * tonumber(coeff)
     end
     return val
 
 end
 
 
-function scalarproduct(pstr::PauliString, psum::PauliSum)
+function scalarproduct(pstr::PauliString, psum::AbstractPauliSum)
     _checknumberofqubits(pstr, psum)
     return tonumber(getcoeff(psum, pstr)) * tonumber(pstr.coeff)
 
 end
 
-scalarproduct(psum::PauliSum, pstr::PauliString) = scalarproduct(pstr, psum)
+scalarproduct(psum::AbstractPauliSum, pstr::PauliString) = scalarproduct(pstr, psum)
 
 
 

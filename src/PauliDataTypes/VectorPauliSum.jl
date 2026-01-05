@@ -61,6 +61,24 @@ Get the coefficient type of a `VectorPauliSum`.
 coefftype(vpsum::VectorPauliSum) = eltype(vpsum.coeffs)
 
 
+"""
+    getcoeff(vpsum::VectorPauliSum, pstr::Integer)
+
+Get the coefficient of an integer Pauli strings `pstr` in a `PauliSum`. 
+Defaults to 0 if the Pauli string is not in the `PauliSum`.
+"""
+function getcoeff(vpsum::VectorPauliSum, pstr::Integer)
+    return sum(vpsum.coeffs[i] for i in eachindex(vpsum.terms) if vpsum.terms[i] == pstr; init=zero(coefftype(vpsum)))
+end
+
+
+"""
+    topaulistrings(vpsum::VectorPauliSum)
+
+Returns the Pauli strings in a `PauliSum` and their coefficients as a list of `PauliString`.
+"""
+topaulistrings(vpsum::VectorPauliSum) = [PauliString(vpsum.nqubits, pauli, coeff) for (pauli, coeff) in zip(vpsum.terms, psum.coeffs)]
+
 
 Base.similar(vpsum::VectorPauliSum) = VectorPauliSum(vpsum.nqubits, similar(vpsum.terms), similar(vpsum.coeffs))
 
@@ -140,8 +158,8 @@ end
 
 PropagationCache(pstr::PauliString) = PropagationCache(VectorPauliSum(pstr))
 
-function PropagationCache(psum::PauliSum)
-    return PropagationCache(VectorPauliSum(psum))
+function PropagationCache(vpsum::PauliSum)
+    return PropagationCache(VectorPauliSum(vpsum))
 end
 
 # convert back

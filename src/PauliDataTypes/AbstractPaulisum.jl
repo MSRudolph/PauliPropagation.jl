@@ -49,6 +49,47 @@ function numcoefftype(CT::Type{<:Number})
 end
 
 
+## The getcoeff() inter face
+# the concrete types must implement getcoeff(psum::AbstractPauliSum, term::Integer) 
+function getcoeff(psum::AbstractPauliSum, pstr::PauliStringType)
+    throw(ErrorException("getcoeff() not implemented for type $(typeof(psum))."))
+end
+
+
+"""
+    getcoeff(psum::AbstractPauliSum, pauli::Symbol, qind::Integer)
+
+Get the coefficient of a Pauli string in an `AbstractPauliSum` by providing the Pauli string as a Symbol acting on qubit `qind`. 
+This is consistent with how Pauli strings can be added to a `PauliSum` via `add!()`. 
+Defaults to 0 if the Pauli string is not in the `AbstractPauliSum`.
+"""
+function getcoeff(psum::AbstractPauliSum, pauli::Symbol, qind::Integer)
+    return getcoeff(psum, symboltoint(psum.nqubits, pauli, qind))
+end
+
+"""
+    getcoeff(psum::AbstractPauliSum, pstr::Vector{Symbol}, qinds::Vector{Int})
+
+Get the coefficient of a Pauli string in an `AbstractPauliSum` by providing the Pauli string `pstr` as a vector of Symbols acting on qubits `qinds`. 
+This is consistent with how Pauli strings can be added to a `PauliSum` via `add!()`. 
+Defaults to 0 if the Pauli string is not in the `AbstractPauliSum`.
+"""
+function getcoeff(psum::AbstractPauliSum, pstr, qinds)
+    return getcoeff(psum, symboltoint(psum.nqubits, pstr, qinds))
+end
+
+"""
+    getcoeff(psum::AbstractPauliSum, pstr::Vector{Symbol})
+
+Get the coefficient of a Pauli string in a `AbstractPauliSum` by providing the Pauli string `pstr` as a vector of Symbols acting on all qubits. 
+This is consistent with how Pauli strings can be added to a `PauliSum` via `add!()`. 
+Defaults to 0 if the Pauli string is not in the `AbstractPauliSum`.
+"""
+function getcoeff(psum::AbstractPauliSum, pstr::Vector{Symbol})
+    return getcoeff(psum, symboltoint(pstr))
+end
+
+
 """
     norm(psum::AbstractPauliSum, L=2)
 

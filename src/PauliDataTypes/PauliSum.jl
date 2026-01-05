@@ -26,6 +26,16 @@ Contructor for an empty `PauliSum` on `nqubits` qubits. Element type defaults fo
 """
 PauliSum(nqubits::Int) = PauliSum(Float64, nqubits)
 
+"""
+    PauliSum(CoeffType, nq::Int)
+
+Contructor for an empty `PauliSum` on `nqubits` qubits. The type of the coefficients can be provided.
+"""
+function PauliSum(::Type{CT}, nq::Int) where {CT}
+    TT = getinttype(nq)
+    return PauliSum(nq, Dict{TT,CT}())
+end
+
 
 """
     nqubits(psum::PauliSum)
@@ -76,55 +86,11 @@ end
 """
     getcoeff(psum::PauliSum, pstr::Integer)
 
-Get the coefficient of an integer Pauli string in a `PauliSum`. Defaults to 0 if the Pauli string is not in the `PauliSum`.
-Requires that the integer Pauli string `pstr` is the same type as the integer Pauli strings in `psum`.
+Get the coefficient of an integer Pauli strings `pstr` in a `PauliSum`. 
+Defaults to 0 if the Pauli string is not in the `PauliSum`.
 """
-function getcoeff(psum::PauliSum{TT1,CT}, pstr::TT2) where {TT1,TT2,CT}
+function getcoeff(psum::PauliSum, pstr::Integer)
     return get(psum.terms, pstr, zero(numcoefftype(psum)))
-end
-
-"""
-    getcoeff(psum::PauliSum, pstr::PauliString)
-
-Get the coefficient of a `PauliString` in a `PauliSum`. Defaults to 0 if the Pauli string is not in the `PauliSum`.
-Requires that the integer Pauli string in `pstr` is the same type as the integer Pauli strings in `psum`.
-"""
-function getcoeff(psum::PauliSum{TT1,CT1}, pstr::PauliString{TT2,CT2}) where {TT1,TT2,CT1,CT2}
-    return getcoeff(psum, pstr.term)
-end
-
-
-"""
-    getcoeff(psum::PauliSum, pauli::Symbol, qind::Integer)
-
-Get the coefficient of a Pauli string in a `PauliSum` by providing the Pauli string as a Symbol acting on qubit `qind`. 
-This is consistent with how Pauli strings can be added to a `PauliSum` via `add!()`. 
-Defaults to 0 if the Pauli string is not in the `PauliSum`.
-"""
-function getcoeff(psum::PauliSum, pauli::Symbol, qind::Integer)
-    return getcoeff(psum, symboltoint(psum.nqubits, pauli, qind))
-end
-
-"""
-    getcoeff(psum::PauliSum, pstr::Vector{Symbol}, qinds::Vector{Int})
-
-Get the coefficient of a Pauli string in a `PauliSum` by providing the Pauli string `pstr` as a vector of Symbols acting on qubits `qinds`. 
-This is consistent with how Pauli strings can be added to a `PauliSum` via `add!()`. 
-Defaults to 0 if the Pauli string is not in the `PauliSum`.
-"""
-function getcoeff(psum::PauliSum, pstr, qinds)
-    return getcoeff(psum, symboltoint(psum.nqubits, pstr, qinds))
-end
-
-"""
-    getcoeff(psum::PauliSum, pstr::Vector{Symbol})
-
-Get the coefficient of a Pauli string in a `PauliSum` by providing the Pauli string `pstr` as a vector of Symbols acting on all qubits. 
-This is consistent with how Pauli strings can be added to a `PauliSum` via `add!()`. 
-Defaults to 0 if the Pauli string is not in the `PauliSum`.
-"""
-function getcoeff(psum::PauliSum, pstr::Vector{Symbol})
-    return getcoeff(psum, symboltoint(pstr))
 end
 
 

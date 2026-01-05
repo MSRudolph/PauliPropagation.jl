@@ -75,6 +75,16 @@ function numcoefftype(pstr::PauliString)
 end
 
 """
+    getcoeff(psum::AbstractPauliSum, pstr::Integer)
+
+Get the coefficient of a `PauliString` in a `PauliSum`. Defaults to 0 if the Pauli string is not in the `PauliSum`.
+Requires that the integer Pauli string in `pstr` is the same type as the integer Pauli strings in `psum`.
+"""
+function getcoeff(psum::AbstractPauliSum, pstr::PauliString)
+    return getcoeff(psum, pstr.term)
+end
+
+"""
     *(pstr::PauliString, c::Number)
 
 Multiply a `PauliString` by a scalar `c`. Returns a new `PauliString`.

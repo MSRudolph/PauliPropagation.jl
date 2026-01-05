@@ -1,15 +1,4 @@
 """
-    PauliSum(CoeffType, nq::Int)
-
-Contructor for an empty `PauliSum` on `nqubits` qubits. The type of the coefficients can be provided.
-"""
-function PauliSum(::Type{CT}, nq::Int) where {CT}
-    TT = getinttype(nq)
-    return PauliSum(nq, Dict{TT,CT}())
-end
-
-
-"""
     PauliSum(pstr::PauliString)
 
 Constructor for a `PauliSum` on `nqubits` qubits from a `PauliString`.
@@ -46,8 +35,11 @@ function PauliSum(pstrs::Union{AbstractArray,Tuple,Base.Generator})
 end
 
 
+PauliSum(vpsum::VectorPauliSum) = PauliSum(vpsum.nqubits, topaulistrings(vpsum))
+
 VectorPauliSum(pstr::PauliString) = VectorPauliSum(pstr.nqubits, [pstr.term], [pstr.coeff])
 VectorPauliSum(psum::PauliSum) = VectorPauliSum(psum.nqubits, collect(paulis(psum)), collect(coefficients(psum)))
+
 
 """
     tonumber(val::Number)
