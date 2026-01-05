@@ -122,6 +122,10 @@ function tonumber(path::PProp) where {PProp<:PathProperties}
     return path.coeff
 end
 
+function numcoefftype(::Type{PProp}) where {PProp<:PathProperties}
+    throw("numcoefftype is not defined for all PathProperties subtypes. Please define numcoefftype(::Type{$(PProp)}) method.")
+end
+
 
 """
     wrapcoefficients(pstr::PauliString, PathPropertiesType<:PathProperties)

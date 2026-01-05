@@ -53,6 +53,8 @@ struct NodePathProperties <: PathProperties
     freq::Int
 end
 
+numcoefftype(::Type{NodePathProperties}) = Float64
+
 
 # Pretty print for PauliFreqTracker
 Base.show(io::IO, pth::NodePathProperties) = print(io, "NodePathProperties($(typeof(pth.node)), nsins=$(pth.nsins), ncos=$(pth.ncos), freq=$(pth.freq))")
