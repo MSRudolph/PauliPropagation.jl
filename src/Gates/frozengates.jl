@@ -41,6 +41,11 @@ end
 Returns a vector of `Gate`s where `ParametrizedGate`s are frozen with their `parameters`.
 """
 function freeze(gates, parameters)
+    # sometimes our parameters default to nothing
+    if isnothing(parameters)
+        parameters = Float64[]
+    end
+
     @assert countparameters(gates) == length(parameters)
 
     frozen_gates = Vector{Gate}(undef, length(gates))
