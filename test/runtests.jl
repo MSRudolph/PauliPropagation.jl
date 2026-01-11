@@ -40,4 +40,6 @@ using Random
 
     include("test_gates_against_yao.jl")
 
+    include("test_qasm_interface.jl")
+
 end
