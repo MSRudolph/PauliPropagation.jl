@@ -57,6 +57,7 @@ end
 ## The apply functions
 
 function applytoall!(gate::CliffordGate, prop_cache::PropagationCache)
+    # TODO: This needs to be reworked for GPU support
 
     # everything is done in place
     terms_view = viewterms(prop_cache)
@@ -78,6 +79,8 @@ end
 
 
 function applytoall!(frozen_gate::FrozenGate{PauliRotation,PT}, prop_cache::PropagationCache{VT,VC,VB,VI}) where {PT,VT,VC,VB,VI}
+    # TODO: design this function in a way that it can be the default for branching gates. 
+    # Think of U3 or amplitude damping 
 
     if prop_cache.active_size == 0
         return prop_cache
