@@ -1,7 +1,15 @@
 module PauliPropagation
 
-using Base.Threads
 using LinearAlgebra
+
+# for the VectorPauliSum operations
+using AcceleratedKernels
+const AK = AcceleratedKernels
+using Base.Threads
+
+include("./Base/Base.jl")
+using .PropagationBase
+
 
 include("./PauliDataTypes/PauliDataTypes.jl")
 export
@@ -10,7 +18,7 @@ export
     PauliSum,
     PauliString,
     VectorPauliSum,
-    PropagationCache,
+    VectorPauliPropagationCache,
     paulis,
     coefficients,
     norm,

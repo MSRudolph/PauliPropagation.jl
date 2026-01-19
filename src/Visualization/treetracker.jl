@@ -9,7 +9,7 @@ using UUIDs
 
 # Import necessary functions from parent modules
 import ..PauliPropagation: PauliSum, PauliString, PauliStringType, PauliRotation, MaskedPauliRotation, CliffordGate
-import ..PauliPropagation: _tomaskedpaulirotation, paulitype, getnewpaulistring, commutes, set!, add!
+import ..PauliPropagation: _tomaskedpaulirotation, paulitype, paulirotationproduct, commutes, set!, add!
 import ..PauliPropagation: inttostring, symboltoint, getpauli, setpauli, splitapply, applytoall!, apply
 import Base: mergewith!
 
@@ -152,7 +152,7 @@ function splitapply(gate::MaskedPauliRotation, pstr::PauliStringType, coeff::Pau
     add_node!(cos_child.node_id, pstr_str, gate_name)
 
     # Get new Pauli string and sign for sin coefficient
-    new_pstr, sign = getnewpaulistring(gate, pstr)
+    new_pstr, sign = paulirotationproduct(gate, pstr)
     sin_coeff_value = coeff.coeff * sin(theta) * sign
     sin_multiplier = sin(theta) * sign
     sin_child = create_child_tracker(coeff, sin_coeff_value, string(round(sin_multiplier, digits=3)), gate_name)

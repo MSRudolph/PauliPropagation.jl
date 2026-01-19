@@ -53,7 +53,7 @@ struct NodePathProperties <: PathProperties
     freq::Int
 end
 
-numcoefftype(::Type{NodePathProperties}) = Float64
+PropagationBase.numcoefftype(::Type{NodePathProperties}) = Float64
 
 
 # Pretty print for PauliFreqTracker
@@ -71,7 +71,7 @@ NodePathProperties(node::CircuitNode) = NodePathProperties(node, 0, 0, 0)
 Get the cummulative coefficient of a `NodePathProperties` node.
 This assumes that the surrogate has already been evaluated.
 """
-tonumber(path::NodePathProperties) = path.node.cummulative_value
+PropagationBase.tonumber(path::NodePathProperties) = path.node.cummulative_value
 
 
 """

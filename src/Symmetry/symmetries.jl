@@ -30,7 +30,7 @@ symmetrymerge(psum, pstr -> _translatetolowestinteger(pstr, psum.nqubits))
 """
 function symmetrymerge(psum::PauliSum, mapfunc::F) where F<:Function
     merged_psum = PauliPropagation.similar(psum)
-
+    # TODO: mage this work for mapfuc that also want to modify the coefficient
     for (pstr, coeff) in psum
         pstr = mapfunc(pstr)
         add!(merged_psum, pstr, coeff)
@@ -44,8 +44,8 @@ function symmetrymerge(psum::VectorPauliSum, mapfunc::F) where F<:Function
     return VectorPauliSum(cache)
 end
 
-function symmetrymerge!(prop_cache::PropagationCache, mapfunc::F) where F<:Function
-    AK.map!(pstr -> mapfunc(pstr), viewterms(prop_cache), viewterms(prop_cache))
+function symmetrymerge!(prop_cache::VectorPauliPropagationCache, mapfunc::F) where F<:Function
+    AK.map!(pstr -> mapfunc(pstr), activeterms(prop_cache), activeterms(prop_cache))
     mergeterms!(prop_cache)
     return prop_cache
 end

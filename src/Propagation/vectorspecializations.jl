@@ -10,58 +10,55 @@
 ###
 ##
 # Propagate a VectorPauliSum through a circuit.
-# This uses the PropagationCache structure defined in PauliAlgebra/VectorPauliSum.jl
+# This uses the VectorPauliPropagationCache structure defined in PauliAlgebra/VectorPauliSum.jl
 ##
 ###
 
-using AcceleratedKernels
-const AK = AcceleratedKernels
+
+# function propagate(circuit, vecpsum::VectorPauliSum, thetas=nothing; kwargs...)
+#     return propagate!(circuit, deepcopy(vecpsum), thetas; kwargs...)
+# end
 
 
-function propagate(circuit, vecpsum::VectorPauliSum, thetas=nothing; kwargs...)
-    return propagate!(circuit, deepcopy(vecpsum), thetas; kwargs...)
-end
+# function propagate!(circuit, vecpsum::VectorPauliSum, thetas=nothing; kwargs...)
+#     prop_cache = VectorPauliPropagationCache(vecpsum)
+#     prop_cache = propagate!(freeze(circuit, thetas), prop_cache; kwargs...)
+#     vecpsum = prop_cache.vecpsum
+#     resize!(vecpsum, prop_cache.active_size)
+#     return vecpsum
+# end
 
 
-function propagate!(circuit, vecpsum::VectorPauliSum, thetas=nothing; kwargs...)
-    prop_cache = PropagationCache(vecpsum)
-    prop_cache = propagate!(freeze(circuit, thetas), prop_cache; kwargs...)
-    vecpsum = prop_cache.vecpsum
-    resize!(vecpsum, prop_cache.active_size)
-    return vecpsum
-end
+# function propagate!(circuit, prop_cache::VectorPauliPropagationCache; min_abs_coeff=1e-10, max_weight=Inf)
+#     # assume circuit contains the parameters via freezing, or is parameter-free
+#     @assert countparameters(circuit) == 0 "circuit requires parameters."
 
+#     for (i, gate) in enumerate(reverse(circuit))
 
-function propagate!(circuit, prop_cache::PropagationCache; min_abs_coeff=1e-10, max_weight=Inf)
-    # assume circuit contains the parameters via freezing, or is parameter-free
-    @assert countparameters(circuit) == 0 "circuit requires parameters."
+#         prop_cache = applymergetruncate!(gate, prop_cache; min_abs_coeff=min_abs_coeff, max_weight=max_weight)
 
-    for (i, gate) in enumerate(reverse(circuit))
+#     end
+#     return prop_cache
+# end
 
-        prop_cache = applymergetruncate!(gate, prop_cache; min_abs_coeff=min_abs_coeff, max_weight=max_weight)
+# function applymergetruncate!(gate, prop_cache::VectorPauliPropagationCache; min_abs_coeff=1e-10, max_weight=Inf)
+#     prop_cache = applytoall!(gate, prop_cache)
 
-    end
-    return prop_cache
-end
+#     prop_cache = mergeterms!(prop_cache)
 
-function applymergetruncate!(gate, prop_cache::PropagationCache; min_abs_coeff=1e-10, max_weight=Inf)
-    prop_cache = applytoall!(gate, prop_cache)
+#     prop_cache = truncate!(prop_cache; min_abs_coeff, max_weight)
 
-    prop_cache = mergeterms!(prop_cache)
-
-    prop_cache = truncate!(prop_cache; min_abs_coeff, max_weight)
-
-    return prop_cache
-end
+#     return prop_cache
+# end
 
 ## The apply functions
-
-function applytoall!(gate::CliffordGate, prop_cache::PropagationCache)
+# TODO: overload applymergetruncate!() and don't merge
+function applytoall!(gate::CliffordGate, prop_cache::VectorPauliPropagationCache)
     # TODO: This needs to be reworked for GPU support
 
     # everything is done in place
-    terms_view = viewterms(prop_cache)
-    coeffs_view = viewcoeffs(prop_cache)
+    terms_view = activeterms(prop_cache)
+    coeffs_view = activecoeffs(prop_cache)
     @assert length(terms_view) == length(coeffs_view)
     AK.foreachindex(terms_view) do ii
         term = terms_view[ii]
@@ -78,7 +75,7 @@ function applytoall!(gate::CliffordGate, prop_cache::PropagationCache)
 end
 
 
-function applytoall!(frozen_gate::FrozenGate{PauliRotation,PT}, prop_cache::PropagationCache{VT,VC,VB,VI}) where {PT,VT,VC,VB,VI}
+function applytoall!(gate::PauliRotation, prop_cache::VectorPauliPropagationCache, theta)
     # TODO: design this function in a way that it can be the default for branching gates. 
     # Think of U3 or amplitude damping 
 
@@ -86,56 +83,58 @@ function applytoall!(frozen_gate::FrozenGate{PauliRotation,PT}, prop_cache::Prop
         return prop_cache
     end
 
-    TT = eltype(VT)
-
     n_old = prop_cache.active_size
 
-    # unpack the frozen PauliRotation
-    gate, theta = frozen_gate.gate, frozen_gate.parameter
-
-    # this allows for faster operations
-    masked_gate = PauliPropagation._tomaskedpaulirotation(gate, TT)
-
     # get the mask out because because the gate cannot be in the function when using GPU
-    gate_mask = masked_gate.generator_mask
+    gate_mask = symboltoint(nqubits(prop_cache), gate.symbols, gate.qinds)
 
     # this needs to be in a separate function because variable names cannot be duplicated (WOW)
-    _flaganticommuting!(prop_cache, gate_mask)
+    # _flaganticommuting!(prop_cache, gate_mask)
+    flagterms!(trm -> !commutes(trm, gate_mask), prop_cache)
+    flagstoindices!(prop_cache)
 
-    n_noncommutes = prop_cache.indices[prop_cache.active_size]
+    n_noncommutes = lastindex(prop_cache)
 
     # slit off into the same array
     n_new = n_old + n_noncommutes
 
     # potential resize factor
     resize_factor = 2
-    if length(prop_cache.vecpsum.terms) < n_new
+    if length(terms(prop_cache)) < n_new
         resize!(prop_cache, n_new * resize_factor)
     end
 
+    # does the branching logic
     _applypaulirotation!(prop_cache, gate_mask, theta)
-    prop_cache.active_size = n_new
+
+    # we now have n_new possibly douplicate Pauli strings in the array
+    setactivesize!(prop_cache, n_new)
 
     return prop_cache
 end
 
-function _applypaulirotation!(prop_cache::PropagationCache, gate_mask::TT, theta) where {TT}
+function _applypaulirotation!(prop_cache::VectorPauliPropagationCache, gate_mask::TT, theta) where {TT}
 
     # pre-compute the sine and cosine values because the are used for every Pauli string that does not commute with the gate
     cos_val = cos(theta)
     sin_val = sin(theta)
 
-    n = prop_cache.active_size
-    n_max = prop_cache.indices[prop_cache.active_size] + n
+    n = activesize(prop_cache)
+    n_max = n + lastindex(prop_cache)
 
-    terms_view = viewterms(prop_cache)
-    coeffs = prop_cache.vecpsum.coeffs
-    terms = prop_cache.vecpsum.terms
-    flags = prop_cache.flags
-    indices = prop_cache.indices
-    @assert length(terms) >= n_max "PropagationCache terms array is not large enough to hold new terms."
-    @assert length(coeffs) >= n_max "PropagationCache coeffs array is not large enough to hold new coeffs."
-    AK.foreachindex(terms_view) do ii
+    active_terms = activeterms(prop_cache)
+
+    # full-length terms so we can write new terms at the end
+    terms = terms(prop_cache)
+    coeffs = coeffs(prop_cache)
+    @assert length(terms) >= n_max "VectorPauliPropagationCache terms array is not large enough to hold new terms."
+    @assert length(coeffs) >= n_max "VectorPauliPropagationCache coeffs array is not large enough to hold new coeffs."
+
+    flags = activeterms(prop_cache)
+    indices = activeindices(prop_cache)
+
+    # TODO: modularize this into something like "two-branching pattern"
+    AK.foreachindex(active_terms) do ii
         # here it anticommutes
         if flags[ii]
             term = terms[ii]
@@ -155,87 +154,46 @@ function _applypaulirotation!(prop_cache::PropagationCache, gate_mask::TT, theta
     return
 end
 
-function _flaganticommuting!(prop_cache::PropagationCache, gate_mask::TT) where {TT}
-    terms_view = viewterms(prop_cache)
-    flags = prop_cache.flags
-    AK.foreachindex(terms_view) do ii
-        flags[ii] = !commutes(terms_view[ii], gate_mask)
-    end
 
-    _flagstoindices!(prop_cache)
-    return
-end
+# function mergeterms!(prop_cache::VectorPauliPropagationCache)
+#     if isempty(prop_cache)
+#         return prop_cache
+#     end
 
-function _paulirotationproduct(gate_mask::TT, pstr::TT) where TT
-    new_pstr = PauliPropagation._bitpaulimultiply(gate_mask, pstr)
+#     # Sort the vector to group identical keys together.
+#     # TODO: dispatch this in dedicated functions
+#     AK.sortperm!(viewindices(prop_cache), viewterms(prop_cache), by=term)
 
-    # this counts the exponent of the imaginary unit in the new Pauli string
-    im_count = PauliPropagation._calculatesignexponent(gate_mask, pstr)
+#     # shuffle the terms and coeffs according to the sorted indices into their aux arrays
+#     permuteviaindices!(prop_cache)
 
-    # now, instead of computing im^im_count followed by another im factor from the gate rules,
-    # we do this in one step via a cheeky trick:
-    sign = (im_count & 2) - 1
-    # this is equivalent to sign = real( im * im^im_count)
+#     # Find the start of each group in parallel.
+#     _flagunique!(prop_cache)
 
-    return new_pstr, sign
-end
+#     # get the indices for where to add the coefficients
+#     flagstoindices!(prop_cache)
+#     # TODO: finalindex() function to work on GPU and CPU without sharing memory
+#     n_unique_terms = prop_cache.indices[prop_cache.active_size]
 
-_flagstoindices!(prop_cache::PropagationCache) = _flagstoindices!(prop_cache.indices, viewflags(prop_cache))
-_flagstoindices!(indices_dst, flags) = AK.accumulate!(+, indices_dst, flags; init=0)
+#     # early stop if all are unique 
+#     if n_unique_terms == prop_cache.active_size
+#         return prop_cache
+#     end
 
-function mergeterms!(prop_cache::PropagationCache)
-    if isempty(prop_cache)
-        return prop_cache
-    end
+#     # the reason we don't do atomic add instead is because the entry might not start off as 0
+#     _deduplicate!(prop_cache)
 
-    # Sort the vector to group identical keys together.
-    # TODO: dispatch this in dedicated functions
-    AK.sortperm!(viewindices(prop_cache), viewterms(prop_cache), by=term)
+#     prop_cache.active_size = n_unique_terms
 
-    # shuffle the terms and coeffs according to the sorted indices into their aux arrays
-    _permuteviaindices!(prop_cache)
-    swapterms!(prop_cache)
+#     return prop_cache
+# end
 
-    # Find the start of each group in parallel.
-    _flagunique!(prop_cache)
 
-    # get the indices for where to add the coefficients
-    _flagstoindices!(prop_cache)
-    # TODO: finalindex() function to work on GPU and CPU without sharing memory
-    n_unique_terms = prop_cache.indices[prop_cache.active_size]
 
-    # early stop if all are unique 
-    if n_unique_terms == prop_cache.active_size
-        return prop_cache
-    end
 
-    # the reason we don't do atomic add instead is because the entry might not start off as 0
-    _deduplicate!(prop_cache)
-
-    prop_cache.active_size = n_unique_terms
-
-    return prop_cache
-end
-
-# TODO: make this sort!(prop_cache) function instead
-
-function _permuteviaindices!(prop_cache::PropagationCache)
-    indices_view = viewindices(prop_cache)
-    term_view = viewterms(prop_cache)
-    coeffs_view = viewcoeffs(prop_cache)
-    aux_terms_view = viewauxterms(prop_cache)
-    aux_coeffs_view = viewauxcoeffs(prop_cache)
-    AK.foreachindex(indices_view) do ii
-        sorted_idx = indices_view[ii]
-        aux_terms_view[ii] = term_view[sorted_idx]
-        aux_coeffs_view[ii] = coeffs_view[sorted_idx]
-    end
-    return
-end
-
-function _flagunique!(prop_cache::PropagationCache)
-    term_view = viewterms(prop_cache)
-    flags_view = viewflags(prop_cache)
+function _flagunique!(prop_cache::VectorPauliPropagationCache)
+    term_view = activeterms(prop_cache)
+    flags_view = activeflags(prop_cache)
     AK.foreachindex(term_view) do ii
         if ii == 1
             flags_view[ii] = true
@@ -243,15 +201,15 @@ function _flagunique!(prop_cache::PropagationCache)
             flags_view[ii] = term_view[ii] != term_view[ii-1]
         end
     end
-    return
+    return prop_cache
 end
 
-function _deduplicate!(prop_cache::PropagationCache)
+function _deduplicate!(prop_cache::VectorPauliPropagationCache)
 
-    term_view = viewterms(prop_cache)
-    coeffs = prop_cache.vecpsum.coeffs
-    aux_terms = prop_cache.aux_vecpsum.terms
-    aux_coeffs = prop_cache.aux_vecpsum.coeffs
+    term_view = activeterms(prop_cache)
+    coeffs = prop_cache.psum.coeffs
+    aux_terms = prop_cache.aux_psum.terms
+    aux_coeffs = prop_cache.aux_psum.coeffs
     flags = prop_cache.flags
     indices = prop_cache.indices
     active_size = prop_cache.active_size
@@ -277,43 +235,59 @@ function _deduplicate!(prop_cache::PropagationCache)
     end
 
     # swap terms and aux_terms
-    swapterms!(prop_cache)
-
-    return
-end
-
-function swapterms!(prop_cache::PropagationCache)
-    prop_cache.vecpsum, prop_cache.aux_vecpsum = prop_cache.aux_vecpsum, prop_cache.vecpsum
-    return prop_cache
-end
-
-
-function truncate!(prop_cache::PropagationCache{TT,CT}; min_abs_coeff::Real, max_weight::Real=Inf) where {TT,CT}
-
-    if isempty(prop_cache)
-        return prop_cache
-    end
-
-    # TODO: can we simplify this entire function via a parallel filter!() function?
-
-    # flag the indices that we keep
-    _flagtokeep!(prop_cache, min_abs_coeff, max_weight)
-
-    # get the new indices after deletion
-    _flagstoindices!(prop_cache)
-    n_kept = prop_cache.indices[prop_cache.active_size]
-
-    _moveflagged!(prop_cache)
-
-    swapterms!(prop_cache)
-    prop_cache.active_size = n_kept
+    swapsums!(prop_cache)
 
     return prop_cache
 end
 
-function _moveflagged!(prop_cache::PropagationCache{TT,CT}) where {TT,CT}
-    terms_view = viewterms(prop_cache)
-    coeffs = viewcoeffs(prop_cache)
+
+# function truncate!(prop_cache::VectorPauliPropagationCache{TT,CT}; min_abs_coeff::Real, max_weight::Real=Inf) where {TT,CT}
+#     # TODO: in Base this should take min_abs_coeff and a custom truncation function. 
+#     # Specialized basis libraries overload truncate!() for their cache type,
+#     # but just use the function to load the custom truncation function to pass to Base.
+#     if isempty(prop_cache)
+#         return prop_cache
+#     end
+
+#     # TODO: can we simplify this entire function via a parallel filter!() function?
+
+#     # flag the indices that we keep
+#     _flagtokeep!(prop_cache, min_abs_coeff, max_weight)
+
+#     # get the new indices after deletion
+#     flagstoindices!(prop_cache)
+
+#     _moveflagged!(prop_cache)
+
+#     swapsums!(prop_cache)
+
+#     n_kept = prop_cache.indices[prop_cache.active_size]
+#     prop_cache.active_size = n_kept
+
+#     return prop_cache
+# end
+
+# function filterviaflags!(prop_cache::VectorPauliPropagationCache{TT,CT}) where {TT,CT}
+#     terms_view = viewterms(prop_cache)
+#     coeffs = viewcoeffs(prop_cache)
+#     aux_terms = viewauxterms(prop_cache)
+#     aux_coeffs = viewauxcoeffs(prop_cache)
+#     flags = viewflags(prop_cache)
+#     indices = viewindices(prop_cache)
+
+#     filterviaflags!(aux_terms, aux_coeffs, terms_view, coeffs, flags, indices)
+
+#     swapsums!(prop_cache)
+
+#     n_new = indices[prop_cache.active_size]
+#     prop_cache.active_size = n_new
+
+#     return prop_cache
+# end
+
+function _moveflagged!(prop_cache::VectorPauliPropagationCache{TT,CT}) where {TT,CT}
+    terms_view = activeterms(prop_cache)
+    coeffs = activecoeffs(prop_cache)
     aux_terms = viewauxterms(prop_cache)
     aux_coeffs = viewauxcoeffs(prop_cache)
     flags = viewflags(prop_cache)
@@ -327,9 +301,9 @@ function _moveflagged!(prop_cache::PropagationCache{TT,CT}) where {TT,CT}
     return
 end
 
-function _flagtokeep!(prop_cache::PropagationCache{TT,CT}, min_abs_coeff, max_weight) where {TT,CT}
-    terms_view = viewterms(prop_cache)
-    coeffs_view = viewcoeffs(prop_cache)
+function _flagtokeep!(prop_cache::VectorPauliPropagationCache{TT,CT}, min_abs_coeff, max_weight) where {TT,CT}
+    terms_view = activeterms(prop_cache)
+    coeffs_view = activecoeffs(prop_cache)
     @assert length(terms_view) == length(coeffs_view)
     flags = prop_cache.flags
     AK.foreachindex(terms_view) do ii
@@ -337,23 +311,3 @@ function _flagtokeep!(prop_cache::PropagationCache{TT,CT}, min_abs_coeff, max_we
     end
     return
 end
-
-# function chopterms!(prop_cache::PropagationCache, max_terms)
-#     if length(prop_cache.terms) <= max_terms
-#         return prop_cache
-#     end
-
-#     # sort by coefficient magnitude
-#     AcceleratedKernels.sort!(
-#         prop_cache.terms,
-#         by=p -> abs(tonumber(p.coeff));
-#         rev=true
-#     )
-
-#     # keep only the largest 'max_terms' terms
-#     resize!(prop_cache.terms, max_terms)
-#     resize!(prop_cache.flags, max_terms)
-#     resize!(prop_cache.indices, max_terms)
-#     return prop_cache
-# end
-

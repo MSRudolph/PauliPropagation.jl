@@ -29,7 +29,7 @@ Initializes `nsins`, `ncos`, and `freq` to zero.
 """
 PauliFreqTracker(coeff::Number) = PauliFreqTracker(float(coeff), 0, 0, 0)
 
-numcoefftype(::Type{PauliFreqTracker{T}}) where {T<:Number} = T
+PropagationBase.numcoefftype(::Type{PauliFreqTracker{T}}) where {T<:Number} = T
 
 ### Specializations for PauliRotations that incremet the nsins, ncos, and freq
 

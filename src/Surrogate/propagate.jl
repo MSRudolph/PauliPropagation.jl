@@ -8,7 +8,7 @@ The circuit must only contain `CliffordGate`s and `PauliRotation`s.
 Truncations based on any numerical coefficient value cannot be used.
 Everything else is the same as in `propagate!()` for the non-Surrogate code.
 """
-function propagate(circ, pstr::PauliString{TT,NodePathProperties}; max_weight=Inf, max_freq=Inf, max_sins=Inf, customtruncfunc=nothing, kwargs...) where {TT<:PauliStringType}
+function PropagationBase.propagate(circ, pstr::PauliString{TT,NodePathProperties}; max_weight=Inf, max_freq=Inf, max_sins=Inf, customtruncfunc=nothing, kwargs...) where {TT<:PauliStringType}
     return propagate(circ, PauliSum(pstr); max_weight, max_freq, max_sins, customtruncfunc, kwargs...)
 end
 
@@ -20,7 +20,7 @@ The circuit must only contain `CliffordGate`s and `PauliRotation`s.
 Truncations based on any numerical coefficient value cannot be used.
 Everything else is the same as in `propagate!()` for the non-Surrogate code.
 """
-function propagate(circ, psum::PauliSum{TT,NodePathProperties}; max_weight=Inf, max_freq=Inf, max_sins=Inf, customtruncfunc=nothing, kwargs...) where {TT<:PauliStringType}
+function PropagationBase.propagate(circ, psum::PauliSum{TT,NodePathProperties}; max_weight=Inf, max_freq=Inf, max_sins=Inf, customtruncfunc=nothing, kwargs...) where {TT<:PauliStringType}
     _checksurrogationconditions(circ)
     return propagate!(circ, PauliSum(psum.nqubits, copy(psum.terms)); max_weight, max_freq, max_sins, customtruncfunc, kwargs...)
 end
@@ -34,7 +34,7 @@ The circuit must only contain `CliffordGate`s and `PauliRotation`s.
 Truncations based on any numerical coefficient value cannot be used.
 Everything else is the same as in `propagate!()` for the non-Surrogate code.
 """
-function propagate!(circ, psum::PauliSum{TT,NodePathProperties}; max_weight=Inf, max_freq=Inf, max_sins=Inf, customtruncfunc=nothing, kwargs...) where {TT<:PauliStringType}
+function PropagationBase.propagate!(circ, psum::PauliSum{TT,NodePathProperties}; max_weight=Inf, max_freq=Inf, max_sins=Inf, customtruncfunc=nothing, kwargs...) where {TT<:PauliStringType}
     _checksurrogationconditions(circ)
 
     thetas = Array{Float64}(undef, countparameters(circ))
@@ -96,7 +96,7 @@ end
 
 
 # Apply a `CliffordGate` to an integer Pauli string and `NodePathProperties` coefficient. 
-function apply(gate::CliffordGate, pstr::PauliStringType, coeff::NodePathProperties; kwargs...)
+function PropagationBase.apply(gate::CliffordGate, pstr::PauliStringType, coeff::NodePathProperties; kwargs...)
     # this array carries the new Paulis + sign for every occuring old Pauli combination
     map_array = clifford_map[gate.symbol]
 

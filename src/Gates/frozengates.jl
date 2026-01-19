@@ -7,6 +7,8 @@
 ###
 
 
+# TODO: This goes to PropagationBase
+
 struct FrozenGate{GateType<:ParametrizedGate,T} <: StaticGate
     gate::GateType
     parameter::T

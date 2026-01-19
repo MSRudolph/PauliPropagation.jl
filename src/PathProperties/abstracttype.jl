@@ -114,7 +114,7 @@ end
 
 Get the numerical coefficient of a `PathProperties` wrapper.
 """
-function tonumber(path::PProp) where {PProp<:PathProperties}
+function PropagationBase.tonumber(path::PProp) where {PProp<:PathProperties}
     if !hasfield(PProp, :coeff)
         throw("The $(PProp) object does not have a field `coeff`.
         Consider defining a `tonumber(path::$(PProp))` method.")
@@ -122,7 +122,7 @@ function tonumber(path::PProp) where {PProp<:PathProperties}
     return path.coeff
 end
 
-function numcoefftype(::Type{PProp}) where {PProp<:PathProperties}
+function PropagationBase.numcoefftype(::Type{PProp}) where {PProp<:PathProperties}
     throw("numcoefftype is not defined for all PathProperties subtypes. Please define numcoefftype(::Type{$(PProp)}) method.")
 end
 

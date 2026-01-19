@@ -16,10 +16,14 @@ Overload of `applytoall!` for `PauliRotation` gates.
 It fixes the type-instability of the `apply()` function and reduces moving Pauli strings between `psum` and `aux_psum`.
 `psum` and `aux_psum` are merged later.
 """
-function applytoall!(gate::PauliRotation, theta, psum, aux_psum; kwargs...)
+function PropagationBase.applytoall!(gate::PauliRotation, prop_cache::AbstractPropagationCache, theta; kwargs...)
+    # unpack the pauli sums
+    psum = mainsum(prop_cache)
+    aux_psum = auxsum(prop_cache)
+
     # turn the (potentially) PauliRotation gate into a MaskedPauliRotation gate
     # this allows for faster operations
-    gate = _tomaskedpaulirotation(gate, paulitype(psum))
+    gate_mask = symboltoint(nqubits(prop_cache), gate.symbols, gate.qinds)
 
     # pre-compute the sine and cosine values because the are used for every Pauli string that does not commute with the gate
     cos_val = cos(theta)
@@ -34,7 +38,7 @@ function applytoall!(gate::PauliRotation, theta, psum, aux_psum; kwargs...)
 
         # else we know the gate will split th Pauli string into two
         coeff1 = coeff * cos_val
-        new_pstr, sign = getnewpaulistring(gate, pstr)
+        new_pstr, sign = paulirotationproduct(gate_mask, pstr)
         coeff2 = coeff * sin_val * sign
 
         # set the coefficient of the original Pauli string
@@ -45,15 +49,25 @@ function applytoall!(gate::PauliRotation, theta, psum, aux_psum; kwargs...)
         set!(aux_psum, new_pstr, coeff2)
     end
 
-    return
+    return prop_cache
 end
 
 
-function getnewpaulistring(gate::MaskedPauliRotation, pstr::PauliStringType)
-    new_pstr = _bitpaulimultiply(gate.generator_mask, pstr)
+function paulirotationproduct(gate::PauliRotation, pstr::TT) where TT
+    masked_gate = _tomaskedpaulirotation(gate, TT)
+    return paulirotationproduct(masked_gate, pstr)
+end
+
+# TODO: completely remove MaskedPauliRotation
+function paulirotationproduct(gate::MaskedPauliRotation, pstr::TT) where TT
+    return paulirotationproduct(gate.generator_mask, pstr)
+end
+
+function paulirotationproduct(gate_mask::TT, pstr::TT) where TT
+    new_pstr = PauliPropagation._bitpaulimultiply(gate_mask, pstr)
 
     # this counts the exponent of the imaginary unit in the new Pauli string
-    im_count = _calculatesignexponent(gate.generator_mask, pstr)
+    im_count = PauliPropagation._calculatesignexponent(gate_mask, pstr)
 
     # now, instead of computing im^im_count followed by another im factor from the gate rules,
     # we do this in one step via a cheeky trick:
@@ -72,11 +86,11 @@ Overload of `applyandadd!` for `CliffordGate` gates.
 Use `set!()` instead of `add!()` because Clifford gates create non-overlapping Pauli strings.
 `applytoall!` does not need to be adapted.
 """
-@inline function applyandadd!(gate::CliffordGate, pstr, coeff, theta, output_psum; kwargs...)
+@inline function PropagationBase.applyandadd!(gate::CliffordGate, output_psum, pstr, coeff; kwargs...)
 
     # TODO: test whether it is significantly faster to get the map_array in applytoall! and pass it here
     new_pstr, new_coeff = apply(gate, pstr, coeff; kwargs...)
-    # we can set the coefficient because Cliffords create non-overlapping Pauli strings
+    # we can set the coefficient because Clifford gates create non-overlapping Pauli strings
     set!(output_psum, new_pstr, new_coeff)
 
     return
@@ -87,7 +101,7 @@ end
 
 Apply a `CliffordGate` to an integer Pauli string and its coefficient. 
 """
-function apply(gate::CliffordGate, pstr::PauliStringType, coeff; kwargs...)
+function PropagationBase.apply(gate::CliffordGate, pstr::PauliStringType, coeff; kwargs...)
     # this array carries the new Paulis + sign for every occuring old Pauli combination
     map_array = clifford_map[gate.symbol]
 
@@ -116,7 +130,10 @@ end
 Overload of `applytoall!` for `PauliNoise` gates with noise strength `p`. 
 It changes the coefficients in-place and does not require the `aux_psum`, which stays empty.
 """
-function applytoall!(gate::PauliNoise, p, psum, aux_psum; kwargs...)
+function PropagationBase.applytoall!(gate::PauliNoise, prop_cache::AbstractPropagationCache, p; kwargs...)
+    # unpack the main pauli sum, aux is not needed
+    psum = mainsum(prop_cache)
+
     # check that the noise strength is in the correct range
     _check_noise_strength(PauliNoise, p)
 
@@ -137,7 +154,7 @@ function applytoall!(gate::PauliNoise, p, psum, aux_psum; kwargs...)
         set!(psum, pstr, new_coeff)
     end
 
-    return
+    return prop_cache
 end
 
 ### Amplitude Damping Noise
@@ -148,7 +165,11 @@ Overload of `applytoall!` for `AmplitudeDampingNoise` gates.
 It fixes the type-instability of the apply() function and reduces moving Pauli strings between psum and aux_psum.
 `psum` and `aux_psum` are merged later.
 """
-function applytoall!(gate::AmplitudeDampingNoise, gamma, psum, aux_psum; kwargs...)
+function PropagationBase.applytoall!(gate::AmplitudeDampingNoise, prop_cache::AbstractPropagationCache, gamma; kwargs...)
+    # unpack the pauli sums
+    psum = mainsum(prop_cache)
+    aux_psum = auxsum(prop_cache)
+
     # check that the noise strength is in the correct range
     _check_noise_strength(AmplitudeDampingNoise, gamma)
 
@@ -182,7 +203,7 @@ function applytoall!(gate::AmplitudeDampingNoise, gamma, psum, aux_psum; kwargs.
         end
     end
 
-    return
+    return prop_cache
 end
 
 ## T Gate
@@ -192,8 +213,8 @@ end
 Overload of `applytoall!()` for `TGate(qind)`.
 Redirects to a `PauliRotation(:Z, qind)` with angle π/4.
 """
-function applytoall!(gate::TGate, thetas, psum, aux_psum; kwargs...)
-    return applytoall!(PauliRotation(:Z, gate.qind), π / 4, psum, aux_psum; kwargs...)
+function PropagationBase.applytoall!(gate::TGate, prop_cache::AbstractPropagationCache, thetas; kwargs...)
+    return applytoall!(PauliRotation(:Z, gate.qind), prop_cache, π / 4; kwargs...)
 end
 
 ## TransferMapGate
@@ -203,7 +224,7 @@ end
 Apply a `TransferMapGate` to an integer Pauli string and its coefficient.
 The outcomes are determined by the `transfer_map` of the gate.
 """
-function PauliPropagation.apply(gate::TransferMapGate, pstr, coeff)
+function PropagationBase.apply(gate::TransferMapGate, pstr, coeff)
     # the Paulis packed into the integer are used to index into the transfer map
     pauli_int = getpauli(pstr, gate.qinds)
     pstrs_and_factors = gate.transfer_map[pauli_int+1]
@@ -217,6 +238,6 @@ end
 
 Overload of `applytoall!` for `FrozenGate`s. Re-directs to `applytoall!` for the wrapped `FrozenGate.gate` with the frozen parameter.
 """
-function applytoall!(gate::FrozenGate, theta, psum, aux_psum; kwargs...)
-    return applytoall!(gate.gate, gate.parameter, psum, aux_psum; kwargs...)
+function PropagationBase.applytoall!(gate::FrozenGate, prop_cache::AbstractPropagationCache, theta; kwargs...)
+    return applytoall!(gate.gate, prop_cache, gate.parameter; kwargs...)
 end
