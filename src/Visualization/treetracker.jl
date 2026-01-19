@@ -170,9 +170,12 @@ end
 Specialized applytoall! for PauliRotation gates with PauliSum containing PauliTreeTracker coefficients.
 This tracks every gate application in the evolution tree.
 """
-function applytoall!(gate::PauliRotation, theta, psum::PauliSum{TT,PauliTreeTracker{T}}, aux_psum; kwargs...) where {TT<:PauliStringType,T<:Number}
+function PropagationBase.applytoall!(gate::PauliRotation, prop_cache::PauliPropagationCache{PauliSum{TT,PauliTreeTracker{T}}}, theta; kwargs...) where {TT<:PauliStringType,T<:Number}
+    psum = mainsum(prop_cache)
+    aux_psum = auxsum(prop_cache)
+
     # Convert PauliRotation to MaskedPauliRotation for efficiency
-    gate = _tomaskedpaulirotation(gate, paulitype(psum))
+    gate_mask = symboltoint(nqubits(psum), gate.symbols, gate.qinds)
 
     # Loop over all Pauli strings and their coefficients in the Pauli sum
     for (pstr, coeff) in psum
@@ -193,7 +196,7 @@ function applytoall!(gate::PauliRotation, theta, psum::PauliSum{TT,PauliTreeTrac
         end
 
         # Apply the gate and track the split
-        pstr, coeff1, new_pstr, coeff2 = splitapply(gate, pstr, coeff, theta; nqubits=psum.nqubits, kwargs...)
+        pstr, coeff1, new_pstr, coeff2 = splitapply(gate_mask, pstr, coeff, theta; nqubits=psum.nqubits, kwargs...)
 
         # Set the coefficient of the original Pauli string
         set!(psum, pstr, coeff1)
@@ -206,12 +209,15 @@ function applytoall!(gate::PauliRotation, theta, psum::PauliSum{TT,PauliTreeTrac
 end
 
 """
-    applytoall!(gate::CliffordGate, theta, psum::PauliSum{TT,PauliTreeTracker{T}}, aux_psum; kwargs...)
+    applytoall!(gate::CliffordGate, prop_cache::PauliPropagationCache{PauliSum{TT,PauliTreeTracker{T}}}; kwargs...)
 
 Specialized applytoall! for CliffordGate with PauliSum containing PauliTreeTracker coefficients.
 Clifford gates deterministically transform Pauli strings without branching, so we create a single child node for each transformation.
 """
-function applytoall!(gate::CliffordGate, theta, psum::PauliSum{TT,PauliTreeTracker{T}}, aux_psum; kwargs...) where {TT<:PauliStringType,T<:Number}
+function PropagationBase.applytoall!(gate::CliffordGate, prop_cache::PauliPropagationCache{PauliSum{TT,PauliTreeTracker{T}}}; kwargs...) where {TT<:PauliStringType,T<:Number}
+    psum = mainsum(prop_cache)
+    aux_psum = auxsum(prop_cache)
+
     # Loop over all Pauli strings and their coefficients in the Pauli sum
     for (pstr, coeff) in psum
         # Apply the Clifford gate to get the new Pauli string and coefficient
@@ -239,14 +245,16 @@ function applytoall!(gate::CliffordGate, theta, psum::PauliSum{TT,PauliTreeTrack
     return
 end
 """
-    applytoall!(gate::PauliNoise, p, psum::PauliSum{TT,PauliTreeTracker{T}}, aux_psum; kwargs...)
+    applytoall!(gate::PauliNoise, prop_cache::PauliPropagationCache{PauliSum{TT,PauliTreeTracker{T}}}, p; kwargs...) where {TT<:PauliStringType,T<:Number}
 
 Specialized applytoall! for PauliNoise with PauliSum containing PauliTreeTracker coefficients.
 PauliNoise gates deterministically transform Pauli strings without branching, so we create a single child node for each transformation.
 """
-function applytoall!(gate::PauliNoise, p, psum::PauliSum{TT,PauliTreeTracker{T}}, aux_psum; kwargs...) where {TT<:PauliStringType,T<:Number}
+function PropagationBase.applytoall!(gate::PauliNoise, prop_cache::PauliPropagationCache{PauliSum{TT,PauliTreeTracker{T}}}, p; kwargs...) where {TT<:PauliStringType,T<:Number}
     # check that the noise strength is in the correct range
     _check_noise_strength(PauliNoise, p)
+
+    psum = mainsum(prop_cache)
 
     # loop over all Pauli strings and their coefficients in the Pauli sum
     for (pstr, coeff) in psum
@@ -287,7 +295,10 @@ AmplitudeDampingNoise gates can transform Pauli strings in two ways:
 1. X/Y Paulis get scaled by sqrt(1-gamma)
 2. Z Paulis split into I with coefficient gamma and Z with coefficient (1-gamma)
 """
-function applytoall!(gate::AmplitudeDampingNoise, gamma, psum::PauliSum{TT,PauliTreeTracker{T}}, aux_psum; kwargs...) where {TT<:PauliStringType,T<:Number}
+function PropagationBase.applytoall!(gate::AmplitudeDampingNoise, prop_cache::PauliPropagationCache{PauliSum{TT,PauliTreeTracker{T}}}, gamma; kwargs...) where {TT<:PauliStringType,T<:Number}
+    psum = mainsum(prop_cache)
+    aux_psum = auxsum(prop_cache)
+
     # check that the noise strength is in the correct range
     _check_noise_strength(AmplitudeDampingNoise, gamma)
 

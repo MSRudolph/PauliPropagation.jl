@@ -22,7 +22,7 @@ Everything else is the same as in `propagate!()` for the non-Surrogate code.
 """
 function PropagationBase.propagate(circ, psum::PauliSum{TT,NodePathProperties}; max_weight=Inf, max_freq=Inf, max_sins=Inf, customtruncfunc=nothing, kwargs...) where {TT<:PauliStringType}
     _checksurrogationconditions(circ)
-    return propagate!(circ, PauliSum(psum.nqubits, copy(psum.terms)); max_weight, max_freq, max_sins, customtruncfunc, kwargs...)
+    return propagate!(circ, deepcopy(psum); max_weight, max_freq, max_sins, customtruncfunc, kwargs...)
 end
 
 """
@@ -37,17 +37,10 @@ Everything else is the same as in `propagate!()` for the non-Surrogate code.
 function PropagationBase.propagate!(circ, psum::PauliSum{TT,NodePathProperties}; max_weight=Inf, max_freq=Inf, max_sins=Inf, customtruncfunc=nothing, kwargs...) where {TT<:PauliStringType}
     _checksurrogationconditions(circ)
 
+    # dummy parameters 
     thetas = Array{Float64}(undef, countparameters(circ))
 
-    param_idx = length(thetas)
-
-    aux_psum = similar(psum)
-
-    for gate in reverse(circ)
-        # add param_index as kwarg, which will descend into the apply function eventually
-        psum, aux_psum, param_idx = applymergetruncate!(gate, psum, aux_psum, thetas, param_idx; max_weight, max_freq, max_sins, customtruncfunc, param_idx=param_idx, kwargs...)
-    end
-    return psum
+    propagate!(circ, psum, thetas; max_weight=max_weight, max_freq=max_freq, max_sins=max_sins, customtruncfunc=customtruncfunc, kwargs...)
 end
 
 function _checksurrogationconditions(circ)

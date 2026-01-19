@@ -20,13 +20,13 @@
 # end
 
 
-# function propagate!(circuit, vecpsum::VectorPauliSum, thetas=nothing; kwargs...)
-#     prop_cache = VectorPauliPropagationCache(vecpsum)
-#     prop_cache = propagate!(freeze(circuit, thetas), prop_cache; kwargs...)
-#     vecpsum = prop_cache.vecpsum
-#     resize!(vecpsum, prop_cache.active_size)
-#     return vecpsum
-# end
+function PropagationBase.propagate!(circuit, vecpsum::VectorPauliSum, args...; kwargs...)
+    prop_cache = VectorPauliPropagationCache(vecpsum)
+    prop_cache = propagate!(circuit, prop_cache, args...; kwargs...)
+    vecpsum = mainsum(prop_cache)
+    resize!(vecpsum, activesize(prop_cache))
+    return vecpsum
+end
 
 
 # function propagate!(circuit, prop_cache::VectorPauliPropagationCache; min_abs_coeff=1e-10, max_weight=Inf)
@@ -53,7 +53,7 @@
 
 ## The apply functions
 # TODO: overload applymergetruncate!() and don't merge
-function applytoall!(gate::CliffordGate, prop_cache::VectorPauliPropagationCache)
+function PropagationBase.applytoall!(gate::CliffordGate, prop_cache::VectorPauliPropagationCache)
     # TODO: This needs to be reworked for GPU support
 
     # everything is done in place
@@ -75,7 +75,8 @@ function applytoall!(gate::CliffordGate, prop_cache::VectorPauliPropagationCache
 end
 
 
-function applytoall!(gate::PauliRotation, prop_cache::VectorPauliPropagationCache, theta)
+function PropagationBase.applytoall!(gate::PauliRotation, prop_cache::VectorPauliPropagationCache, theta)
+
     # TODO: design this function in a way that it can be the default for branching gates. 
     # Think of U3 or amplitude damping 
 
@@ -91,16 +92,19 @@ function applytoall!(gate::PauliRotation, prop_cache::VectorPauliPropagationCach
     # this needs to be in a separate function because variable names cannot be duplicated (WOW)
     # _flaganticommuting!(prop_cache, gate_mask)
     flagterms!(trm -> !commutes(trm, gate_mask), prop_cache)
+
+    # this runs a cumsum over the flags to get the indices
     flagstoindices!(prop_cache)
 
-    n_noncommutes = lastindex(prop_cache)
+    # the final index is the number of new terms
+    n_noncommutes = lastactiveindex(prop_cache)
 
     # slit off into the same array
     n_new = n_old + n_noncommutes
 
     # potential resize factor
     resize_factor = 2
-    if length(terms(prop_cache)) < n_new
+    if capacity(prop_cache) < n_new
         resize!(prop_cache, n_new * resize_factor)
     end
 
@@ -120,17 +124,17 @@ function _applypaulirotation!(prop_cache::VectorPauliPropagationCache, gate_mask
     sin_val = sin(theta)
 
     n = activesize(prop_cache)
-    n_max = n + lastindex(prop_cache)
+    n_max = n + lastactiveindex(prop_cache)
 
     active_terms = activeterms(prop_cache)
 
     # full-length terms so we can write new terms at the end
-    terms = terms(prop_cache)
-    coeffs = coeffs(prop_cache)
+    terms = paulis(mainsum(prop_cache))
+    coeffs = coefficients(mainsum(prop_cache))
     @assert length(terms) >= n_max "VectorPauliPropagationCache terms array is not large enough to hold new terms."
     @assert length(coeffs) >= n_max "VectorPauliPropagationCache coeffs array is not large enough to hold new coeffs."
 
-    flags = activeterms(prop_cache)
+    flags = activeflags(prop_cache)
     indices = activeindices(prop_cache)
 
     # TODO: modularize this into something like "two-branching pattern"
@@ -141,7 +145,7 @@ function _applypaulirotation!(prop_cache::VectorPauliPropagationCache, gate_mask
             coeff = coeffs[ii]
 
             coeff1 = coeff * cos_val
-            new_term, sign = _paulirotationproduct(gate_mask, term)
+            new_term, sign = paulirotationproduct(gate_mask, term)
             coeff2 = coeff * sin_val * sign
 
             coeffs[ii] = coeff1
@@ -191,54 +195,54 @@ end
 
 
 
-function _flagunique!(prop_cache::VectorPauliPropagationCache)
-    term_view = activeterms(prop_cache)
-    flags_view = activeflags(prop_cache)
-    AK.foreachindex(term_view) do ii
-        if ii == 1
-            flags_view[ii] = true
-        else
-            flags_view[ii] = term_view[ii] != term_view[ii-1]
-        end
-    end
-    return prop_cache
-end
+# function _flagunique!(prop_cache::VectorPauliPropagationCache)
+#     term_view = activeterms(prop_cache)
+#     flags_view = activeflags(prop_cache)
+#     AK.foreachindex(term_view) do ii
+#         if ii == 1
+#             flags_view[ii] = true
+#         else
+#             flags_view[ii] = term_view[ii] != term_view[ii-1]
+#         end
+#     end
+#     return prop_cache
+# end
 
-function _deduplicate!(prop_cache::VectorPauliPropagationCache)
+# function _deduplicate!(prop_cache::VectorPauliPropagationCache)
 
-    term_view = activeterms(prop_cache)
-    coeffs = prop_cache.psum.coeffs
-    aux_terms = prop_cache.aux_psum.terms
-    aux_coeffs = prop_cache.aux_psum.coeffs
-    flags = prop_cache.flags
-    indices = prop_cache.indices
-    active_size = prop_cache.active_size
-    AK.foreachindex(term_view) do ii
-        # if this is the start of a new group
-        if flags[ii]
-            # end index is the before the next flag or the end of the array
-            end_idx = ii
-            while end_idx < active_size && !flags[end_idx+1]
-                end_idx += 1
-            end
+#     term_view = activeterms(prop_cache)
+#     coeffs = prop_cache.psum.coeffs
+#     aux_terms = prop_cache.aux_psum.terms
+#     aux_coeffs = prop_cache.aux_psum.coeffs
+#     flags = prop_cache.flags
+#     indices = prop_cache.indices
+#     active_size = prop_cache.active_size
+#     AK.foreachindex(term_view) do ii
+#         # if this is the start of a new group
+#         if flags[ii]
+#             # end index is the before the next flag or the end of the array
+#             end_idx = ii
+#             while end_idx < active_size && !flags[end_idx+1]
+#                 end_idx += 1
+#             end
 
-            # Sum the values in the range.
-            CT = typeof(coeffs[ii])
-            merged_coeff = zero(CT)
-            for jj in ii:end_idx
-                merged_coeff += coeffs[jj]
-            end
+#             # Sum the values in the range.
+#             CT = typeof(coeffs[ii])
+#             merged_coeff = zero(CT)
+#             for jj in ii:end_idx
+#                 merged_coeff += coeffs[jj]
+#             end
 
-            aux_terms[indices[ii]] = term_view[ii]
-            aux_coeffs[indices[ii]] = merged_coeff
-        end
-    end
+#             aux_terms[indices[ii]] = term_view[ii]
+#             aux_coeffs[indices[ii]] = merged_coeff
+#         end
+#     end
 
-    # swap terms and aux_terms
-    swapsums!(prop_cache)
+#     # swap terms and aux_terms
+#     swapsums!(prop_cache)
 
-    return prop_cache
-end
+#     return prop_cache
+# end
 
 
 # function truncate!(prop_cache::VectorPauliPropagationCache{TT,CT}; min_abs_coeff::Real, max_weight::Real=Inf) where {TT,CT}
@@ -285,29 +289,29 @@ end
 #     return prop_cache
 # end
 
-function _moveflagged!(prop_cache::VectorPauliPropagationCache{TT,CT}) where {TT,CT}
-    terms_view = activeterms(prop_cache)
-    coeffs = activecoeffs(prop_cache)
-    aux_terms = viewauxterms(prop_cache)
-    aux_coeffs = viewauxcoeffs(prop_cache)
-    flags = viewflags(prop_cache)
-    indices = viewindices(prop_cache)
-    AK.foreachindex(terms_view) do ii
-        if flags[ii]
-            aux_terms[indices[ii]] = terms_view[ii]
-            aux_coeffs[indices[ii]] = coeffs[ii]
-        end
-    end
-    return
-end
+# function _moveflagged!(prop_cache::VectorPauliPropagationCache{TT,CT}) where {TT,CT}
+#     terms_view = activeterms(prop_cache)
+#     coeffs = activecoeffs(prop_cache)
+#     aux_terms = activeauxterms(prop_cache)
+#     aux_coeffs = activeauxcoeffs(prop_cache)
+#     flags = activeflags(prop_cache)
+#     indices = activeindices(prop_cache)
+#     AK.foreachindex(terms_view) do ii
+#         if flags[ii]
+#             aux_terms[indices[ii]] = terms_view[ii]
+#             aux_coeffs[indices[ii]] = coeffs[ii]
+#         end
+#     end
+#     return
+# end
 
-function _flagtokeep!(prop_cache::VectorPauliPropagationCache{TT,CT}, min_abs_coeff, max_weight) where {TT,CT}
-    terms_view = activeterms(prop_cache)
-    coeffs_view = activecoeffs(prop_cache)
-    @assert length(terms_view) == length(coeffs_view)
-    flags = prop_cache.flags
-    AK.foreachindex(terms_view) do ii
-        flags[ii] = (abs(tonumber(coeffs_view[ii])) >= min_abs_coeff) && countweight(terms_view[ii]) <= max_weight
-    end
-    return
-end
+# function _flagtokeep!(prop_cache::VectorPauliPropagationCache{TT,CT}, min_abs_coeff, max_weight) where {TT,CT}
+#     terms_view = activeterms(prop_cache)
+#     coeffs_view = activecoeffs(prop_cache)
+#     @assert length(terms_view) == length(coeffs_view)
+#     flags = prop_cache.flags
+#     AK.foreachindex(terms_view) do ii
+#         flags[ii] = (abs(tonumber(coeffs_view[ii])) >= min_abs_coeff) && countweight(terms_view[ii]) <= max_weight
+#     end
+#     return
+# end

@@ -115,6 +115,22 @@ export
     ryylayer!,
     rzzlayer!
 
+
+include("Propagation/Propagation.jl")
+export
+    PropagationCache,
+    propagate,
+    propagate!,
+    applymergetruncate!,
+    applytoall!,
+    apply,
+    applyandadd!,
+    mergeandempty!,
+    merge,
+    truncate!,
+    merge!
+
+
 include("PathProperties/PathProperties.jl")
 export
     PathProperties,
@@ -126,16 +142,6 @@ include("truncations.jl")
 export
     truncatedampingcoeff
 
-include("Propagation/Propagation.jl")
-export
-    propagate,
-    propagate!,
-    applymergetruncate!,
-    applytoall!,
-    apply,
-    applyandadd!,
-    mergeandempty!,
-    merge
 
 include("stateoverlap.jl")
 export

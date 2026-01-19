@@ -16,7 +16,7 @@ Overload of `applytoall!` for `PauliRotation` gates.
 It fixes the type-instability of the `apply()` function and reduces moving Pauli strings between `psum` and `aux_psum`.
 `psum` and `aux_psum` are merged later.
 """
-function PropagationBase.applytoall!(gate::PauliRotation, prop_cache::AbstractPropagationCache, theta; kwargs...)
+function PropagationBase.applytoall!(gate::PauliRotation, prop_cache::PauliPropagationCache, theta; kwargs...)
     # unpack the pauli sums
     psum = mainsum(prop_cache)
     aux_psum = auxsum(prop_cache)
@@ -87,7 +87,6 @@ Use `set!()` instead of `add!()` because Clifford gates create non-overlapping P
 `applytoall!` does not need to be adapted.
 """
 @inline function PropagationBase.applyandadd!(gate::CliffordGate, output_psum, pstr, coeff; kwargs...)
-
     # TODO: test whether it is significantly faster to get the map_array in applytoall! and pass it here
     new_pstr, new_coeff = apply(gate, pstr, coeff; kwargs...)
     # we can set the coefficient because Clifford gates create non-overlapping Pauli strings
@@ -130,7 +129,7 @@ end
 Overload of `applytoall!` for `PauliNoise` gates with noise strength `p`. 
 It changes the coefficients in-place and does not require the `aux_psum`, which stays empty.
 """
-function PropagationBase.applytoall!(gate::PauliNoise, prop_cache::AbstractPropagationCache, p; kwargs...)
+function PropagationBase.applytoall!(gate::PauliNoise, prop_cache::PauliPropagationCache, p; kwargs...)
     # unpack the main pauli sum, aux is not needed
     psum = mainsum(prop_cache)
 
@@ -165,7 +164,7 @@ Overload of `applytoall!` for `AmplitudeDampingNoise` gates.
 It fixes the type-instability of the apply() function and reduces moving Pauli strings between psum and aux_psum.
 `psum` and `aux_psum` are merged later.
 """
-function PropagationBase.applytoall!(gate::AmplitudeDampingNoise, prop_cache::AbstractPropagationCache, gamma; kwargs...)
+function PropagationBase.applytoall!(gate::AmplitudeDampingNoise, prop_cache::PauliPropagationCache, gamma; kwargs...)
     # unpack the pauli sums
     psum = mainsum(prop_cache)
     aux_psum = auxsum(prop_cache)
@@ -208,12 +207,12 @@ end
 
 ## T Gate
 """
-    applytoall!(gate::TGate, thetas, psum, aux_psum; kwargs...)
+    applytoall!(gate::TGate, prop_cache::AbstractPauliPropagationCache; kwargs...)
 
 Overload of `applytoall!()` for `TGate(qind)`.
 Redirects to a `PauliRotation(:Z, qind)` with angle π/4.
 """
-function PropagationBase.applytoall!(gate::TGate, prop_cache::AbstractPropagationCache, thetas; kwargs...)
+function PropagationBase.applytoall!(gate::TGate, prop_cache::AbstractPauliPropagationCache; kwargs...)
     return applytoall!(PauliRotation(:Z, gate.qind), prop_cache, π / 4; kwargs...)
 end
 
@@ -238,6 +237,6 @@ end
 
 Overload of `applytoall!` for `FrozenGate`s. Re-directs to `applytoall!` for the wrapped `FrozenGate.gate` with the frozen parameter.
 """
-function PropagationBase.applytoall!(gate::FrozenGate, prop_cache::AbstractPropagationCache, theta; kwargs...)
+function PropagationBase.applytoall!(gate::FrozenGate, prop_cache::AbstractPauliPropagationCache; kwargs...)
     return applytoall!(gate.gate, prop_cache, gate.parameter; kwargs...)
 end

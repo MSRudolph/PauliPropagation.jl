@@ -48,16 +48,6 @@ function VectorPauliSum(pstrs::Union{AbstractArray,Tuple,Base.Generator})
 end
 
 
-"""
-    tonumber(val::Number)
-
-Trivial function returning a numerical value of a number.
-Will be overloaded for custom wrapper types like `PathProperties`.
-"""
-function tonumber(val::Number)
-    return val
-end
-
 # Conversion of PauliString and PauliSum to different coefficient types
 function Base.convert(::Type{PauliString{TT1,CT1}}, pstr::PauliString{TT2,CT2}) where {TT1,TT2,CT1,CT2}
     if TT1 != TT2

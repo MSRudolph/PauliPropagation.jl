@@ -1,0 +1,56 @@
+"""
+    AbstractPauliSum <: AbstractTermSum
+
+Abstract type for objects represented sums of Paulis with coefficients.
+"""
+abstract type AbstractPauliSum <: AbstractTermSum end
+
+nqubits(psum::AbstractPauliSum) = throw(ErrorException("nqubits() not implemented for type $(typeof(psum))."))
+PropagationBase.nsites(psum::AbstractPauliSum) = nqubits(psum)
+
+paulis(psum::AbstractPauliSum) = throw(ErrorException("paulis() not implemented for type $(typeof(psum))."))
+PropagationBase.terms(psum::AbstractPauliSum) = paulis(psum)
+
+"""
+    paulitype(psum::AbstractPauliSum)
+
+Get the Pauli integer type of a `AbstractPauliSum` object.
+"""
+paulitype(psum::AbstractPauliSum) = eltype(paulis(psum))
+
+
+## The symbol conversions for getcoeff()
+
+"""
+    getcoeff(psum::AbstractPauliSum, pauli::Symbol, qind::Integer)
+
+Get the coefficient of a Pauli string in an `AbstractPauliSum` by providing the Pauli string as a Symbol acting on qubit `qind`. 
+This is consistent with how Pauli strings can be added to a `PauliSum` via `add!()`. 
+Defaults to 0 if the Pauli string is not in the `AbstractPauliSum`.
+"""
+function PropagationBase.getcoeff(psum::AbstractPauliSum, pauli::Symbol, qind::Integer)
+    return getcoeff(psum, symboltoint(psum.nqubits, pauli, qind))
+end
+
+"""
+    getcoeff(psum::AbstractPauliSum, pstr::Vector{Symbol}, qinds::Vector{Int})
+
+Get the coefficient of a Pauli string in an `AbstractPauliSum` by providing the Pauli string `pstr` as a vector of Symbols acting on qubits `qinds`. 
+This is consistent with how Pauli strings can be added to a `PauliSum` via `add!()`. 
+Defaults to 0 if the Pauli string is not in the `AbstractPauliSum`.
+"""
+function PropagationBase.getcoeff(psum::AbstractPauliSum, pstr, qinds)
+    return getcoeff(psum, symboltoint(psum.nqubits, pstr, qinds))
+end
+
+"""
+    getcoeff(psum::AbstractPauliSum, pstr::Vector{Symbol})
+
+Get the coefficient of a Pauli string in a `AbstractPauliSum` by providing the Pauli string `pstr` as a vector of Symbols acting on all qubits. 
+This is consistent with how Pauli strings can be added to a `PauliSum` via `add!()`. 
+Defaults to 0 if the Pauli string is not in the `AbstractPauliSum`.
+"""
+function PropagationBase.getcoeff(psum::AbstractPauliSum, pstr::Vector{Symbol})
+    return getcoeff(psum, symboltoint(pstr))
+end
+

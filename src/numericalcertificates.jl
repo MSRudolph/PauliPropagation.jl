@@ -163,7 +163,7 @@ function mcapply(gate::MaskedPauliRotation, pstr::PauliString, theta, split_prob
     # if the gate does not commute with the pauli string, remain with probability `split_prob` and split off with probability 1 - `split_prob`.
     if rand() < split_prob
         # branch into the new Pauli string, ifnore ignore the sign
-        new_term, sign = getnewpaulistring(gate, pstr.term)
+        new_term, sign = paulirotationproduct(gate, pstr.term)
         # for PathProperties: increment sin and frequency count
         coeff = _incrementsinandfreq(coeff)
     else

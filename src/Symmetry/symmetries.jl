@@ -46,7 +46,7 @@ end
 
 function symmetrymerge!(prop_cache::VectorPauliPropagationCache, mapfunc::F) where F<:Function
     AK.map!(pstr -> mapfunc(pstr), activeterms(prop_cache), activeterms(prop_cache))
-    mergeterms!(prop_cache)
+    merge!(prop_cache)
     return prop_cache
 end
 

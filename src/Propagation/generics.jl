@@ -174,16 +174,6 @@ See the `4-custom-gates.ipynb` for examples of how to define custom gates.
     return
 end
 
-## Re-route apply() for StaticGates to a version without theta. Works either way if manually defined.
-"""
-    apply(gate::StaticGate, pstr, coeff, theta)
-
-Calling apply on a `StaticGate` will dispatch to a 3-argument apply function without the paramter `theta`.
-If a 4-argument apply function is defined for a concrete type, it will still dispatch to that one.
-See the `4-custom-gates.ipynb` for examples of how to define custom gates.
-"""
-PropagationBase.apply(gate::SG, pstr, coeff, theta; kwargs...) where {SG<:StaticGate} = apply(gate, pstr, coeff; kwargs...)
-
 ### MERGE
 
 # Merge `aux_psum` into `psum` using the `merge` function. `merge` can be overloaded for different coefficient types.
@@ -237,129 +227,56 @@ function PropagationBase.truncate!(prop_cache::AbstractPauliPropagationCache; ma
 
     return prop_cache
 end
-# Check truncation conditions on all Pauli strings in `psum` and remove them if they are truncated.
-# This function supports the default truncations based on `max_weight`, `min_abs_coeff`, `max_freq`, and `max_sins`.
-# A custom truncation function can be passed as `customtruncfunc` with the signature customtruncfunc(pstr::PauliStringType, coefficient)::Bool.
-function checktruncationonall!(
-    psum; max_weight::Real=Inf, min_abs_coeff=1e-10, max_freq::Real=Inf,
-    max_sins::Real=Inf,
-    kwargs...
-)
-    # TODO: This does currently hinder performance, even if we don't truncated
-    # approx 55ms -> 66ms for the test case
-    for (pstr, coeff) in psum
-        checktruncationonone!(
-            psum, pstr, coeff;
-            max_weight=max_weight, min_abs_coeff=min_abs_coeff,
-            max_freq=max_freq, max_sins=max_sins,
-            kwargs...
-        )
-    end
-    return
-end
 
 
-# Check truncation conditions one Pauli string in `psum` and it them if it is truncated.
-# This function supports the default truncations based on `max_weight`, `min_abs_coeff`, `max_freq`, and `max_sins`.
-# A custom truncation function can be passed as `customtruncfunc` with the signature customtruncfunc(pstr::PauliStringType, coefficient)::Bool.
-@inline function checktruncationonone!(
-    psum, pstr, coeff;
-    max_weight::Real=Inf,
-    min_abs_coeff=1e-10,
-    max_freq::Real=Inf,
-    max_sins::Real=Inf,
-    customtruncfunc=nothing,
-    kwargs...
-)
-    is_truncated = false
-    if truncateweight(pstr, max_weight)
-        is_truncated = true
-    elseif truncatemincoeff(coeff, min_abs_coeff)
-        is_truncated = true
-    elseif truncatefrequency(coeff, max_freq)
-        is_truncated = true
-    elseif truncatesins(coeff, max_sins)
-        is_truncated = true
-    elseif !isnothing(customtruncfunc) && customtruncfunc(pstr, coeff)
-        is_truncated = true
-    end
-    if is_truncated
-        delete!(psum, pstr)
-    end
-    return
-end
+# # Check truncation conditions on all Pauli strings in `psum` and remove them if they are truncated.
+# # This function supports the default truncations based on `max_weight`, `min_abs_coeff`, `max_freq`, and `max_sins`.
+# # A custom truncation function can be passed as `customtruncfunc` with the signature customtruncfunc(pstr::PauliStringType, coefficient)::Bool.
+# function checktruncationonall!(
+#     psum; max_weight::Real=Inf, min_abs_coeff=1e-10, max_freq::Real=Inf,
+#     max_sins::Real=Inf,
+#     kwargs...
+# )
+#     # TODO: This does currently hinder performance, even if we don't truncated
+#     # approx 55ms -> 66ms for the test case
+#     for (pstr, coeff) in psum
+#         checktruncationonone!(
+#             psum, pstr, coeff;
+#             max_weight=max_weight, min_abs_coeff=min_abs_coeff,
+#             max_freq=max_freq, max_sins=max_sins,
+#             kwargs...
+#         )
+#     end
+#     return
+# end
 
 
-## Further utilities here
-
-# wrap the coefficients in `PauliFreqTracker` if max_freq or max_sins are used
-function _check_wrapping_into_paulifreqtracker(psum::PauliSum, max_freq, max_sins)
-
-    # if max_freq or max_sins are used, and the coefficients are not PathProperties (could be custom)
-    # then we wrap the coefficients in `PauliFreqTracker`
-    if ((max_freq != Inf) | (max_sins != Inf)) & !(coefftype(psum) <: PathProperties)
-        psum = wrapcoefficients(psum, PauliFreqTracker)
-        return psum
-    end
-
-    # otherwise just return the original psum
-    return psum
-
-end
-
-# if the psum is not of type `PauliSum` then we don't touch it 
-function _check_wrapping_into_paulifreqtracker(psum, max_freq, max_sins)
-    return psum
-end
-
-# given a coefficient type, make sure that the PauliSum is has the same coefficient type
-# this is only to check whether we had wrapped the coefficients in `PauliFreqTracker`
-function _check_unwrap_from_paulifreqtracker(::Type{CT}, psum::PauliSum{TT,CT}) where {TT,CT}
-    # in this function the original coefficient type and the current coefficient type are the same
-    return psum
-end
-
-function _check_unwrap_from_paulifreqtracker(::Type{CT}, psum::PauliSum{TT,PFT}) where {TT,CT,PFT<:PauliFreqTracker}
-    # in this function is for when the original coefficient type was not `PauliFreqTracker` but that is what we have
-    # we need to unwrap the coefficients
-
-    # if the original coefficient type (CT) is not PauliFreqTracker (PFT), then unwrap
-    if CT != PFT
-        psum = unwrapcoefficients(psum)
-    end
-    return psum
-end
-
-# anything else is just directly returned
-# don't know what do do with it, and we didn't automatically convert it before
-function _check_unwrap_from_paulifreqtracker(T::Type, obj)
-    return obj
-end
-
-# check that max_freq and max_sins are only used a PathProperties type tracking them
-function _checkfreqandsinfields(psum, max_freq, max_sins)
-
-    CT = coefftype(psum)
-
-    if !(CT <: PathProperties) & ((max_freq != Inf) | (max_sins != Inf))
-        throw(ArgumentError(
-            "The `max_freq` and `max_sins` truncations can only be used with coefficients wrapped in `PathProperties` types.\n" *
-            "Consider using `wrapcoefficients() with the `PauliFreqTracker` type" *
-            " or use the out-of-place `propagate()` function for automatic conversion.")
-        )
-    end
-
-    if (max_freq != Inf) & (!hasfield(CT, :freq))
-        throw(ArgumentError(
-            "The `max_freq` truncation is used, but the PathProperties type $CT does not have a `freq` field.")
-        )
-    end
-
-    if (max_sins != Inf) & (!hasfield(CT, :nsins))
-        throw(ArgumentError(
-            "The `max_sins` truncation is used, but the PathProperties type $CT does not have a `nsins` field.")
-        )
-    end
-
-    return
-end
+# # Check truncation conditions one Pauli string in `psum` and it them if it is truncated.
+# # This function supports the default truncations based on `max_weight`, `min_abs_coeff`, `max_freq`, and `max_sins`.
+# # A custom truncation function can be passed as `customtruncfunc` with the signature customtruncfunc(pstr::PauliStringType, coefficient)::Bool.
+# @inline function checktruncationonone!(
+#     psum, pstr, coeff;
+#     max_weight::Real=Inf,
+#     min_abs_coeff=1e-10,
+#     max_freq::Real=Inf,
+#     max_sins::Real=Inf,
+#     customtruncfunc=nothing,
+#     kwargs...
+# )
+#     is_truncated = false
+#     if truncateweight(pstr, max_weight)
+#         is_truncated = true
+#     elseif truncatemincoeff(coeff, min_abs_coeff)
+#         is_truncated = true
+#     elseif truncatefrequency(coeff, max_freq)
+#         is_truncated = true
+#     elseif truncatesins(coeff, max_sins)
+#         is_truncated = true
+#     elseif !isnothing(customtruncfunc) && customtruncfunc(pstr, coeff)
+#         is_truncated = true
+#     end
+#     if is_truncated
+#         delete!(psum, pstr)
+#     end
+#     return
+# end
