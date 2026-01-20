@@ -54,7 +54,7 @@ function applymergetruncate!(gate, prop_cache::AbstractPropagationCache, args...
     prop_cache = applytoall!(gate, prop_cache, args...; kwargs...)
 
     # usually this merges from some auxillary term sum into the main term sum
-    # different from deduplicate(prop_cache) which only removes duplicates within the main term sum
+    # for vector-based caches, it deduplicates within the main term sum
     prop_cache = merge!(prop_cache; kwargs...)
 
     prop_cache = truncate!(prop_cache; kwargs...)

@@ -5,38 +5,45 @@
 ##
 ###
 """
-    propagate(circ, pstr::PauliString, thetas=nothing; max_weight=Inf, min_abs_coeff=1e-10, max_freq=Inf, max_sins=Inf, customtruncfunc=nothing, kwargs...)
+    propagate(circ, pstr::PauliString, thetas=nothing; min_abs_coeff=eps(), max_weight=Inf, max_freq=Inf, max_sins=Inf, customtruncfunc=nothing, kwargs...)
 
 Propagate a `PauliString` through the circuit `circ` in the Heisenberg picture. 
 This means that the circuit is applied to the Pauli string in reverse order, and the action of each gate is its conjugate action.
 Parameters for the parametrized gates in `circ` are given by `thetas`, and need to be passed as if the circuit was applied as written in the Schrödinger picture.
 If thetas are not passed, the circuit must contain only non-parametrized `StaticGates`.
-Default truncations are `max_weight`, `min_abs_coeff`, `max_freq`, and `max_sins`.
+Default truncations are `min_abs_coeff`, `max_weight`, `max_freq`, and `max_sins`.
 `max_freq`, and `max_sins` will lead to automatic conversion if the coefficients are not already wrapped in suitable `PathProperties` objects.
 A custom truncation function can be passed as `customtruncfunc` with the signature customtruncfunc(pstr::PauliStringType, coefficient)::Bool.
 Further `kwargs` are passed to the lower-level functions `applymergetruncate!`, `applytoall!`, `applyandadd!`, and `apply`.
 """
-function PropagationBase.propagate(circ, pstr::PauliString, thetas=nothing; max_weight=Inf, min_abs_coeff=eps(), max_freq=Inf, max_sins=Inf, customtruncfunc=nothing, kwargs...)
+function PropagationBase.propagate(circ, pstr::PauliString, thetas=nothing; min_abs_coeff=eps(), max_weight=Inf, max_freq=Inf, max_sins=Inf, customtruncfunc=nothing, kwargs...)
     psum = PauliSum(pstr)
-    return propagate(circ, psum, thetas; max_weight, min_abs_coeff, max_freq, max_sins, customtruncfunc, kwargs...)
+    return propagate(circ, psum, thetas; min_abs_coeff, max_weight, max_freq, max_sins, customtruncfunc, kwargs...)
 end
 
+"""
+    propagate!(circ, pstr::PauliString, thetas=nothing; min_abs_coeff=eps(), max_weight=Inf, max_freq=Inf, max_sins=Inf, customtruncfunc=nothing, kwargs...)
 
+In-place version of `propagate()` for a `PauliString`.
+This is only a convenience function, because the `PauliString` is converted into a `PauliSum` internally.
+If `max_freq`, and `max_sins` are used without the coefficients already being wrapped in suitable `PathProperties` objects, an error is thrown.
+"""
 function PropagationBase.propagate!(circ, pstr::PauliString, thetas=nothing; max_weight=Inf, min_abs_coeff=eps(), max_freq=Inf, max_sins=Inf, customtruncfunc=nothing, kwargs...)
     psum = PauliSum(pstr)
     # check that max_freq and max_sins are only used a PathProperties type tracking them
     _checkfreqandsinfields(psum, max_freq, max_sins)
-    return propagate(circ, psum, thetas; max_weight, min_abs_coeff, max_freq, max_sins, customtruncfunc, kwargs...)
+    return propagate(circ, psum, thetas; min_abs_coeff, max_weight, max_freq, max_sins, customtruncfunc, kwargs...)
 end
 
 """
-    propagate(circ, psum::PauliSum, thetas=nothing; max_weight=Inf, min_abs_coeff=1e-10, max_freq=Inf, max_sins=Inf, customtruncfunc=nothing, kwargs...)
+    propagate(circ, psum::AbstractPauliSum, thetas=nothing; min_abs_coeff=eps(), max_weight=Inf, max_freq=Inf, max_sins=Inf, customtruncfunc=nothing, kwargs...)
 
-Propagate a `PauliSum` through the circuit `circ` in the Heisenberg picture. 
+Propagate a Pauli sum `psum` through the circuit `circ` in the Heisenberg picture. 
 This means that the circuit is applied to the Pauli sum in reverse order, and the action of each gate is its conjugate action.
+The Pauli sum `psum` is deepcopied and passed into the in-place propagation function `PropagationBase.propagate!()`.
 Parameters for the parametrized gates in `circ` are given by `thetas`, and need to be passed as if the circuit was applied as written in the Schrödinger picture.
 If thetas are not passed, the circuit must contain only non-parametrized `StaticGates`.
-Default truncations are `max_weight`, `min_abs_coeff`, `max_freq`, and `max_sins`.
+Default truncations are `min_abs_coeff`, `max_weight`, `max_freq`, and `max_sins`.
 `max_freq`, and `max_sins` will lead to automatic conversion if the coefficients are not already wrapped in suitable `PathProperties` objects.
 A custom truncation function can be passed as `customtruncfunc` with the signature customtruncfunc(pstr::PauliStringType, coefficient)::Bool.
 Further `kwargs` are passed to the lower-level functions `applymergetruncate!`, `applytoall!`, `applyandadd!`, and `apply`.
@@ -62,8 +69,20 @@ end
 
 ### TRUNCATE
 
+"""
+    truncate!(prop_cache::AbstractPauliPropagationCache; min_abs_coeff=eps(), max_weight=Inf, max_freq=Inf, max_sins=Inf, customtruncfunc=nothing, kwargs...)
 
-function PropagationBase.truncate!(prop_cache::AbstractPauliPropagationCache; max_weight::Real=Inf, min_abs_coeff=1e-10, max_freq::Real=Inf, max_sins::Real=Inf, customtruncfunc=nothing, kwargs...)
+Truncation function for `AbstractPauliPropagationCache`s that combines multiple truncation criteria.
+The default truncation criteria are:
+- `min_abs_coeff`: Truncates Pauli strings with absolute coefficient below this value.
+- `max_weight`: Truncates Pauli strings with weight (number of non-identity Paulis) above this value.
+- `max_freq`: Truncates Pauli strings with frequency (number of cosine factors in coefficient) above this value.
+- `max_sins`: Truncates Pauli strings with number of sine factors in coefficient above this value.
+A custom truncation function can be passed as `customtruncfunc` with the signature customtruncfunc(pstr, coeff)::Bool.
+
+This function combines all truncation criteria into a single truncation function `truncfunc()` calls PropagationBase.truncate!(truncfunc, prop_cache).
+"""
+function PropagationBase.truncate!(prop_cache::AbstractPauliPropagationCache; min_abs_coeff::Real=eps(), max_weight::Real=Inf, max_freq::Real=Inf, max_sins::Real=Inf, customtruncfunc=nothing, kwargs...)
 
     function truncfunc(pstr, coeff)
         is_truncated = false
