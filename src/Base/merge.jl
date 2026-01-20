@@ -1,18 +1,22 @@
 ### MERGE
 
+# Default merge function for coefficients: simple addition
+# Can be overloaded for different coefficient types.
+mergefunc(coeff1, coeff2) = coeff1 + coeff2
+
 # Merge `aux_psum` into `psum` using the `merge` function. `merge` can be overloaded for different coefficient types.
 # Then empty `aux_psum` for the next iteration.
-function Base.merge!(prop_cache::AbstractPropagationCache)
+function Base.merge!(prop_cache::AbstractPropagationCache; kwargs...)
 
 
-    prop_cache = _merge!(StorageType(prop_cache), prop_cache)
+    prop_cache = _merge!(StorageType(prop_cache), prop_cache; kwargs...)
 
     return prop_cache
 end
 
 # Assumptions:
 # TODO
-function _merge!(::DictStorage, prop_cache::AbstractPropagationCache)
+function _merge!(::DictStorage, prop_cache::AbstractPropagationCache; kwargs...)
     term_sum1 = mainsum(prop_cache)
     term_sum2 = auxsum(prop_cache)
 
@@ -21,7 +25,8 @@ function _merge!(::DictStorage, prop_cache::AbstractPropagationCache)
         term_sum2, term_sum1 = term_sum1, term_sum2
     end
 
-    mergewith!(+, term_sum1, term_sum2)
+    # mergefunc can be overloaded for different coefficient types
+    mergewith!(mergefunc, storage(term_sum1), storage(term_sum2))
     empty!(term_sum2)
 
     setmainsum!(prop_cache, term_sum1)
@@ -32,7 +37,7 @@ end
 
 # Assumptions:
 # TODO
-function _merge!(::ArrayStorage, prop_cache::AbstractPropagationCache)
+function _merge!(::ArrayStorage, prop_cache::AbstractPropagationCache; kwargs...)
 
     if isempty(prop_cache)
         return prop_cache
@@ -99,7 +104,8 @@ function _mergegroups!(prop_cache::AbstractPropagationCache)
             CT = typeof(coeffs[ii])
             merged_coeff = zero(CT)
             for jj in ii:end_idx
-                merged_coeff += coeffs[jj]
+                # mergefunc can be overloaded for different coefficient types
+                merged_coeff = mergefunc(merged_coeff, coeffs[jj])
             end
 
             aux_terms[indices[ii]] = term_view[ii]
@@ -114,3 +120,5 @@ function _mergegroups!(prop_cache::AbstractPropagationCache)
 
     return prop_cache
 end
+
+

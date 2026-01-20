@@ -34,7 +34,7 @@ PropagationBase.numcoefftype(::Type{PauliFreqTracker{T}}) where {T<:Number} = T
 ### Specializations for PauliRotations that incremet the nsins, ncos, and freq
 
 # Overload of `applytoall!` for `PauliRotation` gates acting onto Pauli sums with `PathProperties` coefficients. 
-function PropagationBase.applytoall!(gate::PauliRotation, prop_cache::PauliPropagationCache{PauliSum{TT,PProp}}; kwargs...) where {TT,PProp<:PathProperties}
+function PropagationBase.applytoall!(gate::PauliRotation, prop_cache::PauliPropagationCache{PauliSum{TT,PProp}}, theta; kwargs...) where {TT,PProp<:PathProperties}
 
     psum = mainsum(prop_cache)
     aux_psum = auxsum(prop_cache)
@@ -62,7 +62,7 @@ function PropagationBase.applytoall!(gate::PauliRotation, prop_cache::PauliPropa
         set!(aux_psum, new_pstr, coeff2)
     end
 
-    return
+    return prop_cache
 end
 
 ## Specializations for PauliRotations that increment the nsins, ncos, and freq

@@ -77,8 +77,8 @@ end
 function permuteviaindices!(dst_terms, dst_coeffs, src_terms, src_coeffs, indices)
     @assert length(indices) <= length(src_terms) && length(indices) <= length(src_coeffs)
     @assert length(indices) <= length(dst_terms) && length(indices) <= length(dst_coeffs)
-    @assert maximum(indices; init=zero(eltype(indices))) <= length(src_terms)
-    @assert maximum(indices; init=zero(eltype(indices))) <= length(src_coeffs)
+    @assert indices[length(src_terms)] <= length(src_terms)
+    @assert indices[length(src_coeffs)] <= length(src_coeffs)
 
     AK.foreachindex(indices) do ii
         sorted_idx = indices[ii]
@@ -112,8 +112,8 @@ end
 function filterviaflags!(flags, dst_indices, dst_terms, dst_coeffs, src_terms, src_coeffs)
     @assert length(flags) <= length(src_terms) && length(flags) <= length(src_coeffs)
     @assert length(flags) <= length(dst_terms) && length(flags) <= length(dst_coeffs)
-    @assert maximum(dst_indices) <= length(src_terms) && maximum(dst_indices) <= length(src_coeffs)
-    @assert maximum(dst_indices) <= length(dst_terms) && maximum(dst_indices) <= length(dst_coeffs)
+    @assert dst_indices[length(src_terms)] <= length(src_terms) && dst_indices[length(src_coeffs)] <= length(src_coeffs)
+    @assert dst_indices[length(dst_terms)] <= length(dst_terms) && dst_indices[length(dst_coeffs)] <= length(dst_coeffs)
 
     flagstoindices!(dst_indices, flags)
 

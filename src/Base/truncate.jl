@@ -1,20 +1,20 @@
-function truncate!(term_sum::AbstractTermSum; min_abs_coeff::Real, customtruncationfunc::F=_alwaysfalse) where F<:Function
-    prop_cache = truncate!(truncfunc, PropagationCache(term_sum))
+function truncate!(term_sum::AbstractTermSum; min_abs_coeff::Real=eps(), customtruncationfunc::F=_alwaysfalse, kwargs...) where F<:Function
+    prop_cache = truncate!(truncfunc, PropagationCache(term_sum); kwargs...)
     return mainsum(prop_cache)
 end
 
-function truncate!(prop_cache::AbstractPropagationCache; min_abs_coeff::Real=0.0, customtruncationfunc::F=_alwaysfalse) where F<:Function
+function truncate!(prop_cache::AbstractPropagationCache; min_abs_coeff::Real=eps(), customtruncationfunc::F=_alwaysfalse, kwargs...) where F<:Function
 
     # bundle truncation functions 
     truncfunc = (pstr, coeff) -> truncatemincoeff(coeff, min_abs_coeff) || customtruncationfunc(pstr, coeff)
 
-    prop_cache = truncate!(truncfunc, prop_cache)
+    prop_cache = truncate!(truncfunc, prop_cache; kwargs...)
     return prop_cache
 end
 
 # this can can be a term sum or a propagation cache
-function truncate!(truncfunc::F, prop_object) where F<:Function
-    return truncate!(StorageType(prop_object), truncfunc, prop_object)
+function truncate!(truncfunc::F, prop_object; kwargs...) where F<:Function
+    return truncate!(StorageType(prop_object), truncfunc, prop_object; kwargs...)
 end
 
 
@@ -25,7 +25,7 @@ function truncate!(::DictStorage, truncfunc::F, prop_cache::AbstractPropagationC
     return prop_cache
 end
 
-function truncate!(::DictStorage, truncfunc::F, term_sum::AbstractTermSum) where F<:Function
+function truncate!(::DictStorage, truncfunc::F, term_sum::AbstractTermSum; kwargs...) where F<:Function
     for (pstr, coeff) in term_sum
         if truncfunc(pstr, coeff)
             delete!(term_sum, pstr)
@@ -34,7 +34,7 @@ function truncate!(::DictStorage, truncfunc::F, term_sum::AbstractTermSum) where
     return term_sum
 end
 
-function truncate!(::ArrayStorage, truncfunc::F, prop_cache::AbstractPropagationCache) where F<:Function
+function truncate!(::ArrayStorage, truncfunc::F, prop_cache::AbstractPropagationCache; kwargs...) where F<:Function
 
     if isempty(prop_cache)
         return prop_cache
@@ -51,12 +51,11 @@ function truncate!(::ArrayStorage, truncfunc::F, prop_cache::AbstractPropagation
     return prop_cache
 end
 
-function truncate!(::ArrayStorage, truncfunc::F, term_sum::AbstractTermSum) where F<:Function
+function truncate!(::ArrayStorage, truncfunc::F, term_sum::AbstractTermSum; kwargs...) where F<:Function
     # convert to propagation cache for easier handling
     prop_cache = PropagationCache(term_sum)
 
-    prop_cache = truncate!(ArrayStorage(), truncfunc, prop_cache)
-
+    prop_cache = truncate!(ArrayStorage(), truncfunc, prop_cache; kwargs...)
     return mainsum(prop_cache)
 end
 

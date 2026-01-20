@@ -37,10 +37,10 @@ Everything else is the same as in `propagate!()` for the non-Surrogate code.
 function PropagationBase.propagate!(circ, psum::PauliSum{TT,NodePathProperties}; max_weight=Inf, max_freq=Inf, max_sins=Inf, customtruncfunc=nothing, kwargs...) where {TT<:PauliStringType}
     _checksurrogationconditions(circ)
 
-    # dummy parameters 
-    thetas = Array{Float64}(undef, countparameters(circ))
+    # dummy parameters transport the parameter indices 
+    dummy_thetas = collect(Int, 1:countparameters(circ))
 
-    propagate!(circ, psum, thetas; max_weight=max_weight, max_freq=max_freq, max_sins=max_sins, customtruncfunc=customtruncfunc, kwargs...)
+    propagate!(circ, psum, dummy_thetas; max_weight=max_weight, max_freq=max_freq, max_sins=max_sins, customtruncfunc=customtruncfunc, kwargs...)
 end
 
 function _checksurrogationconditions(circ)
@@ -53,32 +53,36 @@ end
 
 ## For Pauli Rotations
 # overloads for _applycos and _applysins defined in PathProperties/paulifreqtracker.jl
-function _applycos(path::NodePathProperties, theta, sign=1; param_idx=0, kwargs...)
-    return NodePathProperties(_applycos(path.node, theta, sign; param_idx=param_idx), path.nsins, path.ncos + 1, path.freq + 1)
+function _applycos(path::NodePathProperties, theta, sign=1; kwargs...)
+    # the parameter encodes the parameter index 
+    param_idx = theta
+    return NodePathProperties(_buildcosnode(path.node, param_idx, sign), path.nsins, path.ncos + 1, path.freq + 1)
 end
 
-function _applycos(node::CircuitNode, theta, sign=1; param_idx=0, kwargs...)
+function _buildcosnode(node::CircuitNode, param_idx, sign=1; kwargs...)
     return PauliRotationNode(parents=[node], trig_inds=[1], signs=[sign], param_idx=param_idx)
 end
 
-function _applysin(path::NodePathProperties, theta, sign=1; param_idx=0, kwargs...)
-    return NodePathProperties(_applysin(path.node, theta, sign; param_idx=param_idx), path.nsins + 1, path.ncos, path.freq + 1)
+function _applysin(path::NodePathProperties, theta, sign=1; kwargs...)
+    # the parameter encodes the parameter index 
+    param_idx = theta
+    return NodePathProperties(_buildsinnode(path.node, param_idx, sign), path.nsins + 1, path.ncos, path.freq + 1)
 end
 
-function _applysin(node::CircuitNode, theta, sign=1; param_idx=0, kwargs...)
+function _buildsinnode(node::CircuitNode, param_idx, sign=1; kwargs...)
     return PauliRotationNode(parents=[node], trig_inds=[-1], signs=[sign], param_idx=param_idx)
 end
 
-function merge(pth1::NodePathProperties, pth2::NodePathProperties)
+function PropagationBase.mergefunc(pth1::NodePathProperties, pth2::NodePathProperties)
     return NodePathProperties(
-        merge(pth1.node, pth2.node),
+        _mergenodes!(pth1.node, pth2.node),
         min(pth1.nsins, pth2.nsins),
         min(pth1.ncos, pth2.ncos),
         min(pth1.freq, pth2.freq)
     )
 end
 
-function merge(node1::CircuitNode, node2::CircuitNode)
+function _mergenodes!(node1::CircuitNode, node2::CircuitNode)
     append!(node1.parents, node2.parents)
     append!(node1.trig_inds, node2.trig_inds)
     append!(node1.signs, node2.signs)

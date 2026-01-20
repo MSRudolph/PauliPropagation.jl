@@ -223,7 +223,7 @@ end
 Apply a `TransferMapGate` to an integer Pauli string and its coefficient.
 The outcomes are determined by the `transfer_map` of the gate.
 """
-function PropagationBase.apply(gate::TransferMapGate, pstr, coeff)
+function PropagationBase.apply(gate::TransferMapGate, pstr, coeff; kwargs...)
     # the Paulis packed into the integer are used to index into the transfer map
     pauli_int = getpauli(pstr, gate.qinds)
     pstrs_and_factors = gate.transfer_map[pauli_int+1]

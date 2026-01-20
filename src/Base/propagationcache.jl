@@ -73,3 +73,21 @@ lastactiveindex(prop_cache::AbstractPropagationCache) = activeindices(prop_cache
 function Base.resize!(prop_cache::AbstractPropagationCache, new_size::Int)
     _thrownotimplemented(prop_cache, :resize!)
 end
+
+## Back-conversions 
+function (::Type{TS})(prop_cache::AbstractPropagationCache) where TS<:AbstractTermSum
+    return convert(TS, _cachetosum!(StorageType(prop_cache), prop_cache))
+end
+
+_cachetosum!(::DictStorage, prop_cache::AbstractPropagationCache) = mainsum(prop_cache)
+
+function _cachetosum!(::ArrayStorage, prop_cache::AbstractPropagationCache)
+    # convert back to TermSum
+    term_sum = mainsum(prop_cache)
+    term_sum = resize!(term_sum, activesize(prop_cache))
+    return term_sum
+end
+
+function _cachetosum!(::Type{ST}, ::PC) where {ST<:StorageType,PC<:AbstractPropagationCache}
+    throw(ErrorException("cachetosum!(::$(ST), ::$(PC)) not implemented."))
+end

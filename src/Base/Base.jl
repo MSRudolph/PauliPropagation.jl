@@ -62,7 +62,7 @@ export propagate,
     apply
 
 include("./merge.jl")
-export merge!
+export merge!, mergefunc
 
 include("./truncate.jl")
 export truncate!

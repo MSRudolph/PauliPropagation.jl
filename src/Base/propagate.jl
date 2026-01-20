@@ -5,9 +5,15 @@ function propagate(circuit, term_sum::AbstractTermSum, parameters=nothing; kwarg
 end
 
 
-function propagate!(circuit, term_sum::AbstractTermSum, parameters=nothing; kwargs...)
+function propagate!(circuit, term_sum::TS, parameters=nothing; kwargs...) where TS<:AbstractTermSum
     prop_cache = propagate!(circuit, PropagationCache(term_sum), parameters; kwargs...)
-    return mainsum(prop_cache)
+    # we expect that there exists a constructor TS(prop_cache) for the back conversion
+    try
+        return TS(prop_cache)
+    catch e
+        throw(ErrorException("Could not convert the propagation cache of type $(typeof(prop_cache)) back to the original TermSum type $(TS).
+         Make sure that a constructor $(TS)(::$(typeof(prop_cache))) is defined. Original error:\n $e"))
+    end
 end
 
 function propagate!(circuit, prop_cache::AbstractPropagationCache, parameters=nothing; kwargs...)
@@ -45,11 +51,11 @@ end
 function applymergetruncate!(gate, prop_cache::AbstractPropagationCache, args...; kwargs...)
 
     # args is usually expected to be empty or contain a parameter for the gate
-    prop_cache = applytoall!(gate, prop_cache, args...)
+    prop_cache = applytoall!(gate, prop_cache, args...; kwargs...)
 
     # usually this merges from some auxillary term sum into the main term sum
     # different from deduplicate(prop_cache) which only removes duplicates within the main term sum
-    prop_cache = merge!(prop_cache)
+    prop_cache = merge!(prop_cache; kwargs...)
 
     prop_cache = truncate!(prop_cache; kwargs...)
 
