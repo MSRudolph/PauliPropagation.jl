@@ -125,3 +125,26 @@ function PropagationBase.truncate!(prop_cache::AbstractPauliPropagationCache; mi
 
     return prop_cache
 end
+
+function PropagationBase.truncate!(psum::AbstractPauliSum; min_abs_coeff::Real=eps(), max_weight::Real=Inf, max_freq::Real=Inf, max_sins::Real=Inf, customtruncfunc=nothing, kwargs...)
+
+    function truncfunc(pstr, coeff)
+        is_truncated = false
+        if truncateweight(pstr, max_weight)
+            is_truncated = true
+        elseif truncatemincoeff(coeff, min_abs_coeff)
+            is_truncated = true
+        elseif truncatefrequency(coeff, max_freq)
+            is_truncated = true
+        elseif truncatesins(coeff, max_sins)
+            is_truncated = true
+        elseif !isnothing(customtruncfunc) && customtruncfunc(pstr, coeff)
+            is_truncated = true
+        end
+
+        return is_truncated
+    end
+
+    term_sum = truncate!(truncfunc, psum; kwargs...)
+    return term_sum
+end

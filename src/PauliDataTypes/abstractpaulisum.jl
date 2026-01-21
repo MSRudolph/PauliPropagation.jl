@@ -54,3 +54,17 @@ function PropagationBase.getcoeff(psum::AbstractPauliSum, pstr::Vector{Symbol})
     return getcoeff(psum, symboltoint(pstr))
 end
 
+
+"""
+    filter!(filterfunc::Function, psum::AbstractPauliSum)
+
+Filter a `AbstractPauliSum` by copying and removing all Pauli strings for which `filterfunc(pstr, coeff)` returns `false`.
+"""
+Base.filter(filterfunc::F, psum::AbstractPauliSum) where {F<:Function} = truncate!((pstr, coeff) -> !filterfunc(pstr, coeff), deepcopy(psum))
+
+"""
+    filter!(filterfunc::Function, psum::AbstractPauliSum)
+
+Filter a `AbstractPauliSum` in-place by removing all Pauli strings for which `filterfunc(pstr, coeff)` returns `false`.
+"""
+filter!(filterfunc::F, psum::AbstractPauliSum) where {F<:Function} = truncate!((pstr, coeff) -> !filterfunc(pstr, coeff), psum)

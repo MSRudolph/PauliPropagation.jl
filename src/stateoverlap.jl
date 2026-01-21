@@ -185,30 +185,6 @@ function scalarproduct(pstr1::PauliString, pstr2::PauliString)
 end
 
 
-"""
-    filter(filterfunc::Function, psum::PauliSum)
-
-Return a filtered `PauliSum` by removing all Pauli strings for which `filterfunc(pstr, coeff)` returns `false`.
-"""
-function Base.filter(filterfunc::F, psum::PauliSum) where {F<:Function}
-    # iterating over dictionaries returns pairs like key=>value
-    # so we need to unpack them to use the in-built Julia filter function
-    filtered_terms = Base.filter(pair -> filterfunc(pair...), psum.terms)
-    return PauliSum(psum.nqubits, filtered_terms)
-end
-
-"""
-    filter!(filterfunc::Function, psum::PauliSum)
-
-Filter a `PauliSum` in-place by removing all Pauli strings for which `filterfunc(pstr, coeff)` returns `false`.
-"""
-function Base.filter!(filterfunc::F, psum::PauliSum) where {F<:Function}
-    # iterating over dictionaries returns pairs like key=>value
-    # so we need to unpack them to use the in-built Julia filter function
-    Base.filter!(pair -> filterfunc(pair...), psum.terms)
-    return psum
-end
-
 
 # returns a new filtered dictionary, but doesn't overlap with anything
 """
@@ -216,28 +192,28 @@ end
 
 Return a filtered Pauli sum with only Pauli strings that are not orthogonal to the zero state |0><0|.
 """
-zerofilter(psum) = filter((pstr, coeff) -> !containsXorY(pstr), psum)
+zerofilter(psum) = truncate!((pstr, coeff) -> containsXorY(pstr), deepcopy(psum))
 
 """
     zerofilter!(psum)
 
 Filter a Pauli sum in-place with only Pauli strings that are not orthogonal to the zero state |0><0|.
 """
-zerofilter!(psum) = filter!((pstr, coeff) -> !containsXorY(pstr), psum)
+zerofilter!(psum) = truncate!((pstr, coeff) -> containsXorY(pstr), psum)
 
 """
     plusfilter(psum)
 
 Return a filtered Pauli sum with only Pauli strings that are not orthogonal to the plus state |+><+|.
 """
-plusfilter(psum) = filter((pstr, coeff) -> !containsYorZ(pstr), psum)
+plusfilter(psum) = truncate!((pstr, coeff) -> containsYorZ(pstr), deepcopy(psum))
 
 """
     zerofilter!(psum)
 
 Filter a Pauli sum in-place with only Pauli strings that are not orthogonal to the plus state |+><+|.
 """
-plusfilter!(psum) = filter!((pstr, coeff) -> !containsYorZ(pstr), psum)
+plusfilter!(psum) = truncate!((pstr, coeff) -> containsYorZ(pstr), psum)
 
 
 

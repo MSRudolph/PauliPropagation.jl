@@ -1,12 +1,14 @@
-function truncate!(term_sum::AbstractTermSum; min_abs_coeff::Real=eps(), customtruncationfunc::F=_alwaysfalse, kwargs...) where F<:Function
-    prop_cache = truncate!(truncfunc, PropagationCache(term_sum); kwargs...)
-    return mainsum(prop_cache)
+function truncate!(term_sum::AbstractTermSum; min_abs_coeff::Real=eps(), customtruncfunc::F=_alwaysfalse, kwargs...) where F<:Function
+    # bundle truncation functions 
+    truncfunc = (pstr, coeff) -> truncatemincoeff(coeff, min_abs_coeff) || customtruncfunc(pstr, coeff)
+
+    term_sum = truncate!(truncfunc, term_sum; min_abs_coeff, customtruncfunc, kwargs...)
+    return term_sum
 end
 
-function truncate!(prop_cache::AbstractPropagationCache; min_abs_coeff::Real=eps(), customtruncationfunc::F=_alwaysfalse, kwargs...) where F<:Function
-
+function truncate!(prop_cache::AbstractPropagationCache; min_abs_coeff::Real=eps(), customtruncfunc::F=_alwaysfalse, kwargs...) where F<:Function
     # bundle truncation functions 
-    truncfunc = (pstr, coeff) -> truncatemincoeff(coeff, min_abs_coeff) || customtruncationfunc(pstr, coeff)
+    truncfunc = (pstr, coeff) -> truncatemincoeff(coeff, min_abs_coeff) || customtruncfunc(pstr, coeff)
 
     prop_cache = truncate!(truncfunc, prop_cache; kwargs...)
     return prop_cache
@@ -40,8 +42,6 @@ function truncate!(::ArrayStorage, truncfunc::F, prop_cache::AbstractPropagation
         return prop_cache
     end
 
-    # TODO: view and active size interface for vector sums
-
     # flag the indices that we keep
     keepfunc(pstr, coeff) = !truncfunc(pstr, coeff)
     flag!(keepfunc, prop_cache)
@@ -51,12 +51,12 @@ function truncate!(::ArrayStorage, truncfunc::F, prop_cache::AbstractPropagation
     return prop_cache
 end
 
-function truncate!(::ArrayStorage, truncfunc::F, term_sum::AbstractTermSum; kwargs...) where F<:Function
+function truncate!(::ArrayStorage, truncfunc::F, term_sum::TS; kwargs...) where {F<:Function,TS<:AbstractTermSum}
     # convert to propagation cache for easier handling
     prop_cache = PropagationCache(term_sum)
 
     prop_cache = truncate!(ArrayStorage(), truncfunc, prop_cache; kwargs...)
-    return mainsum(prop_cache)
+    return TS(prop_cache)
 end
 
 
