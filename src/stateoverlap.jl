@@ -15,7 +15,7 @@ function overlapbyorthogonality(orthogonalfunc::F, psum) where {F<:Function}
     end
 
     val = zero(numcoefftype(psum))
-    for (pstr, coeff) in psum
+    for (pstr, coeff) in zip(paulis(psum), coefficients(psum))
         if overlapbyorthogonality(orthogonalfunc, pstr)
             val += tonumber(coeff)
         end
@@ -71,7 +71,7 @@ function overlapwithcomputational(psum, onebitinds)
     end
 
     val = zero(numcoefftype(psum))
-    for (pstr, coeff) in psum
+    for (pstr, coeff) in zip(paulis(psum), coefficients(psum))
         val += tonumber(coeff) * _calcsignwithones(pstr, onebitinds)
     end
     return val
@@ -100,14 +100,12 @@ end
 Calculates the overlap of an `AbstractPauliSum` with the maximally mixed state I/2^n,
 i.e., Tr[psum * I/2^n].
 """
-function overlapwithmaxmixed(psum::AbstractPauliSum)
+function overlapwithmaxmixed(psum)
     if length(psum) == 0
         return zero(numcoefftype(psum))
     end
 
-    NumType = numcoefftype(psum)
-
-    return getcoeff(psum, 0)
+    return getcoeff(psum, zero(paulitype(psum)))
 end
 
 """
