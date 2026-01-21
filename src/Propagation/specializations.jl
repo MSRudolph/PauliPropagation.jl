@@ -79,19 +79,6 @@ end
 
 ### Clifford gates
 
-function PropagationBase.applymergetruncate!(gate::CliffordGate, prop_cache::AbstractPauliPropagationCache; kwargs...)
-    # overload for Clifford gates 
-    # copy-paste from PropagationBase but we don't require merging
-    # irrelevant for the Dict-based PauliSum, because there the main and aux sums are already swapped
-    # but skipping merging is great for the VectorPauliSum which is limited by sorting
-
-    applytoall!(gate, prop_cache; kwargs...)
-
-    truncate!(prop_cache; kwargs...)
-
-    return
-end
-
 function PropagationBase.applytoall!(gate::CliffordGate, prop_cache::AbstractPauliPropagationCache, ; kwargs...)
     # greedy overload for Clifford gates
     # this is the most concrete function for them, but with an additional arg it will go into the generic applytoall!

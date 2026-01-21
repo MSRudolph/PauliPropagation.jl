@@ -66,11 +66,31 @@ function PropagationBase.propagate(circ, psum::AbstractPauliSum, thetas=nothing;
     return psum
 end
 
+function PropagationBase.applymergetruncate!(gate, prop_cache::AbstractPauliPropagationCache, args...; kwargs...)
+    # overload inside PauliPropagation.jl to skip merging for some gates
+    # irrelevant for the Dict-based PauliSum, because there the main and aux sums are already swapped
+    # but skipping merging is great for the VectorPauliSum which is limited by sorting
+
+    applytoall!(gate, prop_cache, args...; kwargs...)
+
+    if _requiresmerging(gate)
+        merge!(prop_cache; kwargs...)
+    end
+
+    truncate!(prop_cache; kwargs...)
+
+    return
+end
+
+_requiresmerging(gate) = true
+_requiresmerging(::CliffordGate) = false
+_requiresmerging(::PauliNoise) = false
 
 ### TRUNCATE
 
 """
-    truncate!(prop_cache::AbstractPauliPropagationCache; min_abs_coeff=eps(), max_weight=Inf, max_freq=Inf, max_sins=Inf, customtruncfunc=nothing, kwargs...)
+truncate!(psum::AbstractPauliSum; min_abs_coeff=eps(), max_weight=Inf, max_freq=Inf, max_sins=Inf, customtruncfunc=nothing, kwargs...)    
+truncate!(prop_cache::AbstractPauliPropagationCache; min_abs_coeff=eps(), max_weight=Inf, max_freq=Inf, max_sins=Inf, customtruncfunc=nothing, kwargs...)
 
 Truncation function for `AbstractPauliPropagationCache`s that combines multiple truncation criteria.
 The default truncation criteria are:
@@ -105,4 +125,3 @@ function PropagationBase.truncate!(prop_cache::AbstractPauliPropagationCache; mi
 
     return prop_cache
 end
-

@@ -90,7 +90,7 @@ function VectorPauliSum(prop_cache::VectorPauliPropagationCache)
 end
 
 function PauliSum(prop_cache::VectorPauliPropagationCache)
-    mergeterms!(prop_cache)
+    merge!(prop_cache)
     return PauliSum(nqubits(prop_cache), Dict(zip(activeterms(prop_cache), activecoeffs(prop_cache))))
 end
 
