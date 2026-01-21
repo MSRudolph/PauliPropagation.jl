@@ -1,31 +1,4 @@
 
-## The apply functions
-# TODO: overload applymergetruncate!() and don't merge
-function PropagationBase.applytoall!(gate::CliffordGate, prop_cache::VectorPauliPropagationCache; kwargs...)
-    # TODO: This needs to be reworked for GPU support
-
-    lookup_map = clifford_map[gate.symbol]
-
-    # everything is done in place
-    terms_view = activeterms(prop_cache)
-    coeffs_view = activecoeffs(prop_cache)
-    @assert length(terms_view) == length(coeffs_view)
-    AK.foreachindex(terms_view) do ii
-        term = terms_view[ii]
-        coeff = coeffs_view[ii]
-
-        # apply here returns a length-1 tuple
-        term, coeff = only(apply(gate, term, coeff, lookup_map))
-
-        # inbounds is safe here because we assert equal lengths
-        terms_view[ii] = term
-        coeffs_view[ii] = coeff
-    end
-
-    return prop_cache
-end
-
-
 function PropagationBase.applytoall!(gate::PauliRotation, prop_cache::VectorPauliPropagationCache, theta; kwargs...)
 
     # TODO: design this function in a way that it can be the default for branching gates. 
@@ -108,3 +81,55 @@ function _applypaulirotation!(prop_cache::VectorPauliPropagationCache, gate_mask
 
     return
 end
+
+##########################################
+
+function PropagationBase.applytoall!(gate::CliffordGate, prop_cache::VectorPauliPropagationCache; kwargs...)
+    # TODO: This needs to be reworked for GPU support
+
+    lookup_map = clifford_map[gate.symbol]
+
+    # everything is done in place
+    terms_view = activeterms(prop_cache)
+    coeffs_view = activecoeffs(prop_cache)
+    @assert length(terms_view) == length(coeffs_view)
+    AK.foreachindex(terms_view) do ii
+        term = terms_view[ii]
+        coeff = coeffs_view[ii]
+
+        # apply here returns a length-1 tuple
+        term, coeff = only(apply(gate, term, coeff, lookup_map))
+
+        # inbounds is safe here because we assert equal lengths
+        terms_view[ii] = term
+        coeffs_view[ii] = coeff
+    end
+
+    return prop_cache
+end
+
+##########################################
+
+function PropagationBase.applytoall!(gate::PauliNoise, prop_cache::VectorPauliPropagationCache, p; kwargs...)
+
+    # check that the noise strength is in the correct range
+    _check_noise_strength(PauliNoise, p)
+
+    # everything is done in place
+    terms_view = activeterms(prop_cache)
+    coeffs_view = activecoeffs(prop_cache)
+    @assert length(terms_view) == length(coeffs_view)
+    AK.foreachindex(terms_view) do ii
+        pstr = terms_view[ii]
+        coeff = coeffs_view[ii]
+
+        pauli = getpauli(pstr, gate.qind)
+
+        if isdamped(gate, pauli)
+            coeffs_view[ii] = coeff * (1 - p)
+        end
+    end
+
+    return prop_cache
+end
+
