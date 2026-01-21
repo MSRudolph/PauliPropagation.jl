@@ -1,7 +1,7 @@
 name = "PauliPropagation"
 uuid = "293282d5-3c99-4fb6-92d0-fd3280a19750"
 authors = ["Manuel S. Rudolph"]
-version = "0.6.0"
+version = "0.7.0"
 
 [deps]
 AcceleratedKernels = "6a4ca0a5-0e36-4168-a932-d9be78d558f1"
@@ -16,10 +16,17 @@ StatsBase = "2913bbd2-ae8a-5f71-8c99-4fb6c76f3a91"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 UUIDs = "cf7118a7-6976-5b1a-9a39-7adc72f591a4"
 
+[weakdeps]
+CUDA = "052768ef-5323-5732-b1bb-66c8b64840ba"
+
+[extensions]
+PauliPropagationCUDA = "CUDA"
+
 [compat]
 AcceleratedKernels = "0.4.3"
 BitIntegers = "0.3"
 Bits = "0.2"
+CUDA = "5.9.6"
 JSON = "0.21.4"
 PlotGraphviz = "0.6.3"
 ProfileCanvas = "0.1.6"
