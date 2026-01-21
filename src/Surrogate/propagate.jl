@@ -93,30 +93,9 @@ end
 
 
 # Apply a `CliffordGate` to an integer Pauli string and `NodePathProperties` coefficient. 
-function PropagationBase.apply(gate::CliffordGate, pstr::PauliStringType, coeff::NodePathProperties; kwargs...)
-    # this array carries the new Paulis + sign for every occuring old Pauli combination
-    map_array = clifford_map[gate.symbol]
+# the only necessary overload is what happens when we multiply node with a sign
 
-    qinds = gate.qinds
-
-    # this integer carries the active Paulis on its bits
-    lookup_int = getpauli(pstr, qinds)
-
-    # this integer can be used to index into the array returning the new Paulis
-    # +1 because Julia is 1-indexed and lookup_int is 0-indexed
-    partial_pstr, sign = map_array[lookup_int+1]
-
-    # insert the bits of the new Pauli into the old Pauli
-    pstr = setpauli(pstr, partial_pstr, qinds)
-
-    coeff = _multiplysign(coeff, sign)
-
-    return pstr, coeff
-end
-
-function _multiplysign(pth::NodePathProperties, sign; kwargs...)
-    return NodePathProperties(_multiplysign(pth.node, sign), pth.nsins, pth.ncos, pth.freq)
-end
+Base.:*(pth::NodePathProperties, sign::Number) = NodePathProperties(_multiplysign(pth.node, sign), pth.nsins, pth.ncos, pth.freq)
 
 function _multiplysign(pauli_node::PauliRotationNode, sign; kwargs...)
     for ii in eachindex(pauli_node.signs)

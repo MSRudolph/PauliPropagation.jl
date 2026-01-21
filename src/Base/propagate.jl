@@ -18,7 +18,7 @@ Propagate a term sum through under the action of gates in `circuit` using a prop
 This is in-place and modifies `prop_cache` along with the term sums it carries.
 Parameters for the parametrized gates in `circuit` are given by `params`, and need to be passed as if the circuit was applied as written in the Schrödinger picture.
 If params are not passed, the circuit must contain only non-parametrized `StaticGates`.
-`kwargs` are passed to the lower-level functions `applymergetruncate!`, `applytoall!`, `applyandadd!`, and `apply`,
+`kwargs` are passed to the lower-level functions `applymergetruncate!`, `applytoall!`, and `apply`,
 as well as `merge!` and `truncate!`.
 Default truncation kwargs are `min_abs_coeff` and `customtruncfunc`.
 """
@@ -61,7 +61,7 @@ end
 potentially using an auxiliary term sum `auxsum(prop_cache)` in the process. 
 All terms are then merged and deduplicated into the main term sum.
 Truncations are performed after merging.
-This function can be overwritten for a custom gate if the lower-level functions `applytoall!`, `applyandadd!`, and `apply` are not sufficient.
+This function can be overwritten for a custom gate if the lower-level functions `applytoall!`, and `apply` are not sufficient.
 """
 function applymergetruncate!(gate, prop_cache::AbstractPropagationCache, args...; kwargs...)
 
@@ -85,17 +85,22 @@ end
 1st-level function below `propagate!` that applies one gate to all terms in the main term sum `term_sum = mainsum(prop_cache)`, 
 potentially using an auxiliary term sum `aux_term_sum = auxsum(prop_cache)` in the process. 
 After this functions, all terms remaining in `term_sum` and `aux_term_sum` are merged.
-This function can be overwritten for a custom gate if the lower-level functions `applyandadd!` and `apply` are not sufficient.
+This function can be overwritten for a custom gate if the lower-level function `apply()` is not sufficient.
 In particular, this function can be used to manipulate both `term_sum` and `aux_term_sum` at the same time to reduce memory movement.
 Note that manipulating `term_sum` on anything other than the current term will likely lead to errors.
 """
 function applytoall!(gate, prop_cache::AbstractPropagationCache, args...; kwargs...)
     term_sum = mainsum(prop_cache)
     aux_term_sum = auxsum(prop_cache)
+
     # Loop over all terms in term_sum and apply the gate to them.
     for (term, coeff) in term_sum
-        # apply gate to one term, move new terms to aux_term_sum
-        applyandadd!(gate, aux_term_sum, term, coeff, args...; kwargs...)
+        # this is expected to return a tuple of (new_term, new_coeff) pairs
+        # other non-allocating iterables are also possible
+        terms_and_coeffs = apply(gate, term, coeff, args...; kwargs...)
+
+        # simple looped add! into aux_term_sum
+        _batch_add!(aux_term_sum, terms_and_coeffs)
     end
 
     # Empty term_sum because everything was moved into aux_term_sum. They will later be swapped.
@@ -109,28 +114,12 @@ function applytoall!(gate, prop_cache::AbstractPropagationCache, args...; kwargs
     return
 end
 
-
-"""
-    applyandadd!(gate::StaticGate, output_term_sum, term, coeff; kwargs...)
-    applyandadd!(gate::ParametrizedGate, output_term_sum, term, coeff, param; kwargs...)
-
-3rd-level function below `propagate!` that applies a gate to one term in `term_sum`, moving results into `output_term_sum` by default,
-which is modified in place.
-This function can be overwritten for a custom gate if the lower-level function `apply` is not sufficient. 
-This is likely the the case if `apply` is not type-stable because it does not return a unique number of outputs. 
-"""
-@inline function applyandadd!(gate, output_term_sum, term, coeff, args...; kwargs...)
-    # Get the (potentially new) terms and their coefficients in the form of ((term1, coeff1), (term2, coeff2), ...)
-    terms_and_coeffs = apply(gate, term, coeff, args...; kwargs...)
-
-    for (new_term, new_coeff) in terms_and_coeffs
-        # Itererate over the pairs of term and coeff
-        # Store the new_term and coeff in the aux_term_sum, add to existing coeff if new_term already exists there
-        add!(output_term_sum, new_term, new_coeff)
+@inline function _batch_add!(storage, terms_and_coeffs)
+    for (term, coeff) in terms_and_coeffs
+        add!(storage, term, coeff)
     end
-
-    return
 end
+
 
 """
     apply(gate::StaticGate, term, coeff; kwargs...)

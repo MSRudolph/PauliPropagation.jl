@@ -4,6 +4,8 @@
 function PropagationBase.applytoall!(gate::CliffordGate, prop_cache::VectorPauliPropagationCache; kwargs...)
     # TODO: This needs to be reworked for GPU support
 
+    lookup_map = clifford_map[gate.symbol]
+
     # everything is done in place
     terms_view = activeterms(prop_cache)
     coeffs_view = activecoeffs(prop_cache)
@@ -12,7 +14,8 @@ function PropagationBase.applytoall!(gate::CliffordGate, prop_cache::VectorPauli
         term = terms_view[ii]
         coeff = coeffs_view[ii]
 
-        term, coeff = apply(gate, term, coeff)
+        # apply here returns a length-1 tuple
+        term, coeff = only(apply(gate, term, coeff, lookup_map))
 
         # inbounds is safe here because we assert equal lengths
         terms_view[ii] = term

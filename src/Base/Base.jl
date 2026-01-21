@@ -58,7 +58,6 @@ export propagate,
     propagate!,
     applymergetruncate!,
     applytoall!,
-    applyandadd!,
     apply
 
 include("./merge.jl")

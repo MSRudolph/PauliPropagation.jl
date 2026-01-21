@@ -129,7 +129,6 @@ export
     applymergetruncate!,
     applytoall!,
     apply,
-    applyandadd!,
     truncate!,
     merge!,
     mergefunc

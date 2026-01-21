@@ -1,7 +1,6 @@
 ###
 ##
 # This file contains specialized functions for some of our gates.
-# We overload `applyandadd!()` to fix potential type-instabilities in `apply()` if the number of returned Pauli strings is not fixed.
 # We overload `applytoall!()` to reduce unnecessarily moving Pauli strings between `psum` and `aux_psum`.
 # This usually also fixes potential type-instabilities in `apply()`.
 # Both functions can be overloaded if needed.
@@ -79,30 +78,33 @@ end
 
 
 ### Clifford gates
-"""
-    applyandadd!(gate::CliffordGate, pstr, coeff, theta, output_psum; kwargs...)
 
-Overload of `applyandadd!` for `CliffordGate` gates.
-Use `set!()` instead of `add!()` because Clifford gates create non-overlapping Pauli strings.
-`applytoall!` does not need to be adapted.
-"""
-@inline function PropagationBase.applyandadd!(gate::CliffordGate, output_psum, pstr, coeff; kwargs...)
-    # TODO: test whether it is significantly faster to get the map_array in applytoall! and pass it here
-    new_pstr, new_coeff = apply(gate, pstr, coeff; kwargs...)
-    # we can set the coefficient because Clifford gates create non-overlapping Pauli strings
-    set!(output_psum, new_pstr, new_coeff)
+function PropagationBase.applymergetruncate!(gate::CliffordGate, prop_cache::AbstractPauliPropagationCache; kwargs...)
+    # overload for Clifford gates 
+    # copy-paste from PropagationBase but we don't require merging
+    # irrelevant for the Dict-based PauliSum, because there the main and aux sums are already swapped
+    # but skipping merging is great for the VectorPauliSum which is limited by sorting
+
+    applytoall!(gate, prop_cache; kwargs...)
+
+    truncate!(prop_cache; kwargs...)
 
     return
 end
 
-"""
-    apply(gate::CliffordGate, pstr::PauliStringType, coeff)
+function PropagationBase.applytoall!(gate::CliffordGate, prop_cache::AbstractPauliPropagationCache, ; kwargs...)
+    # greedy overload for Clifford gates
+    # this is the most concrete function for them, but with an additional arg it will go into the generic applytoall!
+    # there the apply function will receive the lookup map directly
+    lookup_map = clifford_map[gate.symbol]
 
-Apply a `CliffordGate` to an integer Pauli string and its coefficient. 
-"""
-function PropagationBase.apply(gate::CliffordGate, pstr::PauliStringType, coeff; kwargs...)
-    # this array carries the new Paulis + sign for every occuring old Pauli combination
-    map_array = clifford_map[gate.symbol]
+    applytoall!(gate, prop_cache, lookup_map; kwargs...)
+
+    return
+end
+
+function PropagationBase.apply(gate::CliffordGate, pstr::PauliStringType, coeff, lookup_map; kwargs...)
+    # the lookup array carries the new Paulis + sign for every occuring old Pauli combination
 
     qinds = gate.qinds
 
@@ -111,15 +113,15 @@ function PropagationBase.apply(gate::CliffordGate, pstr::PauliStringType, coeff;
 
     # this integer can be used to index into the array returning the new Paulis
     # +1 because Julia is 1-indexed and lookup_int is 0-indexed
-    partial_pstr, sign = map_array[lookup_int+1]
+    partial_pstr, sign = lookup_map[lookup_int+1]
 
     # insert the bits of the new Pauli into the old Pauli
     pstr = setpauli(pstr, partial_pstr, qinds)
 
     coeff *= sign
 
-    # usually return format would be ((pstr, coeff), ), but we also overload applyandadd!() to accept this
-    return pstr, coeff
+    # always a length-1 tuple, which will be compiled away
+    return ((pstr, coeff),)
 end
 
 ### Pauli Noise

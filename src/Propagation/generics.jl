@@ -14,7 +14,7 @@ If thetas are not passed, the circuit must contain only non-parametrized `Static
 Default truncations are `min_abs_coeff`, `max_weight`, `max_freq`, and `max_sins`.
 `max_freq`, and `max_sins` will lead to automatic conversion if the coefficients are not already wrapped in suitable `PathProperties` objects.
 A custom truncation function can be passed as `customtruncfunc` with the signature customtruncfunc(pstr::PauliStringType, coefficient)::Bool.
-Further `kwargs` are passed to the lower-level functions `applymergetruncate!`, `applytoall!`, `applyandadd!`, and `apply`.
+Further `kwargs` are passed to the lower-level functions `applymergetruncate!`, `applytoall!`, and `apply`.
 """
 function PropagationBase.propagate(circ, pstr::PauliString, thetas=nothing; min_abs_coeff=eps(), max_weight=Inf, max_freq=Inf, max_sins=Inf, customtruncfunc=nothing, kwargs...)
     psum = PauliSum(pstr)
@@ -46,7 +46,7 @@ If thetas are not passed, the circuit must contain only non-parametrized `Static
 Default truncations are `min_abs_coeff`, `max_weight`, `max_freq`, and `max_sins`.
 `max_freq`, and `max_sins` will lead to automatic conversion if the coefficients are not already wrapped in suitable `PathProperties` objects.
 A custom truncation function can be passed as `customtruncfunc` with the signature customtruncfunc(pstr::PauliStringType, coefficient)::Bool.
-Further `kwargs` are passed to the lower-level functions `applymergetruncate!`, `applytoall!`, `applyandadd!`, and `apply`.
+Further `kwargs` are passed to the lower-level functions `applymergetruncate!`, `applytoall!`, and `apply`.
 """
 function PropagationBase.propagate(circ, psum::AbstractPauliSum, thetas=nothing; max_weight=Inf, min_abs_coeff=eps(), max_freq=Inf, max_sins=Inf, customtruncfunc=nothing, kwargs...)
     CT = coefftype(psum)
