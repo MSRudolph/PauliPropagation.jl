@@ -109,6 +109,30 @@ This is likely the the case if `apply` is not type-stable because it does not re
     return output_psum
 end
 
+"""
+    apply(gate::StaticGate, term, coeff; kwargs...)
+    apply(gate::ParametrizedGate, term, coeff; kwargs...)
+
+Lowest-level function that applies one gate to one term and its coefficient.
+Is expected to return a tuple of (new_term, new_coeff) pairs.
+This function must be overloaded for each custom gate type.
+Common mistakes are to return a single pair instead of a tuple of pairs, 
+such as `(new_term, new_coeff)`, instead of `((new_term, new_coeff),)`.
+
+Example:
+```julia
+function apply(gate::NewStaticGate, term::PauliString, coeff::Number)
+    # implementation of how Hadamard gate acts on a Pauli string
+    ...
+    return ((new_term1, new_coeff1), (new_term2, new_coeff2), ...)
+end
+function apply(gate::NewParametrizedGate, term::PauliString, coeff::Number, theta::Number)
+    # implementation of how RZ gate acts on a Pauli string
+    ...
+    return ((new_term1, new_coeff1), (new_term2, new_coeff2), ...)
+end
+```
+"""
 apply(gate, args...; kwargs...) = _thrownotimplemented(gate, :apply)
 
 

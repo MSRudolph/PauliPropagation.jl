@@ -118,17 +118,21 @@ export
 
 include("Propagation/Propagation.jl")
 export
+    AbstractPauliPropagationCache,
+    PauliPropagationCache,
+    VectorPauliPropagationCache,
     PropagationCache,
+    mainsum,
+    auxsum,
     propagate,
     propagate!,
     applymergetruncate!,
     applytoall!,
     apply,
     applyandadd!,
-    mergeandempty!,
-    merge,
     truncate!,
-    merge!
+    merge!,
+    mergefunc
 
 
 include("PathProperties/PathProperties.jl")
