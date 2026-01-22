@@ -15,7 +15,8 @@ function PropagationBase.applytoall!(gate::PauliRotation, prop_cache::VectorPaul
 
     # this needs to be in a separate function because variable names cannot be duplicated (WOW)
     # _flaganticommuting!(prop_cache, gate_mask)
-    flagterms!(trm -> !commutes(trm, gate_mask), prop_cache)
+    anticommutesfunc(trm) = !commutes(trm, gate_mask)
+    flagterms!(anticommutesfunc, prop_cache)
 
     # this runs a cumsum over the flags to get the indices
     flagstoindices!(prop_cache)
