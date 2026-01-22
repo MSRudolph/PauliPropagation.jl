@@ -5,7 +5,7 @@
 ##
 ###
 """
-    propagate(circ, pstr::PauliString, thetas=nothing; min_abs_coeff=eps(), max_weight=Inf, max_freq=Inf, max_sins=Inf, customtruncfunc=nothing, kwargs...)
+    propagate(circ, pstr::PauliString, thetas=nothing; min_abs_coeff=eps(), max_weight=Inf, max_freq=Inf, max_sins=Inf, customtruncfunc=nothing, heisenberg=true, kwargs...)
 
 Propagate a `PauliString` through the circuit `circ` in the Heisenberg picture. 
 This means that the circuit is applied to the Pauli string in reverse order, and the action of each gate is its conjugate action.
@@ -16,31 +16,31 @@ Default truncations are `min_abs_coeff`, `max_weight`, `max_freq`, and `max_sins
 A custom truncation function can be passed as `customtruncfunc` with the signature customtruncfunc(pstr::PauliStringType, coefficient)::Bool.
 Further `kwargs` are passed to the lower-level functions `applymergetruncate!`, `applytoall!`, and `apply`.
 """
-function PropagationBase.propagate(circ, pstr::PauliString, thetas=nothing; min_abs_coeff=eps(), max_weight=Inf, max_freq=Inf, max_sins=Inf, customtruncfunc=nothing, kwargs...)
+function propagate(circuit, pstr::PauliString, thetas=nothing; min_abs_coeff=eps(), max_weight=Inf, max_freq=Inf, max_sins=Inf, customtruncfunc=nothing, heisenberg=true, kwargs...)
     psum = PauliSum(pstr)
-    return propagate(circ, psum, thetas; min_abs_coeff, max_weight, max_freq, max_sins, customtruncfunc, kwargs...)
+    return propagate(circuit, psum, thetas; min_abs_coeff, max_weight, max_freq, max_sins, customtruncfunc, kwargs...)
 end
 
 """
-    propagate!(circ, pstr::PauliString, thetas=nothing; min_abs_coeff=eps(), max_weight=Inf, max_freq=Inf, max_sins=Inf, customtruncfunc=nothing, kwargs...)
+    propagate!(circ, pstr::PauliString, thetas=nothing; min_abs_coeff=eps(), max_weight=Inf, max_freq=Inf, max_sins=Inf, customtruncfunc=nothing, heisenberg=true, kwargs...)
 
 In-place version of `propagate()` for a `PauliString`.
 This is only a convenience function, because the `PauliString` is converted into a `PauliSum` internally.
 If `max_freq`, and `max_sins` are used without the coefficients already being wrapped in suitable `PathProperties` objects, an error is thrown.
 """
-function PropagationBase.propagate!(circ, pstr::PauliString, thetas=nothing; max_weight=Inf, min_abs_coeff=eps(), max_freq=Inf, max_sins=Inf, customtruncfunc=nothing, kwargs...)
+function propagate!(circuit, pstr::PauliString, thetas=nothing; max_weight=Inf, min_abs_coeff=eps(), max_freq=Inf, max_sins=Inf, customtruncfunc=nothing, heisenberg=true, kwargs...)
     psum = PauliSum(pstr)
     # check that max_freq and max_sins are only used a PathProperties type tracking them
     _checkfreqandsinfields(psum, max_freq, max_sins)
-    return propagate(circ, psum, thetas; min_abs_coeff, max_weight, max_freq, max_sins, customtruncfunc, kwargs...)
+    return propagate(circuit, psum, thetas; min_abs_coeff, max_weight, max_freq, max_sins, customtruncfunc, kwargs...)
 end
 
 """
-    propagate(circ, psum::AbstractPauliSum, thetas=nothing; min_abs_coeff=eps(), max_weight=Inf, max_freq=Inf, max_sins=Inf, customtruncfunc=nothing, kwargs...)
+    propagate(circuit, psum::AbstractPauliSum, thetas=nothing; min_abs_coeff=eps(), max_weight=Inf, max_freq=Inf, max_sins=Inf, customtruncfunc=nothing, heisenberg=true, kwargs...)
 
 Propagate a Pauli sum `psum` through the circuit `circ` in the Heisenberg picture. 
 This means that the circuit is applied to the Pauli sum in reverse order, and the action of each gate is its conjugate action.
-The Pauli sum `psum` is deepcopied and passed into the in-place propagation function `PropagationBase.propagate!()`.
+The Pauli sum `psum` is deepcopied and passed into the in-place propagation function `propagate!()`.
 Parameters for the parametrized gates in `circ` are given by `thetas`, and need to be passed as if the circuit was applied as written in the Schrödinger picture.
 If thetas are not passed, the circuit must contain only non-parametrized `StaticGates`.
 Default truncations are `min_abs_coeff`, `max_weight`, `max_freq`, and `max_sins`.
@@ -48,7 +48,7 @@ Default truncations are `min_abs_coeff`, `max_weight`, `max_freq`, and `max_sins
 A custom truncation function can be passed as `customtruncfunc` with the signature customtruncfunc(pstr::PauliStringType, coefficient)::Bool.
 Further `kwargs` are passed to the lower-level functions `applymergetruncate!`, `applytoall!`, and `apply`.
 """
-function PropagationBase.propagate(circ, psum::AbstractPauliSum, thetas=nothing; max_weight=Inf, min_abs_coeff=eps(), max_freq=Inf, max_sins=Inf, customtruncfunc=nothing, kwargs...)
+function propagate(circuit, psum::AbstractPauliSum, thetas=nothing; max_weight=Inf, min_abs_coeff=eps(), max_freq=Inf, max_sins=Inf, customtruncfunc=nothing, heisenberg=true, kwargs...)
     CT = coefftype(psum)
 
     # if max_freq and max_sins are used, and no PathProperties used, automatically wrap the coefficients in `PauliFreqTracker` 
@@ -58,12 +58,47 @@ function PropagationBase.propagate(circ, psum::AbstractPauliSum, thetas=nothing;
     _checkfreqandsinfields(psum, max_freq, max_sins)
 
     # run the in-place propagation function on a deepcopy of the input psum
-    psum = propagate!(circ, deepcopy(psum), thetas; max_weight, min_abs_coeff, max_freq, max_sins, customtruncfunc, kwargs...)
+    psum = propagate!(circuit, deepcopy(psum), thetas; max_weight, min_abs_coeff, max_freq, max_sins, customtruncfunc, kwargs...)
 
     # if the input psum was not a `PauliFreqTracker`, and the corresponding truncations were set,we need to unwrap the coefficients
     psum = _check_unwrap_from_paulifreqtracker(CT, psum)
 
     return psum
+end
+
+"""
+    propagate!(circuit, psum::AbstractPauliSum, thetas=nothing; min_abs_coeff=eps(), max_weight=Inf, max_freq=Inf, max_sins=Inf, customtruncfunc=nothing, heisenberg=true, kwargs...)
+
+In-place version of `propagate()` for an `AbstractPauliSum`.
+"""
+function propagate!(circuit, term_sum::PS, params=nothing; max_weight=Inf, min_abs_coeff=eps(), max_freq=Inf, max_sins=Inf, customtruncfunc=nothing, heisenberg=true, kwargs...) where PS<:AbstractPauliSum
+    prop_cache = propagate!(circuit, PropagationCache(term_sum), params; max_weight=Inf, min_abs_coeff=eps(), max_freq=Inf, max_sins=Inf, customtruncfunc=nothing, kwargs...)
+    # default constructors from a cache back to our Pauli sums are defined 
+    return PS(prop_cache)
+end
+
+"""
+    propagate!(circuit, prop_cache::AbstractPauliPropagationCache, thetas=nothing; min_abs_coeff=eps(), max_weight=Inf, max_freq=Inf, max_sins=Inf, customtruncfunc=nothing, heisenberg=true, kwargs...)
+
+In-place propagation of an `AbstractPauliPropagationCache` through the circuit `circ` in the Heisenberg picture.
+"""
+function propagate!(circuit, prop_cache::AbstractPauliPropagationCache, thetas=nothing; max_weight=Inf, min_abs_coeff=eps(), max_freq=Inf, max_sins=Inf, customtruncfunc=nothing, heisenberg=true, kwargs...)
+
+    # if circuit is actually a single gate, promote it to a list [gate]
+    # similarly the params if it is a single number
+    circuit, params = PropagationBase._promotecircandparams(circuit, params)
+
+    # if params is nothing, the circuit must contain only StaticGates
+    # also check if the length of params equals the number of parametrized gates
+    PropagationBase._checkcircandparams(circuit, params)
+
+    if heisenberg
+        circuit, params = reverse(circuit), reverse(params)
+    else
+        circuit, params = toschrodinger(circuit, params)
+    end
+
+    return PropagationBase.propagate!(circuit, prop_cache, thetas; max_weight=Inf, min_abs_coeff=eps(), max_freq=Inf, max_sins=Inf, customtruncfunc=nothing, kwargs...)
 end
 
 function PropagationBase.applymergetruncate!(gate, prop_cache::AbstractPauliPropagationCache, args...; kwargs...)

@@ -24,7 +24,6 @@ Default truncation kwargs are `min_abs_coeff` and `customtruncfunc`.
 """
 function propagate!(circuit, prop_cache::AbstractPropagationCache, params=nothing; kwargs...)
 
-    # TODO: The two methods should be one
     # if circuit is actually a single gate, promote it to a list [gate]
     # similarly the params if it is a single number
     circuit, params = _promotecircandparams(circuit, params)
@@ -32,11 +31,6 @@ function propagate!(circuit, prop_cache::AbstractPropagationCache, params=nothin
     # if params is nothing, the circuit must contain only StaticGates
     # also check if the length of params equals the number of parametrized gates
     _checkcircandparams(circuit, params)
-
-    # TODO: allow forward propagation 
-    # For now we only assume backward propagation
-    circuit = reverse(circuit)
-    params = reverse(params)
 
     # A useful iteration tool
     parameter_iterator = Iterators.Stateful(params)

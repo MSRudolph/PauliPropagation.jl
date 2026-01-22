@@ -12,6 +12,7 @@ include("paulirotations.jl")
 include("cliffordgates.jl")
 include("noisechannels.jl")
 include("miscgates.jl")
+include("schrodinger.jl")
 
 
 ## Helper functions

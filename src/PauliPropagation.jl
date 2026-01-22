@@ -90,7 +90,8 @@ export
     freeze,
     TGate,
     TransferMapGate,
-    tomatrix
+    tomatrix,
+    toschrodinger
 
 include("Circuits/Circuits.jl")
 export

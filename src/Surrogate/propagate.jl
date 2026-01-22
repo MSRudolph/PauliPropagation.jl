@@ -8,7 +8,7 @@ The circuit must only contain `CliffordGate`s and `PauliRotation`s.
 Truncations based on any numerical coefficient value cannot be used.
 Everything else is the same as in `propagate!()` for the non-Surrogate code.
 """
-function PropagationBase.propagate(circ, pstr::PauliString{TT,NodePathProperties}; max_weight=Inf, max_freq=Inf, max_sins=Inf, customtruncfunc=nothing, kwargs...) where {TT<:PauliStringType}
+function propagate(circ, pstr::PauliString{TT,NodePathProperties}; max_weight=Inf, max_freq=Inf, max_sins=Inf, customtruncfunc=nothing, kwargs...) where {TT<:PauliStringType}
     return propagate(circ, PauliSum(pstr); max_weight, max_freq, max_sins, customtruncfunc, kwargs...)
 end
 
@@ -20,7 +20,7 @@ The circuit must only contain `CliffordGate`s and `PauliRotation`s.
 Truncations based on any numerical coefficient value cannot be used.
 Everything else is the same as in `propagate!()` for the non-Surrogate code.
 """
-function PropagationBase.propagate(circ, psum::PauliSum{TT,NodePathProperties}; max_weight=Inf, max_freq=Inf, max_sins=Inf, customtruncfunc=nothing, kwargs...) where {TT<:PauliStringType}
+function propagate(circ, psum::PauliSum{TT,NodePathProperties}; max_weight=Inf, max_freq=Inf, max_sins=Inf, customtruncfunc=nothing, kwargs...) where {TT<:PauliStringType}
     _checksurrogationconditions(circ)
     return propagate!(circ, deepcopy(psum); max_weight, max_freq, max_sins, customtruncfunc, kwargs...)
 end
@@ -34,7 +34,7 @@ The circuit must only contain `CliffordGate`s and `PauliRotation`s.
 Truncations based on any numerical coefficient value cannot be used.
 Everything else is the same as in `propagate!()` for the non-Surrogate code.
 """
-function PropagationBase.propagate!(circ, psum::PauliSum{TT,NodePathProperties}; max_weight=Inf, max_freq=Inf, max_sins=Inf, customtruncfunc=nothing, kwargs...) where {TT<:PauliStringType}
+function propagate!(circ, psum::PauliSum{TT,NodePathProperties}; max_weight=Inf, max_freq=Inf, max_sins=Inf, customtruncfunc=nothing, kwargs...) where {TT<:PauliStringType}
     _checksurrogationconditions(circ)
 
     # dummy parameters transport the parameter indices 
