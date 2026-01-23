@@ -54,9 +54,11 @@ end
 ##
 ###
 
-mutable struct VectorPauliPropagationCache{VT,VC,VB,VI} <: AbstractPauliPropagationCache
-    psum::VectorPauliSum{VT,VC}
-    aux_psum::VectorPauliSum{VT,VC}
+mutable struct VectorPauliPropagationCache{VPS<:VectorPauliSum,VB,VI} <: AbstractPauliPropagationCache
+    psum::VPS
+    aux_psum::VPS
+    # TODO: are flags ever needed? Can we use indices alone?
+    # Strictly type flags and indices?
     flags::VB
     indices::VI
 

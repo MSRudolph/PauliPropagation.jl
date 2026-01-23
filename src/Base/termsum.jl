@@ -57,14 +57,13 @@ end
 # default implementation
 function getcoeff(::ST, term_sum::AbstractTermSum, trm) where {ST<:StorageType}
     # TODO: GPU kernel for this
-    terms, coeffs = storage(term_sum)
-    @assert length(terms) == length(coeffs) "Inconsistent storage in $(typeof(term_sum)): length of terms and coeffs differ."
-    for i in eachindex(terms)
-        if terms[i] == trm
-            return coeffs[i]
+    val = zero(coefftype(term_sum))
+    for (term, coeff) in zip(terms(term_sum), coefficients(term_sum))
+        if term == trm
+            val += coeff
         end
     end
-    return zero(coefftype(term_sum))
+    return val
 end
 
 

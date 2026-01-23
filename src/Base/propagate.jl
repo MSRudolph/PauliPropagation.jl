@@ -23,7 +23,12 @@ as well as `merge!` and `truncate!`.
 Default truncation kwargs are `min_abs_coeff` and `customtruncfunc`.
 """
 function propagate!(circuit, prop_cache::AbstractPropagationCache, params=nothing; kwargs...)
+    # directly call the internal function
+    # the higher-level function can be overloaded if needed
+    return _propagate!(circuit, prop_cache, params; kwargs...)
+end
 
+function _propagate!(circuit, prop_cache::AbstractPropagationCache, params=nothing; kwargs...)
     # if circuit is actually a single gate, promote it to a list [gate]
     # similarly the params if it is a single number
     circuit, params = _promotecircandparams(circuit, params)
@@ -58,19 +63,33 @@ Truncations are performed after merging.
 This function can be overwritten for a custom gate if the lower-level functions `applytoall!`, and `apply` are not sufficient.
 """
 function applymergetruncate!(gate, prop_cache::AbstractPropagationCache, args...; kwargs...)
+    return _applymergetruncate!(gate, prop_cache, args...; kwargs...)
+end
 
+function _applymergetruncate!(gate, prop_cache::AbstractPropagationCache, args...; kwargs...)
     # args is usually expected to be empty or contain a parameter for the gate
     # prop_cache is modified in place
     applytoall!(gate, prop_cache, args...; kwargs...)
 
     # usually this merges from some auxillary term sum into the main term sum
     # for vector-based caches, it deduplicates within the main term sum
-    merge!(prop_cache; kwargs...)
+    if requiresmerging(gate)
+        merge!(prop_cache; kwargs...)
+    end
 
     truncate!(prop_cache; kwargs...)
 
     return
 end
+
+"""
+    requiresmerging(gate)::Bool
+
+Helper function that indicates whether merging is required after applying a gate.
+Can be overloaded for custom gates.
+Defaults to `true`.
+"""
+requiresmerging(gate) = true
 
 """
     applytoall!(gate, prop_cache::AbstractPropagationCache; kwargs...)

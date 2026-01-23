@@ -58,7 +58,8 @@ export propagate,
     propagate!,
     applymergetruncate!,
     applytoall!,
-    apply
+    apply,
+    requiresmerging
 
 include("./merge.jl")
 export merge!, mergefunc

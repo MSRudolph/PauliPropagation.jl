@@ -109,6 +109,8 @@ function PropagationBase.applytoall!(gate::CliffordGate, prop_cache::VectorPauli
     return prop_cache
 end
 
+requiresmerging(::CliffordGate) = false
+
 ##########################################
 
 function PropagationBase.applytoall!(gate::PauliNoise, prop_cache::VectorPauliPropagationCache, p; kwargs...)
@@ -134,3 +136,4 @@ function PropagationBase.applytoall!(gate::PauliNoise, prop_cache::VectorPauliPr
     return prop_cache
 end
 
+requiresmerging(::PauliNoise) = false
