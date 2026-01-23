@@ -9,6 +9,8 @@ export tonumber
 include("./termsum.jl")
 export
     AbstractTermSum,
+    storage,
+    StorageType,
     terms,
     coefficients,
     coeffs,

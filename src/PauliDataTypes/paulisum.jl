@@ -45,54 +45,11 @@ Get the number of qubits that the `PauliSum` is defined on.
 """
 nqubits(psum::PauliSum) = psum.nqubits
 
-"""
-    paulis(psum::PauliSum)
-
-Returns an iterator over the integer pauli strings of a `PauliSum`.
-Call `topaulistrings` to receive entries as `PauliString`s.
-"""
-function paulis(psum::PauliSum)
-    return keys(psum.terms)
-end
-
-"""
-    coefficients(psum::PauliSum)
-
-Returns an iterator over the coefficients of a `PauliSum`.
-Call `topaulistrings` to receive entries as `PauliString`s.
-"""
-function PropagationBase.coefficients(psum::PauliSum)
-    return values(psum.terms)
-end
-
-
-"""
-    getcoeff(psum::PauliSum, pstr::Integer)
-
-Get the coefficient of an integer Pauli strings `pstr` in a `PauliSum`. 
-Defaults to 0 if the Pauli string is not in the `PauliSum`.
-"""
-function PropagationBase.getcoeff(psum::PauliSum, pstr::Integer)
-    return get(psum.terms, pstr, zero(numcoefftype(psum)))
-end
-
-
-"""
-    topaulistrings(psum::PauliSum)
-
-Returns the Pauli strings in a `PauliSum` and their coefficients as a list of `PauliString`.
-"""
-topaulistrings(psum::PauliSum) = [PauliString(psum.nqubits, pauli, coeff) for (pauli, coeff) in psum.terms]
 
 """
 Copy a `PauliSum` by copying its `terms` field.
 """
 Base.copy(psum::PauliSum) = PauliSum(psum.nqubits, copy(psum.terms))
-
-"""
-Iterator for `PauliSum` returns an iterator over (pstr, coeff) pairs`.
-"""
-Base.iterate(psum::PauliSum, state=1) = iterate(psum.terms, state)
 
 
 # Pretty print for `PauliSum`.
@@ -114,6 +71,7 @@ Hint to the `PauliSum` to reserve space for `n` terms.
 Base.sizehint!(psum::PauliSum, n) = sizehint!(psum.terms, n)
 
 
+# TODO: Move these to PropagationBase
 """
     ==(psum1::PauliSum, psum2::PauliSum)
 

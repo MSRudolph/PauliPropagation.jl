@@ -8,8 +8,21 @@ abstract type AbstractPauliSum <: AbstractTermSum end
 nqubits(psum::AbstractPauliSum) = throw(ErrorException("nqubits() not implemented for type $(typeof(psum))."))
 PropagationBase.nsites(psum::AbstractPauliSum) = nqubits(psum)
 
-paulis(psum::AbstractPauliSum) = throw(ErrorException("paulis() not implemented for type $(typeof(psum))."))
-PropagationBase.terms(psum::AbstractPauliSum) = paulis(psum)
+"""
+    paulis(psum::AbstractPauliSum)
+
+Returns an iterator over the integer pauli strings of an `AbstractPauliSum`.
+Call `topaulistrings` to receive entries as `PauliString`s.
+"""
+paulis(psum::AbstractPauliSum) = terms(psum)
+
+"""
+    coefficients(psum::AbstractPauliSum)
+
+Returns an iterator over the coefficients of a `PauliSum`.
+Call `topaulistrings` to receive entries as `PauliString`s.
+"""
+PropagationBase.coefficients
 
 """
     paulitype(psum::AbstractPauliSum)
@@ -17,6 +30,14 @@ PropagationBase.terms(psum::AbstractPauliSum) = paulis(psum)
 Get the Pauli integer type of a `AbstractPauliSum` object.
 """
 paulitype(psum::AbstractPauliSum) = eltype(paulis(psum))
+
+
+"""
+    topaulistrings(psum::AbstractPauliSum)
+
+Returns the Pauli strings in a, `AbstractPauliSum` and their coefficients as a list of `PauliString`.
+"""
+topaulistrings(psum::AbstractPauliSum) = [PauliString(psum.nqubits, pauli, coeff) for (pauli, coeff) in zip(paulis(psum), coefficients(psum))]
 
 
 ## The symbol conversions for getcoeff()

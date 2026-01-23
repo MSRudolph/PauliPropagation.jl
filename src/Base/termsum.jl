@@ -27,8 +27,17 @@ storage(term_sum::TS) where TS<:AbstractTermSum = _thrownotimplemented(TS, :stor
 Base.length(term_sum::AbstractTermSum) = length(terms(term_sum))
 
 nsites(term_sum::TS) where TS<:AbstractTermSum = _thrownotimplemented(TS, :nsites)
-terms(term_sum::TS) where TS<:AbstractTermSum = _thrownotimplemented(TS, :terms)
-coefficients(term_sum::TS) where TS<:AbstractTermSum = _thrownotimplemented(TS, :coefficients)
+
+terms(::StorageType, term_sum::TS) where TS<:AbstractTermSum = _thrownotimplemented(TS, :terms)
+terms(term_sum::AbstractTermSum) = terms(StorageType(term_sum), term_sum)
+terms(::DictStorage, term_sum::AbstractTermSum) = keys(storage(term_sum))
+terms(::ArrayStorage, term_sum::AbstractTermSum) = storage(term_sum)[1]
+
+
+coefficients(::StorageType, term_sum::TS) where TS<:AbstractTermSum = _thrownotimplemented(TS, :coefficients)
+coefficients(term_sum::AbstractTermSum) = coefficients(StorageType(term_sum), term_sum)
+coefficients(::DictStorage, term_sum::AbstractTermSum) = values(storage(term_sum))
+coefficients(::ArrayStorage, term_sum::AbstractTermSum) = storage(term_sum)[2]
 coeffs(term_sum::AbstractTermSum) = coefficients(term_sum)
 
 # receives the object
@@ -47,11 +56,7 @@ end
 
 function getcoeff(::Type{DictStorage}, term_sum::AbstractTermSum, trm)
     term_dict = storage(term_sum)
-    if haskey(term_dict, trm)
-        return term_dict[trm]
-    else
-        return zero(coefftype(term_sum))
-    end
+    return get(term_dict, trm, zero(coefftype(term_sum)))
 end
 
 # default implementation

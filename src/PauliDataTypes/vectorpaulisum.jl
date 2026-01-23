@@ -24,7 +24,7 @@ end
 VectorPauliSum(nqubits::Int) = VectorPauliSum(Float64, nqubits)
 VectorPauliSum(::Type{CT}, nqubits::Int) where {CT} = VectorPauliSum(nqubits, getinttype(nqubits)[], CT[])
 
-PropagationBase.storage(vpsum::VectorPauliSum) = (paulis(vpsum), coefficients(vpsum))
+PropagationBase.storage(vpsum::VectorPauliSum) = (vpsum.terms, vpsum.coeffs)
 
 
 """
@@ -33,28 +33,6 @@ PropagationBase.storage(vpsum::VectorPauliSum) = (paulis(vpsum), coefficients(vp
 Get the number of qubits that the `VectorPauliSum` is defined on.
 """
 nqubits(vpsum::VectorPauliSum) = vpsum.nqubits
-
-"""
-    paulis(vpsum::VectorPauliSum)
-
-Get the vector of Pauli strings from a `VectorPauliSum`.
-"""
-paulis(vpsum::VectorPauliSum) = vpsum.terms
-
-"""
-    coefficients(vpsum::VectorPauliSum)
-    
-Get the vector of coefficients from a `VectorPauliSum`.
-"""
-PropagationBase.coefficients(vpsum::VectorPauliSum) = vpsum.coeffs
-
-
-"""
-    topaulistrings(vpsum::VectorPauliSum)
-
-Returns the Pauli strings in a `PauliSum` and their coefficients as a list of `PauliString`.
-"""
-topaulistrings(vpsum::VectorPauliSum) = [PauliString(vpsum.nqubits, pauli, coeff) for (pauli, coeff) in zip(vpsum.terms, vpsum.coeffs)]
 
 
 Base.similar(vpsum::VectorPauliSum) = VectorPauliSum(vpsum.nqubits, similar(vpsum.terms), similar(vpsum.coeffs))

@@ -17,6 +17,9 @@ Abstract type for wrapping coefficients and record custom path properties
 """
 abstract type PathProperties end
 
+(::Type{PProp})(coeff) where {PProp<:PathProperties} = throw("The one-argument constructor `$(PProp)(coeff)` is not defined for the $(PProp) type.")
+
+Base.zero(::Type{PProp}) where {PProp<:PathProperties} = PProp(0.0)
 
 # Pretty print for PathProperties
 function Base.show(io::IO, pth::PProp) where {PProp<:PathProperties}
@@ -30,7 +33,6 @@ function Base.show(io::IO, pth::PProp) where {PProp<:PathProperties}
     print(io, ")")
 
 end
-
 
 # Multiplication of the `coeff` field in a `PathProperties` object with a number.
 # Requires that the `PathProperties` object has a `coeff` field defined which will be multiplied.

@@ -28,6 +28,7 @@ Constructor for `PauliFreqTracker` from only a coefficient.
 Initializes `nsins`, `ncos`, and `freq` to zero.
 """
 PauliFreqTracker(coeff::Number) = PauliFreqTracker(float(coeff), 0, 0, 0)
+PauliFreqTracker{T}(coeff::Number) where {T<:Number} = PauliFreqTracker{T}(convert(T, coeff), 0, 0, 0)
 
 PropagationBase.numcoefftype(::Type{PauliFreqTracker{T}}) where {T<:Number} = T
 

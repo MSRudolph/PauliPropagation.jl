@@ -58,7 +58,6 @@ mutable struct VectorPauliPropagationCache{VPS<:VectorPauliSum,VB,VI} <: Abstrac
     psum::VPS
     aux_psum::VPS
     # TODO: are flags ever needed? Can we use indices alone?
-    # Strictly type flags and indices?
     flags::VB
     indices::VI
 
@@ -128,9 +127,3 @@ function Base.resize!(prop_cache::VectorPauliPropagationCache, n_new::Int)
     resize!(prop_cache.indices, n_new)
     return prop_cache
 end
-
-
-
-# term(trm::Integer) = trm
-# term(pstr::PauliString) = term(pstr.term)
-

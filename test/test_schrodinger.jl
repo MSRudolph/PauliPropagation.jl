@@ -49,7 +49,7 @@ end
     nl = 3
     topology = rectangletopology(nx, ny; periodic=false)
 
-    min_abs_coeff = eps()
+    min_abs_coeff = 1e-12
 
     circ = hardwareefficientcircuit(nq, nl; topology=topology)
     thetas = randn(countparameters(circ))

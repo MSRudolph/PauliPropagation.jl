@@ -90,7 +90,7 @@ function PropagationBase.applytoall!(gate::CliffordGate, prop_cache::AbstractPau
     return
 end
 
-function PropagationBase.apply(gate::CliffordGate, pstr::PauliStringType, coeff, lookup_map; kwargs...)
+function PropagationBase.apply(gate::CliffordGate, pstr, coeff, lookup_map; kwargs...)
     # the lookup array carries the new Paulis + sign for every occuring old Pauli combination
 
     qinds = gate.qinds
