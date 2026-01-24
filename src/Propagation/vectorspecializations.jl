@@ -28,16 +28,13 @@ function PropagationBase.applytoall!(gate::PauliRotation, prop_cache::VectorPaul
     n_new = n_old + n_noncommutes
 
     # potential resize factor
-    resize_factor = 2
+    resize_factor = 1.5
     if capacity(prop_cache) < n_new
-        resize!(prop_cache, n_new * resize_factor)
+        resize!(prop_cache, round(Int, n_new * resize_factor))
     end
 
     # does the branching logic
     _applypaulirotation!(prop_cache, gate_mask, theta)
-
-    # we now have n_new possibly douplicate Pauli strings in the array
-    setactivesize!(prop_cache, n_new)
 
     return prop_cache
 end
@@ -49,15 +46,15 @@ function _applypaulirotation!(prop_cache::VectorPauliPropagationCache, gate_mask
     sin_val = sin(theta)
 
     n = activesize(prop_cache)
-    n_max = n + lastactiveindex(prop_cache)
+    n_new = n + lastactiveindex(prop_cache)
 
     active_terms = activeterms(prop_cache)
 
     # full-length terms so we can write new terms at the end
     terms = paulis(mainsum(prop_cache))
     coeffs = coefficients(mainsum(prop_cache))
-    @assert length(terms) >= n_max "VectorPauliPropagationCache terms array is not large enough to hold new terms."
-    @assert length(coeffs) >= n_max "VectorPauliPropagationCache coeffs array is not large enough to hold new coeffs."
+    @assert length(terms) >= n_new "VectorPauliPropagationCache terms array is not large enough to hold new terms."
+    @assert length(coeffs) >= n_new "VectorPauliPropagationCache coeffs array is not large enough to hold new coeffs."
 
     flags = activeflags(prop_cache)
     indices = activeindices(prop_cache)
@@ -80,10 +77,98 @@ function _applypaulirotation!(prop_cache::VectorPauliPropagationCache, gate_mask
         end
     end
 
+    # we now have n_new possibly douplicate Pauli strings in the array
+    setactivesize!(prop_cache, n_new)
+
     return
 end
 
-##########################################
+### Imaginary Pauli Rotation
+
+function PropagationBase.applytoall!(gate::ImaginaryPauliRotation, prop_cache::VectorPauliPropagationCache, tau; kwargs...)
+
+    # TODO: design this function in a way that it can be the default for branching gates. 
+    # Think of U3 or amplitude damping 
+
+    if prop_cache.active_size == 0
+        return prop_cache
+    end
+
+    n_old = prop_cache.active_size
+
+    # get the mask out because because the gate cannot be in the function when using GPU
+    gate_mask::paulitype(prop_cache) = symboltoint(nqubits(prop_cache), gate.symbols, gate.qinds)
+
+    # Imaginary Rotation branches on commutation, not anticommutation
+    commutesfunc(trm) = commutes(trm, gate_mask)
+    flagterms!(commutesfunc, prop_cache)
+
+    # this runs a cumsum over the flags to get the indices
+    flagstoindices!(prop_cache)
+
+    # the final index is the number of new terms
+    n_noncommutes = lastactiveindex(prop_cache)
+
+    # slit off into the same array
+    n_new = n_old + n_noncommutes
+
+    # potential resize factor
+    resize_factor = 1.5
+    if capacity(prop_cache) < n_new
+        resize!(prop_cache, round(Int, n_new * resize_factor))
+    end
+
+    # does the branching logic
+    _applyimaginarypaulirotation!(prop_cache, gate_mask, tau)
+
+
+    return prop_cache
+end
+
+function _applyimaginarypaulirotation!(prop_cache::VectorPauliPropagationCache, gate_mask::TT, tau) where {TT}
+
+    # pre-compute the sine and cosine values because the are used for every Pauli string that does not commute with the gate
+    cosh_val = cosh(tau)
+    sinh_val = sinh(tau)
+
+    n = activesize(prop_cache)
+    n_new = n + lastactiveindex(prop_cache)
+
+    active_terms = activeterms(prop_cache)
+
+    # full-length terms so we can write new terms at the end
+    terms = paulis(mainsum(prop_cache))
+    coeffs = coefficients(mainsum(prop_cache))
+    @assert length(terms) >= n_new "VectorPauliPropagationCache terms array is not large enough to hold new terms."
+    @assert length(coeffs) >= n_new "VectorPauliPropagationCache coeffs array is not large enough to hold new coeffs."
+
+    flags = activeflags(prop_cache)
+    indices = activeindices(prop_cache)
+
+    AK.foreachindex(active_terms) do ii
+        # branching upon commutation
+        if flags[ii]
+            term = terms[ii]
+            coeff = coeffs[ii]
+
+            coeff1 = coeff * cosh_val
+            new_term, sign = imaginarypaulirotationproduct(gate_mask, term)
+            coeff2 = coeff * sinh_val * sign
+
+            coeffs[ii] = coeff1
+
+            terms[n+indices[ii]] = new_term
+            coeffs[n+indices[ii]] = coeff2
+        end
+    end
+
+    # we now have n_new possibly douplicate Pauli strings in the array
+    setactivesize!(prop_cache, n_new)
+
+    return
+end
+
+### Clifford gates
 
 function PropagationBase.applytoall!(gate::CliffordGate, prop_cache::VectorPauliPropagationCache; kwargs...)
     # TODO: This needs to be reworked for GPU support

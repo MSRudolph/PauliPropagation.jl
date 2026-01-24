@@ -47,6 +47,16 @@ function toschrodinger(gate::PauliRotation, θ)
 end
 
 """
+    toschrodinger(gate::ImaginaryPauliRotation, τ)
+
+Method to transpose a `ImaginaryPauliRotation` gate for Schrödinger picture propagation.
+This does not change the parameter because exp(-τ*P/2) is the same under conjugation.
+"""
+function toschrodinger(gate::ImaginaryPauliRotation, τ)
+    return gate, τ
+end
+
+"""
     toschrodinger(gate::CliffordGate)
 
 Method to transpose a `CliffordGate` for Schrödinger picture propagation.

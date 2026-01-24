@@ -133,16 +133,6 @@ and equivalently for Pauli strings.
 """
 function scalarproduct(psum1::AbstractPauliSum, psum2::AbstractPauliSum)
 
-    _checknumberofqubits(psum1, psum2)
-
-    CType = promote_type(numcoefftype(psum1), numcoefftype(psum2))
-
-    val = float(zero(CType))
-
-    if length(psum1) == 0 || length(psum2) == 0
-        return val
-    end
-
     longer_psum = psum1
     shorter_psum = psum2
 
@@ -152,8 +142,25 @@ function scalarproduct(psum1::AbstractPauliSum, psum2::AbstractPauliSum)
     end
 
     # looping over the shorter psum because we are only looking for collisions
-    for (pstr, coeff) in shorter_psum
-        val += tonumber(getcoeff(longer_psum, pstr)) * tonumber(coeff)
+    return _scalarproduct(longer_psum, shorter_psum)
+
+end
+
+function _scalarproduct(lookup_psum, loop_psum)
+
+    _checknumberofqubits(lookup_psum, loop_psum)
+
+    CType = promote_type(numcoefftype(lookup_psum), numcoefftype(loop_psum))
+
+    val = float(zero(CType))
+
+    if length(lookup_psum) == 0 || length(loop_psum) == 0
+        return val
+    end
+
+    # looping over the iter psum because we are only looking for collisions
+    for (pstr, coeff) in zip(paulis(loop_psum), coefficients(loop_psum))
+        val += tonumber(getcoeff(lookup_psum, pstr)) * tonumber(coeff)
     end
     return val
 

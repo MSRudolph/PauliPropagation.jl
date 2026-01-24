@@ -288,21 +288,6 @@ function *(psum1::PauliSum, psum2::PauliSum)
 end
 
 
-## In-place Multiplication
-
-"""
-    mult!(psum::PauliSum, c::Number)
-
-Multiply a `PauliSum` by a scalar `c` in-place.
-"""
-function mult!(psum::PauliSum, c::Number)
-    # multiply in-place
-    for (k, v) in psum.terms
-        psum.terms[k] *= c
-    end
-    return psum
-end
-
 ## In-place Addition
 
 """

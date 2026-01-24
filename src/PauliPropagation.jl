@@ -72,6 +72,7 @@ export
     StaticGate,
     PauliRotation,
     MaskedPauliRotation,
+    ImaginaryPauliRotation,
     CliffordGate,
     clifford_map,
     transposecliffordmap,
