@@ -68,3 +68,55 @@ end
     @test PauliSum(pstr) ≈ psum_backward
 
 end
+
+@testset "Test conversions" begin
+    # The Heisenberg conversions are implicitly already performed above and in other tests.
+
+    nq = 4
+    # Pauli Rotation 
+    gate = PauliRotation(rand([:I, :X, :Y, :Z], nq), 1:nq)
+    θ = randn()
+    gate_schrodinger, param_schrodinger = toschrodinger(gate, θ)
+    @test gate_schrodinger == gate
+    @test param_schrodinger == -θ
+
+    # FrozenGate if PauliRotation
+    gate = freeze(gate, θ)
+    gate_schrodinger = toschrodinger(gate)
+    @test gate_schrodinger.gate == gate.gate
+    @test gate_schrodinger.parameter == -θ
+
+    # CliffordGate
+    cliff_symb = rand(keys(clifford_map))
+    transfer_map = clifford_map[cliff_symb]
+    active_qubits = Int(log(4, length(transfer_map)))
+    gate = CliffordGate(cliff_symb, 1:active_qubits)
+    gate_schrodinger = toschrodinger(gate)
+    @test gate_schrodinger.symbol == Symbol(cliff_symb, :_transpose)
+    @test gate_schrodinger.qinds == gate.qinds
+
+
+    # PauliNoise
+    gate = rand([DepolarizingNoise, DephasingNoise, PauliXNoise, PauliYNoise])(3)
+    p = 0.1
+    gate_schrodinger, param_schrodinger = toschrodinger(gate, p)
+    @test gate_schrodinger == gate
+    @test param_schrodinger == p
+
+    # AmplitudeDampingNoise should throw in Schrödinger
+    gate = AmplitudeDampingNoise(2)
+    p = 0.1
+    @test_throws ErrorException toschrodinger(gate, p)
+
+    # TransferMapGate should throw in Schrodinger
+    ptm = randn(4, 4)
+    gate = TransferMapGate(ptm, 1)
+    @test_throws ErrorException toschrodinger(gate)
+
+    # ImaginaryPauliRotation should throw in Heisenberg
+    gate = ImaginaryPauliRotation(rand([:I, :X, :Y, :Z], nq), 1:nq)
+    τ = randn()
+    @test_throws ErrorException toheisenberg(gate, τ)
+
+end
+

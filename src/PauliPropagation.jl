@@ -92,7 +92,8 @@ export
     TGate,
     TransferMapGate,
     tomatrix,
-    toschrodinger
+    toschrodinger,
+    toheisenberg
 
 include("Circuits/Circuits.jl")
 export

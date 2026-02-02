@@ -35,7 +35,7 @@ function _propagate!(circuit, prop_cache::AbstractPropagationCache, params=nothi
 
     # if params is nothing, the circuit must contain only StaticGates
     # also check if the length of params equals the number of parametrized gates
-    _checkcircandparams(circuit, params)
+    _checknumberofparams(circuit, params)
 
     # A useful iteration tool
     parameter_iterator = Iterators.Stateful(params)
@@ -181,7 +181,7 @@ function _promotecircandparams(circ, params)
     return circ, params
 end
 
-function _checkcircandparams(circ, params)
+function _checknumberofparams(circ, params)
     nparams = countparameters(circ)
 
     if nparams != length(params)
