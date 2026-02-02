@@ -9,7 +9,7 @@ using CUDA
 
 # TODO: export utilities
 const CUDAVectorPauliSum = VectorPauliSum{<:CuArray,<:CuArray}
-const CUDAVectorPauliPropagationCache = VectorPauliPropagationCache{<:CuArray,<:CuArray,<:CuArray,<:CuArray}
+const CUDAVectorPauliPropagationCache = VectorPauliPropagationCache{CUDAVectorPauliSum,<:CuArray,<:CuArray}
 
 const _UNIFIED = true
 
@@ -41,7 +41,7 @@ function Base.show(io::IO, prop_cache::CUDAVectorPauliPropagationCache)
 end
 
 # TODO: This function is apparently
-function PauliPropagation.lastactiveindex(prop_cache::VectorPauliPropagationCache{TA,CA,FA,IA}) where {TA<:CUDA.CuArray,CA<:CUDA.CuArray,FA<:CUDA.CuArray,IA<:CUDA.CuArray}
+function PauliPropagation.lastactiveindex(prop_cache::CUDAVectorPauliPropagationCache)
     return CUDA.@allowscalar PP.indices(prop_cache)[PP.activesize(prop_cache)]
 end
 

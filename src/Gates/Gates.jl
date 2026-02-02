@@ -9,10 +9,11 @@
 
 include("frozengates.jl")
 include("paulirotations.jl")
+include("imaginarytime.jl")
 include("cliffordgates.jl")
 include("noisechannels.jl")
 include("miscgates.jl")
-include("schrodinger.jl")
+include("heisenbergschrodinger.jl")
 
 
 ## Helper functions

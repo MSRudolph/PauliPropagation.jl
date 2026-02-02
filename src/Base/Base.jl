@@ -18,6 +18,7 @@ export
     coefftype,
     numcoefftype,
     getcoeff,
+    getmergedcoeff,
     nsites,
     add!,
     mult!,

@@ -20,9 +20,9 @@ function PropagationBase.applytoall!(gate::PauliRotation, prop_cache::PauliPropa
     psum = mainsum(prop_cache)
     aux_psum = auxsum(prop_cache)
 
-    # turn the (potentially) PauliRotation gate into a MaskedPauliRotation gate
+    # get the bitmask of the Pauli generator
     # this allows for faster operations
-    gate_mask = symboltoint(nqubits(prop_cache), gate.symbols, gate.qinds)
+    gate_mask = symboltoint(paulitype(prop_cache), gate.symbols, gate.qinds)
 
     # pre-compute the sine and cosine values because the are used for every Pauli string that does not commute with the gate
     cos_val = cos(theta)
@@ -35,7 +35,7 @@ function PropagationBase.applytoall!(gate::PauliRotation, prop_cache::PauliPropa
             continue
         end
 
-        # else we know the gate will split th Pauli string into two
+        # else we know the gate will split the Pauli string into two
         coeff1 = coeff * cos_val
         new_pstr, sign = paulirotationproduct(gate_mask, pstr)
         coeff2 = coeff * sin_val * sign
@@ -76,6 +76,82 @@ function paulirotationproduct(gate_mask::TT, pstr::TT) where TT
     return new_pstr, sign
 end
 
+### Imaginary Pauli Rotation
+
+function PropagationBase.applymergetruncate!(gate::ImaginaryPauliRotation, prop_cache::AbstractPauliPropagationCache, tau; normalize_coeffs=true, kwargs...)
+    # normal application
+    applytoall!(gate, prop_cache, tau; kwargs...)
+
+    # normal merging
+    merge!(prop_cache; kwargs...)
+
+    # This gate assumes we are working in the Schrödinger picture evolving states
+    # we normalize by the coefficient of the identity Pauli string
+    # this is beneficial for numerical stability and if absolute coefficient truncation is used
+    # example failure modes are if the coefficient is zero, of if it is supposed to be a number other than 1
+    # these can be avoided by setting `normalize_coeffs=false`
+    if normalize_coeffs
+        # "getmergedcoeff" because we know there are no duplictates.
+        # for array storage, the identity term will also be right at the beginning
+        mult!(mainsum(prop_cache), 1 / getmergedcoeff(mainsum(prop_cache), 0))
+    end
+
+    # normal truncation
+    truncate!(prop_cache; kwargs...)
+
+    return
+end
+
+function PauliPropagation.applytoall!(gate::ImaginaryPauliRotation, prop_cache::PauliPropagationCache, tau; kwargs...)
+    # unpack the pauli sums
+    psum = mainsum(prop_cache)
+    aux_psum = auxsum(prop_cache)
+
+    # get the bitmask of the Pauli generator
+    # this allows for faster operations
+    gate_mask = symboltoint(paulitype(prop_cache), gate.symbols, gate.qinds)
+
+    # pre-compute the sinh and cosh values because they are used for every Pauli string that does not commute with the gate
+    cosh_val = cosh(tau)
+    sinh_val = sinh(tau)
+    # loop over all Pauli strings and their coefficients in the Pauli sum
+    for (pstr, coeff) in psum
+
+        if !commutes(gate_mask, pstr)
+            # imaginary Pauli rotations branch upon commutation
+            continue
+        end
+
+        coeff1 = coeff * cosh_val
+        # because of the imaginary time, we have take a normal product here
+        # given the commutation, the sign is always real
+        new_pstr, sign = imaginarypaulirotationproduct(gate_mask, pstr)
+        coeff2 = coeff * sinh_val * sign
+
+        # set the coefficient of the original Pauli string
+        set!(psum, pstr, coeff1)
+
+        # set the coefficient of the new Pauli string in the aux_psum
+        # we can set the coefficient because PauliRotations create non-overlapping new Pauli strings
+        set!(aux_psum, new_pstr, coeff2)
+    end
+
+    return
+end
+
+function imaginarypaulirotationproduct(gate_mask::TT, pstr::TT) where TT
+    new_pstr = PauliPropagation._bitpaulimultiply(gate_mask, pstr)
+
+    # this counts the exponent of the imaginary unit in the new Pauli string
+    im_count = PauliPropagation._calculatesignexponent(gate_mask, pstr)
+
+    # now, instead of computing real(im^im_count),
+    # we do this in one step via a cheeky trick:
+    sign = 1 - (im_count & 2)
+    # this is equivalent to sign = real(im^im_count)
+    return new_pstr, sign
+end
+
 
 ### Clifford gates
 
@@ -113,10 +189,9 @@ end
 
 ### Pauli Noise
 """
-    applytoall!(gate::PauliNoise, p, psum, aux_psum; kwargs...)
+    applytoall!(gate::PauliNoise, prop_cache::PauliPropagationCache, p; kwargs...)
 
 Overload of `applytoall!` for `PauliNoise` gates with noise strength `p`. 
-It changes the coefficients in-place and does not require the `aux_psum`, which stays empty.
 """
 function PropagationBase.applytoall!(gate::PauliNoise, prop_cache::PauliPropagationCache, p; kwargs...)
     # unpack the main pauli sum, aux is not needed
@@ -147,11 +222,9 @@ end
 
 ### Amplitude Damping Noise
 """
-    applytoall!(gate::AmplitudeDampingNoise, theta, psum, aux_psum; kwargs...)
+    applytoall!(gate::AmplitudeDampingNoise, prop_cache::PauliPropagationCache, gamma; kwargs...)
 
 Overload of `applytoall!` for `AmplitudeDampingNoise` gates. 
-It fixes the type-instability of the apply() function and reduces moving Pauli strings between psum and aux_psum.
-`psum` and `aux_psum` are merged later.
 """
 function PropagationBase.applytoall!(gate::AmplitudeDampingNoise, prop_cache::PauliPropagationCache, gamma; kwargs...)
     # unpack the pauli sums

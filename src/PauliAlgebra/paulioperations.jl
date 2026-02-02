@@ -22,7 +22,7 @@ If the `pstr.term` bitmask is `0x00`, it signifies the identity operator across 
 `pstr.term` value (representing a non-identity Pauli operator), the trace is `0.0`.
 
 # Arguments
-- `pstr::PauliString{TT, CT}`: The Pauli string to trace. 
+- `pstr::PauliString`: The Pauli string to trace. 
 
 # Returns
 - `CT`: The trace value of the `PauliString`.
@@ -32,9 +32,9 @@ function LinearAlgebra.tr(pstr::PauliString{TT,CT}) where {TT,CT}
 end
 
 """
-    LinearAlgebra.tr(psum::PauliSum)
+    LinearAlgebra.tr(psum::AbstractPauliSum)
 
-Compute the trace of a `PauliSum` operator.
+Compute the trace of an `AbstractPauliSum` operator.
 
 The trace is a linear operation: Tr(A + B) = Tr(A) + Tr(B). Since individual non-identity
 PauliString terms have a trace of zero (as per tr(::PauliString)), only the coefficient
@@ -51,8 +51,8 @@ resulting in a total trace of 0.0.
 # Returns
 `CT`: The trace value of the PauliSum.
 """
-function LinearAlgebra.tr(psum::PauliSum{TT,CT}) where {TT,CT}
-    return getcoeff(psum, zero(TT)) * CT(2.0^nqubits(psum))
+function LinearAlgebra.tr(psum::AbstractPauliSum)
+    return getcoeff(psum, zero(paulitype(psum))) * convert(coefftype(psum), 2^nqubits(psum))
 end
 
 """
@@ -61,12 +61,12 @@ end
 Wrapper for `LinearAlgebra.tr(pstr::PauliString)`.
 
 # Arguments
-- `pstr::PauliString{TT, CT}`: The Pauli string to trace. 
+- `pstr::PauliString`: The Pauli string to trace. 
 
 # Returns
 - `CT`: The trace value of the `PauliString`.
 """
-function trace(pstr::PauliString{TT,CT}) where {TT,CT}
+function trace(pstr::PauliString)
     return LinearAlgebra.tr(pstr)
 end
 
@@ -81,7 +81,7 @@ Wrapper for `LinearAlgebra.tr(psum::PauliSum)`.
 # Returns
 `CT`: The trace value of the PauliSum.
 """
-function trace(psum::PauliSum{TT,CT}) where {TT,CT}
+function trace(psum::AbstractPauliSum)
     return LinearAlgebra.tr(psum)
 end
 

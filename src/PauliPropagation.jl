@@ -72,6 +72,7 @@ export
     StaticGate,
     PauliRotation,
     MaskedPauliRotation,
+    ImaginaryPauliRotation,
     CliffordGate,
     clifford_map,
     transposecliffordmap,
@@ -91,7 +92,8 @@ export
     TGate,
     TransferMapGate,
     tomatrix,
-    toschrodinger
+    toschrodinger,
+    toheisenberg
 
 include("Circuits/Circuits.jl")
 export

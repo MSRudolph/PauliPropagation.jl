@@ -80,11 +80,13 @@ function PropagationBase.propagate!(circuit, prop_cache::AbstractPauliPropagatio
 
     # if thetas is nothing, the circuit must contain only StaticGates
     # also check if the length of thetas equals the number of parametrized gates
-    PropagationBase._checkcircandparams(circuit, thetas)
+    PropagationBase._checknumberofparams(circuit, thetas)
 
     if heisenberg
-        circuit, thetas = reverse(circuit), reverse(thetas)
+        # this usually just reverses circuit and parameter order
+        circuit, thetas = toheisenberg(circuit, thetas)
     else
+        # this usually entails a conversion of how gates act
         circuit, thetas = toschrodinger(circuit, thetas)
     end
 
