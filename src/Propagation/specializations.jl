@@ -22,7 +22,7 @@ function PropagationBase.applytoall!(gate::PauliRotation, prop_cache::PauliPropa
 
     # get the bitmask of the Pauli generator
     # this allows for faster operations
-    gate_mask::paulitype(psum) = symboltoint(nqubits(prop_cache), gate.symbols, gate.qinds)
+    gate_mask = symboltoint(paulitype(prop_cache), gate.symbols, gate.qinds)
 
     # pre-compute the sine and cosine values because the are used for every Pauli string that does not commute with the gate
     cos_val = cos(theta)
@@ -35,7 +35,7 @@ function PropagationBase.applytoall!(gate::PauliRotation, prop_cache::PauliPropa
             continue
         end
 
-        # else we know the gate will split th Pauli string into two
+        # else we know the gate will split the Pauli string into two
         coeff1 = coeff * cos_val
         new_pstr, sign = paulirotationproduct(gate_mask, pstr)
         coeff2 = coeff * sin_val * sign
@@ -77,6 +77,31 @@ function paulirotationproduct(gate_mask::TT, pstr::TT) where TT
 end
 
 ### Imaginary Pauli Rotation
+
+function PropagationBase.applymergetruncate!(gate::ImaginaryPauliRotation, prop_cache::AbstractPauliPropagationCache, tau; normalize_coeffs=true, kwargs...)
+    # normal application
+    applytoall!(gate, prop_cache, tau; kwargs...)
+
+    # normal merging
+    merge!(prop_cache; kwargs...)
+
+    # This gate assumes we are working in the Schrödinger picture evolving states
+    # we normalize by the coefficient of the identity Pauli string
+    # this is beneficial for numerical stability and if absolute coefficient truncation is used
+    # example failure modes are if the coefficient is zero, of if it is supposed to be a number other than 1
+    # these can be avoided by setting `normalize_coeffs=false`
+    if normalize_coeffs
+        # "getmergedcoeff" because we know there are no duplictates.
+        # for array storage, the identity term will also be right at the beginning
+        mult!(mainsum(prop_cache), 1 / getmergedcoeff(mainsum(prop_cache), 0))
+    end
+
+    # normal truncation
+    truncate!(prop_cache; kwargs...)
+
+    return
+end
+
 function PauliPropagation.applytoall!(gate::ImaginaryPauliRotation, prop_cache::PauliPropagationCache, tau; kwargs...)
     # unpack the pauli sums
     psum = mainsum(prop_cache)
@@ -84,7 +109,7 @@ function PauliPropagation.applytoall!(gate::ImaginaryPauliRotation, prop_cache::
 
     # get the bitmask of the Pauli generator
     # this allows for faster operations
-    gate_mask::paulitype(psum) = symboltoint(nqubits(prop_cache), gate.symbols, gate.qinds)
+    gate_mask = symboltoint(paulitype(prop_cache), gate.symbols, gate.qinds)
 
     # pre-compute the sinh and cosh values because they are used for every Pauli string that does not commute with the gate
     cosh_val = cosh(tau)

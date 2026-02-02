@@ -26,6 +26,8 @@ using Random
 
     include("test_paulirotations.jl")
 
+    include("test_imaginary.jl")
+
     include("test_paulioperations.jl")
 
     include("test_paulitransfermaps.jl")

@@ -71,6 +71,28 @@ function getcoeff(::ST, term_sum::AbstractTermSum, trm) where {ST<:StorageType}
     return val
 end
 
+# this assumes everything is merged and de-duplicated
+# may result in wrong results if not
+function getmergedcoeff(term_sum::AbstractTermSum, trm)
+    return getmergedcoeff(StorageType(term_sum), term_sum, trm)
+end
+
+# for the DictStorage, this is the same as getcoeff
+function getmergedcoeff(::DictStorage, term_sum::AbstractTermSum, trm)
+    return getcoeff(DictStorage(), term_sum, trm)
+end
+
+# everywhere else, we do a linear search
+function getmergedcoeff(::StorageType, term_sum::AbstractTermSum, trm)
+    terms_vec, coeffs_vec = storage(term_sum)
+    for (term, coeff) in zip(terms_vec, coeffs_vec)
+        if term == trm
+            return coeff
+        end
+    end
+    return zero(coefftype(term_sum))
+end
+
 
 ### Default functions defined for all TermSum types
 function Base.iterate(term_sum::AbstractTermSum)
