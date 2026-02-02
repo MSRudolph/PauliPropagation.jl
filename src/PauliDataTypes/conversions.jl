@@ -37,6 +37,16 @@ end
 
 PauliSum(vpsum::VectorPauliSum) = PauliSum(topaulistrings(vpsum))
 
+"""
+    VectorPauliSum(nq::Integer, pstr::PauliString)
+
+Constructor for a `VectorPauliSum` on `nqubits` qubits from a `PauliString`.
+"""
+function VectorPauliSum(nq::Integer, pstr::PauliString)
+    _checknumberofqubits(nq, pstr)
+    return VectorPauliSum(pstr)
+end
+
 VectorPauliSum(pstr::PauliString) = VectorPauliSum(pstr.nqubits, [pstr.term], [pstr.coeff])
 VectorPauliSum(psum::PauliSum) = VectorPauliSum(psum.nqubits, collect(paulis(psum)), collect(coefficients(psum)))
 function VectorPauliSum(pstrs::Union{AbstractArray,Tuple,Base.Generator})

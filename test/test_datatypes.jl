@@ -28,31 +28,48 @@ function createpaulisum(nq)
     return psum
 end
 
+function createvectorpaulisum(nq)
+    VectorPauliSum(nq)
+
+    pstr = createpaulistring(nq)
+    VectorPauliSum(nq, pstr)
+
+    pstr = createpaulistring(nq)
+    psum = VectorPauliSum(pstr)
+
+    return psum
+end
+
 @testset "Add to PauliSum" begin
     nq = 65
 
-    psum = createpaulisum(nq)
-    pstr = createpaulistring(nq)
-    pstr_temp = psum + pstr
-    @test isa(pstr_temp, PauliSum)
-    pstr_temp = pstr + pstr
-    @test isa(pstr_temp, PauliSum)
-    add!(psum, pstr)
-    @test getcoeff(psum, pstr.term) == pstr.coeff
+    for (creatorfunc, PS) in zip(
+        (createpaulisum, createvectorpaulisum),
+        (PauliSum, VectorPauliSum)
+    )
+        psum = creatorfunc(nq)
+        pstr = createpaulistring(nq)
+        pstr_temp = psum + pstr
+        @test isa(pstr_temp, PS)
+        pstr_temp = pstr + pstr
+        # currently this always converts to PauliSum
+        @test isa(pstr_temp, PauliSum)
+        add!(psum, pstr)
+        @test getcoeff(psum, pstr.term) == pstr.coeff
 
-    symbol = rand([:I, :X, :Y, :Z])
-    qind = rand(1:nq)
-    coeff = randn()
-    add!(psum, symbol, qind, coeff)
-    @test getcoeff(psum, symbol, qind) == coeff
+        symbol = rand([:I, :X, :Y, :Z])
+        qind = rand(1:nq)
+        coeff = randn()
+        add!(psum, symbol, qind, coeff)
+        @test getcoeff(psum, symbol, qind) == coeff
 
-    symbols = rand([:I, :X, :Y, :Z], min(nq, 4))
-    qinds = shuffle(1:nq)[1:min(nq, 4)]
-    coeff = randn()
-    psum2 = createpaulisum(nq)
-    add!(psum2, symbols, qinds, coeff)
-    @test getcoeff(psum2, symbols, qinds) == coeff
-
+        symbols = rand([:I, :X, :Y, :Z], min(nq, 4))
+        qinds = shuffle(1:nq)[1:min(nq, 4)]
+        coeff = randn()
+        psum2 = creatorfunc(nq)
+        add!(psum2, symbols, qinds, coeff)
+        @test getcoeff(psum2, symbols, qinds) == coeff
+    end
 end
 
 @testset "PauliString Tests" begin
@@ -99,18 +116,23 @@ end
         psum1 = PauliSum(3)
         add!(psum1, [:I, :I, :Y], 1:3, 1.0)
         add!(psum1, :I, 1, 1.5)
+        vecpsum = VectorPauliSum(psum1)
         psum2 = PauliSum(PauliString(3, :I, 1, 1.5))
         result_psum = psum1 - psum2
+        result_vecpsum = vecpsum - psum2
 
         expected_psum = PauliSum(PauliString(3, [:I, :I, :Y], 1:3, 1.0))
         @test result_psum == expected_psum
         @test result_psum ≈ expected_psum
+        @test result_vecpsum == expected_psum
+        @test result_vecpsum ≈ expected_psum
 
         complex_psum = PauliSum(3)
         for (pstr, coeff) in result_psum
             add!(complex_psum, pstr, coeff)
         end
         @test result_psum ≈ complex_psum
+        @test result_vecpsum ≈ complex_psum
     end
 
     @testset "+ PauliSum" begin

@@ -341,6 +341,7 @@ end
 
 
 ## Commutator
+# TODO: implement commutator and pauliprod for VectorPauliSum
 """
     commutator(psum1::PauliSum, psum2::PauliSum)
     

@@ -75,6 +75,184 @@ function PropagationBase.getcoeff(psum::AbstractPauliSum, pstr::Vector{Symbol})
     return getcoeff(psum, symboltoint(pstr))
 end
 
+"""
+    getcoeff(psum::AbstractPauliSum, pstr::Integer)
+
+Get the coefficient of a `PauliString` in a `PauliSum`. Defaults to 0 if the Pauli string is not in the `PauliSum`.
+Requires that the integer Pauli string in `pstr` is the same type as the integer Pauli strings in `psum`.
+"""
+function PropagationBase.getcoeff(psum::AbstractPauliSum, pstr::PauliString)
+    return getcoeff(psum, pstr.term)
+end
+
+
+### Adding symbols or PauliStrings
+# The lower-level add! functions are defined in PropagationBase.jl
+"""
+    add!(psum::AbstractPauliSum, pauli::Symbol, qind::Integer, coeff=1.0)
+    add!(psum::AbstractPauliSum, paulis::Vector{Symbol}, qinds::Vector{Integer}, coeff=1.0)
+
+Add a Pauli string to a `AbstractPauliSum` `psum`. Changes `psum` in-place.
+Provide the Pauli string as a `Symbol` (:I, :X, :Y, :Z) or `Vector{Symbol}`.
+Provide the index or indices for those symbols as `qind` or `qinds`.
+The coefficient of the Pauli string in the Pauli sum defaults to 1.0.
+"""
+function PropagationBase.add!(psum::AbstractPauliSum, paulis::Union{Symbol,Vector{Symbol}}, qinds, coeff=coefftype(psum)(1.0))
+    return add!(psum, PauliString(psum.nqubits, paulis, qinds, coeff))
+end
+
+"""
+    add!(psum::AbstractPauliSum, pstr::PauliString)
+
+Add a `PauliString` `pstr` to a `PauliSum` `psum`. Changes `psum` in-place.
+`psum` and `pstr` need to be defined on the same number of qubits and have the same coefficient type.
+"""
+function PropagationBase.add!(psum::AbstractPauliSum, pstr::PauliString)
+    _checknumberofqubits(psum, pstr)
+
+    # this is supposed to error if pstr.coeff cannot be converted to CT1
+    # because this is an in-place operation
+    pstr_coeff = convert(coefftype(psum), pstr.coeff)
+    add!(psum, pstr.term, pstr_coeff)
+    return psum
+end
+
+"""
+    add!(psum1::AbstractPauliSum, psum2::AbstractPauliSum)
+
+Add two `AbstractPauliSum`s `psum1` and `psum2`. Changes `psum1` in-place.
+`psum1` and `psum2` need to be defined on the same number of qubits and have the same coefficient type.
+"""
+PropagationBase.add!(::AbstractPauliSum, ::AbstractPauliSum)
+
+
+"""
+    add!(psum::AbstractPauliSum, pstr, coeff)
+
+Add a Pauli string `pstr` with coefficient `coeff` to a `AbstractPauliSum` `psum`. This changes `psum` in-place.
+`pstr` needs to have the same type as `paulitype(psum)`, and `coeff` needs to have the same type as `coefftype(psum)`.
+"""
+PropagationBase.add!(::AbstractPauliSum, ::Any, ::Any)
+
+
+"""
+    +(pstr1::PauliString, pstr2::PauliString)
+
+Addition of two `PauliString`s. Returns a PauliSum.
+"""
+function Base.:+(pstr1::PauliString, pstr2::PauliString)
+
+    nq = _checknumberofqubits(pstr1, pstr2)
+
+    # get a compatibel coefficient type
+    CType = promote_type(coefftype(pstr1), coefftype(pstr2))
+    psum = PauliSum(CType, nq)
+    add!(psum, pstr1)
+    add!(psum, pstr2)
+    return psum
+end
+
+"""
+    +(pstr::PauliString, psum::AbstractPauliSum)
+    +(psum::AbstractPauliSum, pstr::PauliString)
+
+Addition of a `PauliString` to a `PauliSum`. Returns a `PauliSum`.
+"""
+function Base.:+(psum::PS, pstr::PauliString) where PS<:AbstractPauliSum
+    nq = _checknumberofqubits(psum, pstr)
+
+    # get a compatible coefficient type
+    CType = promote_type(paulitype(psum), coefftype(pstr))
+    PlainPS = Base.typename(PS).wrapper
+    new_psum = PlainPS(CType, nq)
+
+    add!(new_psum, psum)
+    add!(new_psum, pstr)
+    return new_psum
+end
+
+Base.:+(pstr::PauliString, psum::AbstractPauliSum) = psum + pstr
+
+
+### Subtraction
+
+"""
+    -(pstr1::PauliString, pstr2::PauliString)
+
+Subtract two `PauliString`s. Returns a PauliSum.
+"""
+function Base.:-(pstr1::PauliString, pstr2::PauliString)
+    return pstr1 + (-1 * pstr2)
+end
+
+"""
+    -(pstr::PauliString, psum::AbstractPauliSum)
+    -(psum::AbstractPauliSum, pstr::PauliString)
+
+Subtract a `PauliString` from a `PauliSum` or vice versa.
+Returns a `PauliSum`.
+"""
+function Base.:-(psum::AbstractPauliSum, pstr::PauliString)
+    return psum + (-1 * pstr)
+end
+
+Base.:-(pstr::PauliString, psum::AbstractPauliSum) = mult!(psum - pstr, -1)
+
+
+## Set in Pauli sum
+"""
+    set!(psum::AbstractPauliSum, pstr, coeff)
+
+In-place setting the coefficient of a Pauli string in an `AbstractPauliSum`.
+The type of the Pauli string needs to be the typeof(pstr)==paulitype(psum) and `typeof(coeff)==coefftype(psum)`.
+"""
+PropagationBase.set!
+
+
+### TODO: general products between AbstractPauliSums and PauliStrings
+# TODO: in-place pauliprod()
+
+
+"""
+    ==(psum1::AbstractPauliSum, psum2::AbstractPauliSum)
+Equality check for two `AbstractPauliSum`.
+Calls `isequal()` on the coefficients of the contained Pauli strings,
+which can be square complexity for Pauli sums with non-O(1) `getcoeff()` functions.
+"""
+function Base.:(==)(psum1::AbstractPauliSum, psum2::AbstractPauliSum)
+    return _comparison(isequal, psum1, psum2)
+end
+
+"""
+    ≈(psum1::AbstractPauliSum, psum2::AbstractPauliSum)
+
+Approximate equality check for two `AbstractPauliSum`.
+Calls `isapprox()` on the coefficients of the contained Pauli strings,
+which can be square complexity for Pauli sums with non-O(1) `getcoeff()` functions .
+"""
+function PropagationBase.:≈(psum1::AbstractPauliSum, psum2::AbstractPauliSum)
+    return _comparison(isapprox, psum1, psum2)
+end
+
+function _comparison(compfunc::f, psum1::AbstractPauliSum, psum2::AbstractPauliSum) where {f<:Function}
+    nqubits(psum1) == nqubits(psum2) || return false
+    # we don't strictly need to check the length of the dictionaries
+    # small values are allowed for Pauli strings that don't exist in both
+    # our solution is to check for approximate equality both ways
+    for (pstr, coeff) in zip(paulis(psum1), coefficients(psum1))
+        if !compfunc(getcoeff(psum2, pstr), coeff)
+            return false
+        end
+    end
+    for (pstr, coeff) in zip(paulis(psum2), coefficients(psum2))
+        if !compfunc(getcoeff(psum1, pstr), coeff)
+            return false
+        end
+    end
+
+    return true
+end
+
 
 """
     filter!(filterfunc::Function, psum::AbstractPauliSum)

@@ -109,7 +109,7 @@ function setcummulativevalue(node::CircuitNode, val)
     return
 end
 
-function set!(psum::Dict{TT,NodePathProperties}, pstr::TT, path::NodePathProperties) where {TT}
+function PropagationBase.set!(psum::Dict{TT,NodePathProperties}, pstr::TT, path::NodePathProperties) where {TT}
     psum[pstr] = path
     return psum
 end
