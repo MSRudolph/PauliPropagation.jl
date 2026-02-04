@@ -34,7 +34,12 @@ function PauliSum(pstrs::Union{AbstractArray,Tuple,Base.Generator})
     return psum
 end
 
+"""
+    PauliSum(vpsum::VectorPauliSum)
 
+Convert a `VectorPauliSum` to a `PauliSum`.
+Does not change `vpsum`.
+"""
 PauliSum(vpsum::VectorPauliSum) = PauliSum(topaulistrings(vpsum))
 
 """
@@ -47,8 +52,26 @@ function VectorPauliSum(nq::Integer, pstr::PauliString)
     return VectorPauliSum(pstr)
 end
 
+"""
+    VectorPauliSum(pstr::PauliString)
+
+Constructor for a `VectorPauliSum` from a `PauliString`.
+"""
 VectorPauliSum(pstr::PauliString) = VectorPauliSum(pstr.nqubits, [pstr.term], [pstr.coeff])
+
+"""
+    VectorPauliSum(psum::PauliSum)
+
+Convert a `PauliSum` to a `VectorPauliSum`.
+"""
 VectorPauliSum(psum::PauliSum) = VectorPauliSum(psum.nqubits, collect(paulis(psum)), collect(coefficients(psum)))
+
+
+"""
+    VectorPauliSum(pstrs::Vector{PauliString})
+
+Constructor for a `VectorPauliSum` from a vector of `PauliString`s.
+"""
 function VectorPauliSum(pstrs::Union{AbstractArray,Tuple,Base.Generator})
     nq = _checknumberofqubits(pstrs)
 
