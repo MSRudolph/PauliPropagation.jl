@@ -1,4 +1,8 @@
+"""
+    applytoall!(gate::PauliRotation, prop_cache::VectorPauliPropagationCache, theta; kwargs...)
 
+Overload of `applytoall!` for `PauliRotation` gates and a propagating `VectorPauliSum`.
+"""
 function PropagationBase.applytoall!(gate::PauliRotation, prop_cache::VectorPauliPropagationCache, theta; kwargs...)
 
     # TODO: design this function in a way that it can be the default for branching gates. 
@@ -84,7 +88,11 @@ function _applypaulirotation!(prop_cache::VectorPauliPropagationCache, gate_mask
 end
 
 ### Imaginary Pauli Rotation
+"""
+    applytoall!(gate::ImaginaryPauliRotation, prop_cache::VectorPauliPropagationCache, tau; kwargs...)
 
+Overload of `applytoall!` for `ImaginaryPauliRotation` gates and a propagating `VectorPauliSum`.
+"""
 function PropagationBase.applytoall!(gate::ImaginaryPauliRotation, prop_cache::VectorPauliPropagationCache, tau; kwargs...)
 
     # TODO: design this function in a way that it can be the default for branching gates. 
@@ -169,7 +177,11 @@ function _applyimaginarypaulirotation!(prop_cache::VectorPauliPropagationCache, 
 end
 
 ### Clifford gates
-
+"""
+    applytoall!(gate::CliffordGate, prop_cache::VectorPauliPropagationCache; kwargs...)
+    
+Overload of `applytoall!` for `CliffordGate`s and a propagating `VectorPauliSum`.
+"""
 function PropagationBase.applytoall!(gate::CliffordGate, prop_cache::VectorPauliPropagationCache; kwargs...)
     # TODO: This needs to be reworked for GPU support
 
@@ -198,6 +210,11 @@ requiresmerging(::CliffordGate) = false
 
 ##########################################
 
+"""
+    applytoall!(gate::PauliNoise, prop_cache::VectorPauliPropagationCache, p; kwargs...)
+
+Overload of `applytoall!` for `PauliNoise` gates with noise strength `p` and a propagating `VectorPauliSum`.
+"""
 function PropagationBase.applytoall!(gate::PauliNoise, prop_cache::VectorPauliPropagationCache, p; kwargs...)
 
     # check that the noise strength is in the correct range

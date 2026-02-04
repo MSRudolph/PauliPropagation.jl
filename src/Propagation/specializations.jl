@@ -11,7 +11,7 @@
 """
     applytoall!(gate::PauliRotation, theta, psum, aux_psum; kwargs...)
 
-Overload of `applytoall!` for `PauliRotation` gates. 
+Overload of `applytoall!` for `PauliRotation` gates and a propagating `PauliSum`.
 It fixes the type-instability of the `apply()` function and reduces moving Pauli strings between `psum` and `aux_psum`.
 `psum` and `aux_psum` are merged later.
 """
@@ -77,7 +77,14 @@ function paulirotationproduct(gate_mask::TT, pstr::TT) where TT
 end
 
 ### Imaginary Pauli Rotation
+"""
+    applymergetruncate!(gate::ImaginaryPauliRotation, prop_cache::AbstractPauliPropagationCache, tau; normalize_coeffs=true, kwargs...)
 
+Overload of `applymergetruncate!` for `ImaginaryPauliRotation` gates and a propagating `PauliSum`.
+Applies the gate, merges the resulting Pauli sum, and truncates it.
+If `normalize_coeffs=true`, the resulting Pauli sum is normalized by the coefficient of the identity Pauli string after merging.
+This is useful for numerical stability when evolving states in the Schrödinger picture.
+"""
 function PropagationBase.applymergetruncate!(gate::ImaginaryPauliRotation, prop_cache::AbstractPauliPropagationCache, tau; normalize_coeffs=true, kwargs...)
     # normal application
     applytoall!(gate, prop_cache, tau; kwargs...)
@@ -155,6 +162,12 @@ end
 
 ### Clifford gates
 
+"""
+    applytoall!(gate::CliffordGate, prop_cache::AbstractPauliPropagationCache; kwargs...)
+
+Overload of `applytoall!` for `CliffordGate`s with a propagating `PauliSum`.
+Provides the Clifford lookup map to the default `applytoall!`, and `apply` functions.
+"""
 function PropagationBase.applytoall!(gate::CliffordGate, prop_cache::AbstractPauliPropagationCache, ; kwargs...)
     # greedy overload for Clifford gates
     # this is the most concrete function for them, but with an additional arg it will go into the generic applytoall!
@@ -191,7 +204,7 @@ end
 """
     applytoall!(gate::PauliNoise, prop_cache::PauliPropagationCache, p; kwargs...)
 
-Overload of `applytoall!` for `PauliNoise` gates with noise strength `p`. 
+Overload of `applytoall!` for `PauliNoise` gates with noise strength `p` and a propagating `PauliSum`.
 """
 function PropagationBase.applytoall!(gate::PauliNoise, prop_cache::PauliPropagationCache, p; kwargs...)
     # unpack the main pauli sum, aux is not needed
@@ -224,7 +237,7 @@ end
 """
     applytoall!(gate::AmplitudeDampingNoise, prop_cache::PauliPropagationCache, gamma; kwargs...)
 
-Overload of `applytoall!` for `AmplitudeDampingNoise` gates. 
+Overload of `applytoall!` for `AmplitudeDampingNoise` gates and a propagating `PauliSum`.
 """
 function PropagationBase.applytoall!(gate::AmplitudeDampingNoise, prop_cache::PauliPropagationCache, gamma; kwargs...)
     # unpack the pauli sums
@@ -271,7 +284,7 @@ end
 """
     applytoall!(gate::TGate, prop_cache::AbstractPauliPropagationCache; kwargs...)
 
-Overload of `applytoall!()` for `TGate(qind)`.
+Overload of `applytoall!()` for `TGate(qind)` and a propagating `PauliSum`.
 Redirects to a `PauliRotation(:Z, qind)` with angle π/4.
 """
 function PropagationBase.applytoall!(gate::TGate, prop_cache::AbstractPauliPropagationCache; kwargs...)

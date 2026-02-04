@@ -55,13 +55,11 @@ Base.copy(psum::PauliSum) = PauliSum(psum.nqubits, copy(psum.terms))
 ### Products
 # TODO: enable for Vector PauliSum
 
-"""
-    *(pstr::PauliString, psum::PauliSum)
-    *(psum::PauliSum, pstr::PauliString)
 
-Perform a Pauli product of a `PauliString` with a `PauliSum`.
-Returns a `PauliSum` with complex coefficients.
-"""
+#     *(pstr::PauliString, psum::PauliSum)
+#     *(psum::PauliSum, pstr::PauliString)
+# Perform a Pauli product of a `PauliString` with a `PauliSum`.
+# Returns a `PauliSum` with complex coefficients.
 function Base.:*(psum::PauliSum, pstr::PauliString)
 
     psum2 = PauliSum(pstr)
@@ -75,12 +73,10 @@ function Base.:*(pstr::PauliString, psum::PauliSum)
 end
 
 
-"""
-    *(psum1::PauliSum, psum2::PauliSum)
 
-Perform a Pauli product of two `PauliSum`s.
-Returns a `PauliSum` with complex coefficients.
-"""
+#     *(psum1::PauliSum, psum2::PauliSum)
+# Perform a Pauli product of two `PauliSum`s.
+# Returns a `PauliSum` with complex coefficients.
 function Base.:*(psum1::PauliSum, psum2::PauliSum)
 
     return pauliprod(psum1, psum2)
@@ -98,21 +94,16 @@ function Base.show(io::IO, psum::PauliSum)
 end
 
 
-"""
-    sizehint!(psum::PauliSum, n)
 
-Hint to the `PauliSum` to reserve space for `n` terms.
-"""
+#     sizehint!(psum::PauliSum, n)
+# Hint to the `PauliSum` to reserve space for `n` terms.
 Base.sizehint!(psum::PauliSum, n) = sizehint!(psum.terms, n)
 
 
 
-"""
-    similar(psum::PauliSum)
-
-Create a new `PauliSum` with the same number of qubits and coefficient type as `psum`.
-Calls `sizehint!()` with `length(psum)` on the dictionary of the new `PauliSum`. 
-"""
+#     similar(psum::PauliSum)
+# Create a new `PauliSum` with the same number of qubits and coefficient type as `psum`.
+# Calls `sizehint!()` with `length(psum)` on the dictionary of the new `PauliSum`. 
 function Base.similar(psum::PauliSum)
     return PauliSum(psum.nqubits, similar(psum.terms))
 end

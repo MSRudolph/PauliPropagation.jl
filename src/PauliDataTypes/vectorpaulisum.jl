@@ -9,7 +9,13 @@
 using AcceleratedKernels
 const AK = AcceleratedKernels
 
+"""
+    VectorPauliSum{TV,CV} <: AbstractPauliSum
 
+`VectorPauliSum` is a `struct` that represents a sum of Pauli strings acting on `nqubits` qubits.
+It is a wrapper around two vectors: one for the Pauli strings (as unsigned Integers for efficiency reasons), and one for the coefficients.
+Using it defaults to multi-threaded operations where possible.
+"""
 struct VectorPauliSum{TV,CV} <: AbstractPauliSum
     nqubits::Int
     terms::TV
@@ -21,7 +27,18 @@ struct VectorPauliSum{TV,CV} <: AbstractPauliSum
     end
 end
 
+"""
+    VectorPauliSum(nqubits::Int)
+
+Constructor for an empty `VectorPauliSum` on `nqubits` qubits. Element type defaults for Float64.
+"""
 VectorPauliSum(nqubits::Int) = VectorPauliSum(Float64, nqubits)
+
+"""
+    VectorPauliSum(::Type{CT}, nqubits::Int)
+
+Contructor for an empty `VectorPauliSum` on `nqubits` qubits. The type of the coefficients can be provided.
+"""
 VectorPauliSum(::Type{CT}, nqubits::Int) where {CT} = VectorPauliSum(nqubits, getinttype(nqubits)[], CT[])
 
 PropagationBase.storage(vpsum::VectorPauliSum) = (vpsum.terms, vpsum.coeffs)

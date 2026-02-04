@@ -17,3 +17,9 @@ Pages = ["src/PauliDataTypes/paulisum.jl"]
 Modules = [PauliPropagation]
 Pages = ["src/PauliDataTypes/vectorpaulisum.jl"]
 ```
+
+## Conversions
+```@autodocs
+Modules = [PauliPropagation]
+Pages = ["src/PauliDataTypes/conversion.jl"]
+```
