@@ -43,7 +43,6 @@ VectorPauliSum(::Type{CT}, nqubits::Int) where {CT} = VectorPauliSum(nqubits, ge
 
 PropagationBase.storage(vpsum::VectorPauliSum) = (vpsum.terms, vpsum.coeffs)
 
-
 """
     nqubits(vpsum::VectorPauliSum)
 

@@ -75,29 +75,22 @@ function PropagationBase.numcoefftype(pstr::PauliString{TT,CT}) where {TT,CT}
 end
 
 
-"""
-    *(pstr::PauliString, c::Number)
 
-Multiply a `PauliString` by a scalar `c`. Returns a new `PauliString`.
-"""
+#     *(pstr::PauliString, c::Number)
+# Multiply a `PauliString` by a scalar `c`. Returns a new `PauliString`.
 *(pstr::PauliString, c::Number) = PauliString(pstr.nqubits, pstr.term, pstr.coeff * c)
 *(c::Number, pstr::PauliString) = pstr * c
 
-"""
-    *(pstr1::PauliString, pstr2::PauliString)
 
-Perform a Pauli product of two `PauliString`s. 
-"""
+#     *(pstr1::PauliString, pstr2::PauliString)
+# Perform a Pauli product of two `PauliString`s. 
 function *(pstr1::PauliString, pstr2::PauliString)
 
     return pauliprod(pstr1, pstr2)
 end
 
-"""
-    /(pstr::PauliString, c::Number)
-
-Divide a `PauliString` by a scalar `c`. Returns a new `PauliString`.
-"""
+#     /(pstr::PauliString, c::Number)
+# Divide a `PauliString` by a scalar `c`. Returns a new `PauliString`.
 /(pstr::PauliString, c::Number) = pstr * (1 / c)
 
 

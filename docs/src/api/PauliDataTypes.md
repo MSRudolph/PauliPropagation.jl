@@ -21,5 +21,11 @@ Pages = ["src/PauliDataTypes/vectorpaulisum.jl"]
 ## Conversions
 ```@autodocs
 Modules = [PauliPropagation]
-Pages = ["src/PauliDataTypes/conversion.jl"]
+Pages = ["src/PauliDataTypes/conversions.jl"]
+```
+
+## AbstractPauliSum
+```@autodocs
+Modules = [PauliPropagation]
+Pages = ["src/PauliDataTypes/abstractpaulisum.jl"]
 ```
