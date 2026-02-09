@@ -175,12 +175,12 @@ function PropagationBase.applytoall!(gate::PauliRotation, prop_cache::PauliPropa
     aux_psum = auxsum(prop_cache)
 
     # Convert PauliRotation to MaskedPauliRotation for efficiency
-    gate_mask = symboltoint(nqubits(psum), gate.symbols, gate.qinds)
+    gate_mask = symboltoint(paulitype(psum), gate.symbols, gate.qinds)
 
     # Loop over all Pauli strings and their coefficients in the Pauli sum
     for (pstr, coeff) in psum
         pstr_str = format_pauli_string(pstr, psum.nqubits)
-        if commutes(gate, pstr)
+        if commutes(gate_mask, pstr)
             # If the gate commutes, create a new child node and edge
             pstr_str = format_pauli_string(pstr, psum.nqubits)
             gate_symbol = isempty(gate.symbols) ? "?" : string(gate.symbols[1])
