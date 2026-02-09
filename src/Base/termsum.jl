@@ -95,7 +95,17 @@ end
 
 
 ### Default functions defined for all TermSum types
-function Base.iterate(term_sum::AbstractTermSum)
+@inline function Base.iterate(term_sum::AbstractTermSum, args...)
+    return _iterate(StorageType(term_sum), term_sum, args...)
+end
+
+@inline function _iterate(::DictStorage, term_sum::AbstractTermSum, args...)
+    dict_storage = storage(term_sum)
+    return iterate(dict_storage, args...)
+end
+
+
+@inline function _iterate(::StorageType, term_sum::AbstractTermSum)
     # 1. Create the iterator we are delegating to
     iter = zip(terms(term_sum), coefficients(term_sum))
 
@@ -107,7 +117,7 @@ function Base.iterate(term_sum::AbstractTermSum)
     return next === nothing ? nothing : (next[1], (iter, next[2]))
 end
 
-function Base.iterate(term_sum::AbstractTermSum, state)
+@inline function _iterate(::StorageType, term_sum::AbstractTermSum, state)
     # 1. Unpack the state tuple
     (iter, inner_state) = state
 
@@ -138,16 +148,16 @@ end
     add!(term_sum::AbstractTermSum, term, coeff)
 
 Add `coeff` to the coefficient of `term` in `term_sum`.
-Calls `add!(StorageType(term_sum), term_sum, term, coeff)` internally.
-For custom behavior, overload `storage()` and/or `add!` for the specific TermSum type.
+Calls `_add!(StorageType(term_sum), term_sum, term, coeff)` internally.
+For custom behavior, overload `storage()` and/or `_add!` for the specific TermSum type.
 """
-function add!(term_sum::AbstractTermSum, term, coeff)
-    add!(StorageType(term_sum), term_sum, term, coeff)
+@inline function add!(term_sum::AbstractTermSum, term, coeff)
+    _add!(StorageType(term_sum), term_sum, term, coeff)
     return term_sum
 end
 
 
-function add!(::DictStorage, term_sum::AbstractTermSum, term, coeff)
+@inline function _add!(::DictStorage, term_sum::AbstractTermSum, term, coeff)
     dict_storage = storage(term_sum)
     if haskey(dict_storage, term)
         dict_storage[term] += coeff
@@ -157,7 +167,7 @@ function add!(::DictStorage, term_sum::AbstractTermSum, term, coeff)
     return term_sum
 end
 
-function add!(::ArrayStorage, term_sum::AbstractTermSum, term, coeff)
+@inline function _add!(::ArrayStorage, term_sum::AbstractTermSum, term, coeff)
     terms_vec, coeffs_vec = storage(term_sum)
     ind = findfirst(t -> t == term, terms_vec)
     if !isnothing(ind)
@@ -169,20 +179,20 @@ function add!(::ArrayStorage, term_sum::AbstractTermSum, term, coeff)
     return term_sum
 end
 
-function add!(::StorageType, term_sum::AbstractTermSum, term, coeff)
-    thrownotimplemented(typeof(term_sum), :add!)
+@inline function _add!(::StorageType, term_sum::AbstractTermSum, term, coeff)
+    thrownotimplemented(typeof(term_sum), :_add!)
 end
 
 
 function add!(term_sum1::AbstractTermSum, term_sum2::AbstractTermSum)
-    for (term, coeff) in zip(terms(term_sum2), coefficients(term_sum2))
+    for (term, coeff) in term_sum2
         add!(term_sum1, term, coeff)
     end
     return term_sum1
 end
 
 function subtract!(term_sum1::AbstractTermSum, term_sum2::AbstractTermSum)
-    for (term, coeff) in zip(terms(term_sum2), coefficients(term_sum2))
+    for (term, coeff) in term_sum2
         add!(term_sum1, term, -coeff)
     end
     return term_sum1
@@ -193,23 +203,22 @@ end
     set!(term_sum::AbstractTermSum, term, coeff)
     
 Set the coefficient of `term` in `term_sum` to `coeff`.
-Calls `set!(StorageType(term_sum), term_sum, term, coeff)` internally.
-For custom behavior, overload `storage()` and/or `set!` for the specific TermSum type.
+Calls `_set!(StorageType(term_sum), term_sum, term, coeff)` internally.
+For custom behavior, overload `storage()` and/or `_set!` for the specific TermSum type.
 """
-set!(term_sum::AbstractTermSum, term, coeff) = set!(StorageType(term_sum), term_sum, term, coeff)
+@inline function set!(term_sum::AbstractTermSum, term, coeff)
+    _set!(StorageType(term_sum), term_sum, term, coeff)
+    return term_sum
+end
 
-"""
-    set!(term_storage::Dict, term, coeff)
 
-Default implementation of `set!()` for `Dict` storage.
-"""
-function set!(::DictStorage, term_sum::AbstractTermSum, term, coeff)
+@inline function _set!(::DictStorage, term_sum::AbstractTermSum, term, coeff)
     dict_storage = storage(term_sum)
     dict_storage[term] = coeff
     return term_sum
 end
 
-function set!(::ArrayStorage, term_sum::AbstractTermSum, term, coeff)
+@inline function _set!(::ArrayStorage, term_sum::AbstractTermSum, term, coeff)
     terms_vec, coeffs_vec = storage(term_sum)
     ind = findfirst(t -> t == term, terms_vec)
     if !isnothing(ind)
@@ -221,13 +230,13 @@ function set!(::ArrayStorage, term_sum::AbstractTermSum, term, coeff)
     return term_sum
 end
 
-function set!(::StorageType, term_sum::AbstractTermSum, term, coeff)
+@inline function _set!(ST::StorageType, term_sum::AbstractTermSum, term, coeff)
     old_coeff = getcoeff(term_sum, term)
     if old_coeff == zero(coefftype(term_sum))
-        add!(term_sum, term, coeff)
+        _add!(ST, term_sum, term, coeff)
     else
         delta = coeff - old_coeff
-        add!(term_sum, term, delta)
+        _add!(ST, term_sum, term, delta)
     end
     return term_sum
 end
