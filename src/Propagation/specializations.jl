@@ -30,7 +30,7 @@ function PropagationBase.applytoall!(gate::PauliRotation, prop_cache::PauliPropa
     # loop over all Pauli strings and their coefficients in the Pauli sum
     for (pstr, coeff) in psum
 
-        if commutes(gate, pstr)
+        if commutes(gate_mask, pstr)
             # if the gate commutes with the pauli string, do nothing
             continue
         end
