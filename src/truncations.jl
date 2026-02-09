@@ -1,38 +1,64 @@
-## TODO: Make actual use of this ile or remove.
+# Custom truncation function
 
+# Define the custom truncation functions by dissipation-assisted damping
 """
-    truncateweight(pstr::PauliStringType, max_weight::Real)
-    
-Return `true` if an integer Pauli string should be truncated because its weight (i.e., number of non-identity Paulis) is larger than `max_weight`. 
+    truncatedampingcoeff(
+        pstr::Integer, 
+        coeff::Real, 
+        gamma::Number, 
+        min_abs_coeff::Float64
+    )
+
+Custom truncation function with dissipation-assisted damping of coefficients.
+It returns `true` (indicating to truncate) if the coefficient exponentially damped by the Pauli weight drops below `min_abs_coeff`.
+
+The function evaluates the condition:
+`abs(coeff) * 10^(-gamma * countweight(pstr)) < min_abs_coeff`
+
+`gamma` is the damping factor controlling the rate of exponential decay with Pauli weight.
+
+To turn this function into a custom truncation function for `propagate()`, you need to define a _closure_ 
+that only takes the `pstr` and `coeff` as arguments, but has `gamma` and `min_abs_coeff` fixed.
+
+Example:
+```julia
+customtruncfunc = (pstr, coeff) -> truncatedampingcoeff(pstr, coeff, 0.5, 1e-10) 
+```
 """
+function truncatedampingcoeff(
+    pstr::PauliStringType, coeff, gamma::Number, min_abs_coeff::Real
+)
+
+    return abs(tonumber(coeff)) * 10.0^(-gamma * countweight(pstr)) < min_abs_coeff
+end
+
+
+## TODO: Make actual use of this file or remove.
+## from here on, the are just for the backend
+
+## Truncations on the Pauli string:
+
+# Return `true` if an integer Pauli string should be truncated because its weight (i.e., number of non-identity Paulis) is larger than `max_weight`. 
 function truncateweight(pstr::PauliStringType, max_weight::Real)
     return countweight(pstr) > max_weight
 end
 
-"""
-    truncatemincoeff(coeff, min_abs_coeff::Real)
 
-Return `true` if `abs(coeff) < min_abs_coeff`. Truncations on coefficients should default to false if it is not applicable for a type.
-"""
+## Truncations on the coefficient:
+
+# Truncations on unsuitable coefficient types defaults to false.
 function truncatemincoeff(coeff, min_abs_coeff::Real)
     return false
 end
 
-"""
-    truncatemincoeff(coeff::Float64, min_abs_coeff::Real)
 
-Return `true` if `abs(coeff) < min_abs_coeff`. 
-"""
-function truncatemincoeff(coeff::Real, min_abs_coeff::Real)
+# Return `true` if `abs(coeff) < min_abs_coeff`. 
+function truncatemincoeff(coeff::Number, min_abs_coeff::Real)
     return abs(coeff) < min_abs_coeff
 end
 
 
-"""
-    truncatemincoeff(path_property::PathProperties, min_abs_coeff::Real)
-
-Return `true` if `abs(path_property.coeff) < min_abs_coeff`. 
-"""
+# Return `true` if `abs(path_property.coeff) < min_abs_coeff`. 
 function truncatemincoeff(path_property::PProp, min_abs_coeff::Real) where {PProp<:PathProperties}
     if hasfield(PProp, :coeff)
         return abs(path_property.coeff) < min_abs_coeff
@@ -42,20 +68,13 @@ function truncatemincoeff(path_property::PProp, min_abs_coeff::Real) where {PPro
 end
 
 
-"""
-    truncatefrequency(coeff, max_freq::Real)
-
-Return `true` if  `PathProperties.freq > max_freq`. Truncations on coefficients should default to false if it is not applicable for a type.
-"""
+# Return `true` if  `PathProperties.freq > max_freq`. Truncations on coefficients should default to false if it is not applicable for a type.
 function truncatefrequency(coeff, max_freq::Real)
     return false
 end
 
-"""
-    truncatefrequency(path_properties::PathProperties, max_freq::Real)
 
-Return `true` if  `path_properties.freq > max_freq`.
-"""
+# Return `true` if  `path_properties.freq > max_freq`.
 function truncatefrequency(path_properties::PProp, max_freq::Real) where {PProp<:PathProperties}
     if hasfield(PProp, :freq)
         return path_properties.freq > max_freq
@@ -64,19 +83,13 @@ function truncatefrequency(path_properties::PProp, max_freq::Real) where {PProp<
     end
 end
 
-"""
-    truncatesins(coeff, max_sins::Real)
-
-Return `true` if  `PathProperties.nsins > max_sins`. Truncations on coefficients should default to false if it is not applicable for a type.
-"""
+# Return `true` if  `PathProperties.nsins > max_sins`. Truncations on coefficients should default to false if it is not applicable for a type.
 function truncatesins(coeff, max_sins::Real)
     return false
 end
-"""
-    truncatesins(path_properties::PathProperties, max_sins::Real)
 
-Return `true` if  `path_properties.nsins > max_sins`.
-"""
+
+# Return `true` if  `path_properties.nsins > max_sins`.
 function truncatesins(path_properties::PProp, max_sins::Real) where {PProp<:PathProperties}
     if hasfield(PProp, :nsins)
         return path_properties.nsins > max_sins
@@ -85,48 +98,3 @@ function truncatesins(path_properties::PProp, max_sins::Real) where {PProp<:Path
     end
 end
 
-# Custom truncation function
-
-# Define the custom truncation functions by dissipation-assisted damping
-"""
-    truncatedampingcoeff(
-        pstr::PauliStringType, 
-        coeff::Real, 
-        gamma::Real, 
-        min_abs_coeff::Float64
-    )
-
-Custom truncation function with dissipation-assisted damping of coefficients.
-
-This function damps the coefficient `coeff` scaling with the weight of an interger Pauli string `pstr`. 
-The damping factor is `gamma`. 
-If the coefficient, damped by an exponential factor, falls below `min_abs_coeff`, 
-the function returns `true` to indicate truncation.
-
-# Arguments
-- `pstr::PauliStringType`: The Pauli string whose coefficient may be damped.
-- `coeff::Float64`: The coefficient associated with the Pauli string `pstr`.
-- `gamma::Float64`: Gamma, rate of exponential decay in the damping process.
-- `min_abs_coeff::Float64`: The minimum value of the coefficient for truncation.
-
-# Returns
-- `Bool`: `true` if the damped coefficient of `pstr` < `min_abs_coeff`;
-    `false` otherwise.
-
-# Details
-The function evaluates the condition:
-`abs(coeff) * exp(-gamma * w(pstr)) < min_abs_coeff`
-
-where `w(pstr)` is the weight of the Pauli string (computed by `countweight`). 
-The damping factor `gamma` controls the exponential decay.
-
-# Examples
-```julia
-truncatedampingcoeff(pstr, 0.8, 0.5, 0.01)
-"""
-function truncatedampingcoeff(
-    pstr::PauliStringType, coeff::Real, gamma::Real, min_abs_coeff::Real
-)
-
-    return abs(coeff) * exp(-gamma * countweight(pstr)) < min_abs_coeff
-end

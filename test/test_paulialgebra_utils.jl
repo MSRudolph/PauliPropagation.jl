@@ -24,8 +24,8 @@ end
     end
 
     # Test the bounds error for converting integers outside [0, 3]
-    @test_throws BoundsError inttosymbol(4)
-    @test_throws BoundsError inttosymbol(-1)
+    @test_throws ArgumentError inttosymbol(4)
+    @test_throws ArgumentError inttosymbol(-1)
 
     # Test multiqubit conversion. Note that the order of the symbols is reversed
     # compared to the bitstring to int conversion.
@@ -109,6 +109,45 @@ end
 
     # Test target_pauli as integer
     @test setpauli(pstr.term, 3, 1) == expected_pstr.term
+
+end
+
+
+@testset "Get Pauli for a range of indices" begin
+    nq = 12
+    pstr = PauliString(nq, [:X, :Z], [3, 9])
+
+    @test getpauli(pstr.term, range(2, 10)) == getpauli(pstr.term, range(2, 10))
+    @test getpauli(pstr.term, range(2, 10)) == getpauli(pstr.term, 2, 10)
+end
+
+@testset "Set Pauli Continuous" begin
+    nq = 12
+    pstr = PauliString(nq, [:X, :Z], [3, 9])
+    target_pstr = PauliString(nq, [:Y, :X], [4, 5])
+    @test setpauli(pstr.term, target_pstr.term, 2, 10) == setpauli(pstr.term, target_pstr.term, range(2, 10))
+end
+
+
+@testset "Convert PauliString/PauliSum coeff types" begin
+
+    @testset "PauliString" begin
+        pstr = PauliString(2, :X, 1, 1 + 0im)
+        @test convertcoefftype(Float64, pstr) == PauliString(2, :X, 1, 1.)
+
+        pstr = PauliString(2, [:X, :Y], [1, 2], 1)
+        @test convertcoefftype(ComplexF64, pstr) == PauliString(2, [:X, :Y], [1, 2], 1 + 0im)
+    end
+
+    @testset "PauliSum" begin
+        psum = PauliSum(ComplexF64, 2)
+        add!(psum, [:X, :Y], [1, 2], 2 + 0im)
+        add!(psum, :Z, 1, 1 + 0im)
+        expected_psum = PauliSum(2)
+        add!(expected_psum, [:X, :Y], [1, 2], 2)
+        add!(expected_psum, :Z, 1, 1)
+        @test convertcoefftype(Float64, psum) == expected_psum
+    end
 
 end
 

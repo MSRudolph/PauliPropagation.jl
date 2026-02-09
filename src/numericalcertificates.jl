@@ -1,4 +1,4 @@
-using Statistics
+using StatsBase
 
 """
     estimatemse(circ, pstr::PauliString, n_mcsamples::Integer, thetas=π; stateoverlapfunc=overlapwithzero, circuit_is_reversed=false, customtruncfunc=nothing)
@@ -34,14 +34,20 @@ function estimatemse(circ, pstr::PauliString, n_mcsamples::Integer, thetas=π; s
 end
 
 """
-    estimatemse!(circ, pstr::PauliString, error_array::AbstractVector, thetas, split_probabilities; stateoverlapfunc=overlapwithzero, circuit_is_reversed=false, kwargs...)
+    estimatemse!(
+    circ, pstr::PauliString, error_array::AbstractVector, thetas, split_probabilities; 
+    stateoverlapfunc=overlapwithzero, circuit_is_reversed=false, max_weight=Inf, max_freq=Inf, max_sins=Inf, customtruncfunc=nothing
+    )
 
 In-place version of `estimatemse`. This function takes an array `error_array` of length `n_mcsamples` as an argument and modifies it in-place. 
 It further assumes that the `thetas` and `split_probabilities` are already correctly calculated and provided as arguments. 
 In general they will be vectors, but they can also be real numbers.
 A custom truncation function can be passed as `customtruncfunc` with the signature `customtruncfunc(pstr::PauliStringType, coefficient)::Bool`.
 """
-function estimatemse!(circ, pstr::PauliString, error_array::AbstractVector, thetas, split_probabilities; stateoverlapfunc=overlapwithzero, circuit_is_reversed=false, kwargs...)
+function estimatemse!(
+    circ, pstr::PauliString, error_array::AbstractVector, thetas, split_probabilities;
+    stateoverlapfunc=overlapwithzero, circuit_is_reversed=false, max_weight=Inf, max_freq=Inf, max_sins=Inf, customtruncfunc=nothing
+)
     # This function takes an error_array as an argument and modifies it in-place.
 
     # length(thetas) should be equal to the number of parametrized gates in the circuit
@@ -57,6 +63,14 @@ function estimatemse!(circ, pstr::PauliString, error_array::AbstractVector, thet
         end
     end
 
+    # if max_freq or max_sins is not Inf, then the Pauli string must be a PathProperties type
+    # check whether the coefficient of the Pauli string is properly wrapped and convert it if not
+    if max_freq != Inf || max_sins != Inf
+        if !(pstr.coeff isa PathProperties)
+            pstr = wrapcoefficients(pstr, PauliFreqTracker)
+        end
+    end
+
     # reverse the circuit once 
     if !circuit_is_reversed
         circ = reverse(circ)
@@ -68,7 +82,7 @@ function estimatemse!(circ, pstr::PauliString, error_array::AbstractVector, thet
 
     n_mcsamples = length(error_array)
     @threads for ii in 1:n_mcsamples
-        final_pstr, is_truncated = montecarlopropagation(circ, pstr, thetas, split_probabilities; kwargs...)
+        final_pstr, is_truncated = montecarlopropagation(circ, pstr, thetas, split_probabilities; max_weight, max_freq, max_sins, customtruncfunc)
 
         # multiply the coefficient of the backpropagated Pauli with the overlap with the initial state
         # and then multply with `is_truncated` to get the final error.
@@ -82,14 +96,9 @@ end
 
 # TODO: provide an easy way to just Monte Carlo sample paths. This will happen in a refactor.
 
-"""
-    montecarlopropagation(circ, pstr::PauliString, thetas, split_probabilities; max_weight=Inf, max_freq=Inf, max_sins=Inf)
-
-Perform a single Monte Carlo propagation of a Pauli string through an already reversed circuit. Returns the final Pauli string and a boolean indicating whether the path was truncated.
-
-It further assumes that the `thetas` and `split_probabilities` are already correctly calculated and provided as arguments. 
-In general they will be vectors, but they can also be real numbers.
-"""
+# Perform a single Monte Carlo propagation of a Pauli string through an already reversed circuit. Returns the final Pauli string and a boolean indicating whether the path was truncated.
+# It further assumes that the `thetas` and `split_probabilities` are already correctly calculated and provided as arguments. 
+# In general they will be vectors, but they can also be real numbers.
 function montecarlopropagation(circ, pstr::PauliString, thetas, split_probabilities; max_weight=Inf, max_freq=Inf, max_sins=Inf, customtruncfunc=nothing)
 
     param_idx = length(thetas)
@@ -136,21 +145,14 @@ end
 
 ## Monte Carlo apply functions
 
-"""
-    mcapply(gate::CliffordGate, pauli, coeff, theta, split_probability)
+# `mcapply()` function for a `CliffordGate` is just the `apply()` function because it does not split.
+mcapply(gate::CliffordGate, pstr::PauliString, theta, split_probability) = PauliString(pstr.nqubits, only(apply(gate, pstr.term, pstr.coeff, clifford_map[gate.symbol]))...)
 
-`mcapply()` function for a `CliffordGate` is just the `apply()` function because it does not split.
-"""
-mcapply(gate::CliffordGate, pstr::PauliString, theta, split_probability) = PauliString(pstr.nqubits, apply(gate, pstr.term, pstr.coeff)...)
 
-"""
-    mcapply(gate::MaskedPauliRotation, pauli, coeff, theta, split_prob) 
-
-MC apply function for a `MaskedPauliRotation`.
-This will error if a `PauliRotation` is not converted to a `MaskedPauliRotation` before calling this function.
-If the gate commutes with the pauli string, the pauli string is left unchanged. 
-Else the pauli string is split off with a probability 1 - `split_prob`.
-"""
+# MC apply function for a `MaskedPauliRotation`.
+# This will error if a `PauliRotation` is not converted to a `MaskedPauliRotation` before calling this function.
+# If the gate commutes with the pauli string, the pauli string is left unchanged. 
+# Else the pauli string is split off with a probability 1 - `split_prob`.
 function mcapply(gate::MaskedPauliRotation, pstr::PauliString, theta, split_prob)
 
     if commutes(gate, pstr.term)
@@ -161,7 +163,7 @@ function mcapply(gate::MaskedPauliRotation, pstr::PauliString, theta, split_prob
     # if the gate does not commute with the pauli string, remain with probability `split_prob` and split off with probability 1 - `split_prob`.
     if rand() < split_prob
         # branch into the new Pauli string, ifnore ignore the sign
-        new_term, sign = getnewpaulistring(gate, pstr.term)
+        new_term, sign = paulirotationproduct(gate, pstr.term)
         # for PathProperties: increment sin and frequency count
         coeff = _incrementsinandfreq(coeff)
     else
@@ -213,11 +215,10 @@ _incrementcosandfreq(val::Number) = val
 _incrementsinandfreq(val::Number) = val
 
 ## Utilities for `estimatemse()`
-"""
-Function that automatically calculates the vector of splitting probabilities of the gates in the circuit based on a vector of thetas.
-For Pauli gates, the theta value is interpreted as the limits of the integration [-theta, theta].
-For AmplitudeDampingNoise, the splitting probability is the damping rate.
-"""
+
+# Function that automatically calculates the vector of splitting probabilities of the gates in the circuit based on a vector of thetas.
+# For Pauli gates, the theta value is interpreted as the limits of the integration [-theta, theta].
+# For AmplitudeDampingNoise, the splitting probability is the damping rate.
 function _calculatesplitprobabilities(circ::AbstractArray, thetas::AbstractArray)
     if length(thetas) != countparameters(circ)
         throw("Vector `thetas` must have same length the number of parametrized gates in `circ`.")
@@ -235,10 +236,9 @@ function _calculatesplitprobabilities(circ::AbstractArray, thetas::AbstractArray
     return split_probabilities
 end
 
-"""
-Function that automatically calculates the splitting probability of the gates in the circuit based on a one number theta.
-This assumes that the circuit consists only of `PauliRotation` -`CliffordGate`.
-"""
+
+# Function that automatically calculates the splitting probability of the gates in the circuit based on a one number theta.
+# This assumes that the circuit consists only of `PauliRotation` -`CliffordGate`.
 function _calculatesplitprobabilities(circ::AbstractArray, r::Number)
     return 0.5 * (1 - sin(2 * r) / (2 * r))
 end

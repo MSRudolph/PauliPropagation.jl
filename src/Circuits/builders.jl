@@ -7,17 +7,22 @@
 
 ## Circuits corresponding to Trotter time evolution circuits
 """
-    tfitrottercircuit(nqubits::Integer, nlayers::Integer; topology=nothing, start_with_ZZ=true)
+    tfitrottercircuit(nqubits::Integer, nlayers::Integer; topology=bricklayertopology(nqubits), start_with_ZZ=true)
 
 Create a circuit that corresponds to a Trotterization of the transverse-field Ising Hamiltonian. 
+```math
+H = ∑_{(i,j) ∈ topology} J_{ij} Z_i Z_j + ∑_{i=1 ... nqubits} h_i X_i
+```
+This returns only the sequence of gates, not their parameters.
 A topology can be specified as a list of pairs of qubit indices. If no topology is specified, a bricklayer topology is used.
 If `start_with_ZZ` is set to `true`, the circuit starts with a layer of ZZ gates, else with a layer of X gates. This is relevant depending on the initial state.
 """
-function tfitrottercircuit(nqubits::Integer, nlayers::Integer; topology=nothing, start_with_ZZ=true)
+function tfitrottercircuit(nqubits::Integer, nlayers::Integer; topology=bricklayertopology(nqubits), start_with_ZZ=true)
     circuit::Vector{Gate} = []
 
-    if isnothing(topology)
-        topology = bricklayertopology(nqubits)
+    # the function after this expects a circuit with at least one layer and will always append something
+    if nlayers == 0
+        return circuit
     end
 
     if start_with_ZZ
@@ -39,29 +44,20 @@ function tfitrottercircuit(nqubits::Integer, nlayers::Integer; topology=nothing,
 end
 
 """
-    tiltedtfitrottercircuit(nqubits, n_layers; topology=nothing)
+    tiltedtfitrottercircuit(nqubits::Integer, nlayers::Integer; topology=bricklayertopology(nqubits))
 
-Returns a Trottterized circuit for the tilted transverse field Ising model.
-H = Sum_{(i, i+1) in topology} Z_i Z_{i+1} 
-  + Sum_{i=1}^{nqubits} Z_i + Sum_{i=1}^{nqubits} X_i
-
-# Arguments
-- `nqubits::Integer`: The number of qubits in the circuit.
-- `n_layers::Integer`: The number of Trotter steps to perform.
-- `topology=nothing`: The topology of the qubits in the circuit. 
-    Default (nothing): A linear chain.
-
-# Returns
-The Trottterized circuit as a vector of Gate.
+Create a circuit that corresponds to a Trotterization of the transverse-field Ising Hamiltonian. 
+```math
+H = ∑_{(i,j) ∈ topology} J_{ij} Z_i Z_j 
+  + ∑_{i=1 ... nqubits} h_i Z_i +  ∑_{i=1 ... nqubits} b_i X_i
+```
+This returns only the sequence of gates, not their parameters.
+A topology can be specified as a list of pairs of qubit indices. If no topology is specified, a bricklayer topology is used.
 """
-function tiltedtfitrottercircuit(nqubits::Integer, layers::Integer; topology=nothing)
+function tiltedtfitrottercircuit(nqubits::Integer, layers::Integer; topology=bricklayertopology(nqubits))
     # TODO(YT): the ordering of the Trotter circuit layer will be important
     # for shallow circuits to minimize the Trotter error.
     circuit::Vector{Gate} = []
-
-    if isnothing(topology)
-        topology = bricklayertopology(nqubits)
-    end
 
     for _ in 1:layers
         rzzlayer!(circuit, topology)
@@ -73,18 +69,18 @@ function tiltedtfitrottercircuit(nqubits::Integer, layers::Integer; topology=not
 end
 
 """
-    heisenbergtrottercircuit(nqubits::Integer, nlayers::Integer; topology=nothing)
+    heisenbergtrottercircuit(nqubits::Integer, nlayers::Integer; topology=bricklayertopology(nqubits))
 
 Create a circuit that corresponds to a Trotterization of the Heisenberg Hamiltonian.
+```math
+H = ∑_{(i,j) ∈ topology} Jzz_{ij} Z_i Z_j + Jxx_{ij} X_i X_j + Jyy_{ij} Y_i Y_j
+```
+This returns only the sequence of gates, not their parameters.
 A topology can be specified as a list of pairs of qubit indices. If no topology is specified, a bricklayer topology is used.
-Note that the gates are applied as layers of XX-YY-ZZ gates, not as layers of XX on all, then YY on all, then ZZ on all. On the bricklayer topology, these are equivalent.
+Note that the gates are applied as layers of XX-YY-ZZ gates, not as layers of XX on all, then YY on all, then ZZ on all.
 """
-function heisenbergtrottercircuit(nqubits::Integer, nlayers::Integer; topology=nothing)
+function heisenbergtrottercircuit(nqubits::Integer, nlayers::Integer; topology=bricklayertopology(nqubits))
     circuit::Vector{Gate} = []
-
-    if isnothing(topology)
-        topology = bricklayertopology(nqubits)
-    end
 
     for jj in 1:nlayers
         rxxlayer!(circuit, topology)
@@ -97,18 +93,14 @@ end
 
 ## Generic circuits
 """
-    hardwareefficientcircuit(nqubits::Integer, nlayers::Integer; topology=nothing)
+    hardwareefficientcircuit(nqubits::Integer, nlayers::Integer; topology=bricklayertopology(nqubits))
 
 Create a hardware-efficient circuit consisting of layers of single-qubit X-Z-X Pauli gates and YY entangling gates.
 A topology can be specified as a list of pairs of qubit indices. 
 If no topology is specified, a bricklayer topology is used.
 """
-function hardwareefficientcircuit(nqubits::Integer, nlayers::Integer; topology=nothing)
+function hardwareefficientcircuit(nqubits::Integer, nlayers::Integer; topology=bricklayertopology(nqubits))
     circuit::Vector{Gate} = []
-
-    if isnothing(topology)
-        topology = bricklayertopology(nqubits)
-    end
 
     for _ in 1:nlayers
         for ii in 1:nqubits
@@ -132,18 +124,14 @@ function hardwareefficientcircuit(nqubits::Integer, nlayers::Integer; topology=n
 end
 
 """
-    efficientsu2circuit(nqubits::Integer, nlayers::Integer; topology=nothing)
+    efficientsu2circuit(nqubits::Integer, nlayers::Integer; topology=bricklayertopology(nqubits))
 
 Create a hardware-efficient circuit consisting of layers of single-qubit Y-Z Pauli gates and CNOT entangling gates.
 A topology can be specified as a list of pairs of qubit indices. If no topology is specified, a bricklayer topology is used.
 """
-function efficientsu2circuit(nqubits::Integer, nlayers::Integer; topology=nothing)
+function efficientsu2circuit(nqubits::Integer, nlayers::Integer; topology=bricklayertopology(nqubits))
     # TODO: Technically the middle layers have Y-Z-Y Pauli gates, and the last Z-Y.
     circuit::Vector{Gate} = []
-
-    if isnothing(topology)
-        topology = bricklayertopology(nqubits)
-    end
 
     for jj in 1:nlayers
         for ii in 1:nqubits
@@ -165,18 +153,14 @@ function efficientsu2circuit(nqubits::Integer, nlayers::Integer; topology=nothin
 end
 
 """
-    su4circuit(nqubits::Integer, nlayers::Integer; topology=nothing)
+    su4circuit(nqubits::Integer, nlayers::Integer; topology=bricklayertopology(nqubits))
 
 Create a circuit that consists of layers of SU(4) gates on a given topology. 
 SU(4) gates are decomposed via the KAK Decomposition into single-qubit Z-X-Z gates on each qubit, followed by XX-YY-ZZ gates and again single-qubit Z-X-Z gates, for a total of 15 Pauli gates.
 A topology can be specified as a list of pairs of qubit indices. If no topology is specified, a bricklayer topology is used.
 """
-function su4circuit(nqubits::Integer, nlayers::Integer; topology=nothing)
+function su4circuit(nqubits::Integer, nlayers::Integer; topology=bricklayertopology(nqubits))
     circuit::Vector{Gate} = []
-
-    if isnothing(topology)
-        topology = bricklayertopology(nqubits)
-    end
 
     for nl in 1:nlayers
         for pair in topology

@@ -1,14 +1,25 @@
 module PauliPropagation
 
-using Base.Threads
 using LinearAlgebra
 
-include("./PauliAlgebra/PauliAlgebra.jl")
+# for the VectorPauliSum operations
+using AcceleratedKernels
+const AK = AcceleratedKernels
+using Base.Threads
+
+include("./Base/Base.jl")
+using .PropagationBase
+
+
+include("./PauliDataTypes/PauliDataTypes.jl")
 export
     PauliStringType,
     PauliType,
     PauliSum,
     PauliString,
+    VectorPauliSum,
+    VectorPauliPropagationCache,
+    nqubits,
     paulis,
     coefficients,
     norm,
@@ -17,27 +28,42 @@ export
     numcoefftype,
     getcoeff,
     topaulistrings,
+    mult!,
     add!,
     set!,
+    mult!,
     empty!,
+    similar,
+    convertcoefftype
+
+include("./PauliAlgebra/PauliAlgebra.jl")
+export
     identitypauli,
     identitylike,
     inttosymbol,
     symboltoint,
     inttostring,
+    ispauli,
     getpauli,
     setpauli,
-    show,
     countweight,
     countxy,
     countyz,
+    countx,
+    county,
+    countz,
     containsXorY,
     containsYorZ,
     pauliprod,
     commutes,
     commutator,
+    trace,
     getinttype
 
+include("PauliTransferMatrix/PauliTransferMatrix.jl")
+export
+    calculateptm,
+    totransfermap
 
 include("Gates/Gates.jl")
 export
@@ -46,21 +72,28 @@ export
     StaticGate,
     PauliRotation,
     MaskedPauliRotation,
+    ImaginaryPauliRotation,
     CliffordGate,
     clifford_map,
+    transposecliffordmap,
     reset_clifford_map!,
     createcliffordmap,
+    composecliffordmaps,
     ParametrizedNoiseChannel,
     PauliNoise,
     DepolarizingNoise,
     DephasingNoise,
+    AmplitudeDampingNoise,
     PauliXNoise,
     PauliYNoise,
     PauliZNoise,
-    AmplitudeDampingNoise,
     FrozenGate,
     freeze,
-    TGate
+    TGate,
+    TransferMapGate,
+    tomatrix,
+    toschrodinger,
+    toheisenberg
 
 include("Circuits/Circuits.jl")
 export
@@ -86,30 +119,37 @@ export
     ryylayer!,
     rzzlayer!
 
-include("PathProperties/PathProperties.jl")
-export
-    PathProperties,
-    PauliFreqTracker,
-    wrapcoefficients
-
-include("truncations.jl")
-export
-    truncateweight,
-    truncatemincoeff,
-    truncatefrequency,
-    truncatesins,
-    truncatedampingcoeff
 
 include("Propagation/Propagation.jl")
 export
+    AbstractPauliPropagationCache,
+    PauliPropagationCache,
+    VectorPauliPropagationCache,
+    PropagationCache,
+    mainsum,
+    auxsum,
+    capacity,
     propagate,
     propagate!,
     applymergetruncate!,
     applytoall!,
     apply,
-    applyandadd!,
-    mergeandempty!,
-    merge
+    truncate!,
+    merge!,
+    mergefunc
+
+
+include("PathProperties/PathProperties.jl")
+export
+    PathProperties,
+    PauliFreqTracker,
+    wrapcoefficients,
+    unwrapcoefficients
+
+include("truncations.jl")
+export
+    truncatedampingcoeff
+
 
 include("stateoverlap.jl")
 export
@@ -117,11 +157,10 @@ export
     overlapwithzero,
     overlapwithplus,
     overlapwithones,
-    orthogonaltozero,
-    orthogonaltoplus,
     overlapwithcomputational,
-    overlapwithpaulisum,
     overlapwithmaxmixed,
+    overlapwithpaulisum,
+    scalarproduct,
     filter,
     filter!,
     zerofilter,
@@ -136,10 +175,36 @@ export
     estimatemse,
     estimatemse!
 
+include("Symmetry/Symmetry.jl")
+export
+    symmetrymerge,
+    translationmerge
+
 include("Surrogate/Surrogate.jl")
 export
     NodePathProperties,
     evaluate!,
     reset!
+
+include("Visualization/Visualization.jl")
+export
+    PauliTreeTracker,
+    TreeNode,
+    TreeEdge,
+    EVOLUTION_TREE,
+    EVOLUTION_EDGES,
+    reset_tree!,
+    add_node!,
+    add_edge!,
+    create_child_tracker,
+    format_pauli_string,
+    export_to_graphviz,
+    export_to_json,
+    print_tree_summary,
+    visualize_tree,
+    propagate_with_tree_tracking
+
+# # experimental vector propagation 
+# include("Propagation/VectorPropagate/VectorPropagate.jl")
 
 end
