@@ -10,9 +10,9 @@ function propagate!(circuit, term_sum::TS, params=nothing; kwargs...) where TS<:
     # by default implemented for some storage types
 
     # if the original term_sum is not mainsum(prop_cache), we copy contents over
-    if term_sum !== mainsum(prop_cache)
-        copyswapsums!(prop_cache)
-    end
+    # if term_sum !== mainsum(prop_cache)
+    #     copyswapsums!(prop_cache)
+    # end
 
     return TS(prop_cache)
 end

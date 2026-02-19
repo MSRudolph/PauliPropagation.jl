@@ -387,19 +387,34 @@ function Base.isequal(term_sum1::AbstractTermSum, term_sum2::AbstractTermSum)
     coefftype(term_sum1) == coefftype(term_sum2) || return false
     length(term_sum1) == length(term_sum2) || return false
 
-    # call isequal on all fields of the types 
-    return all(isequal(getfield(term_sum1, f), getfield(term_sum2, f)) for f in fieldnames(typeof(term_sum1)))
+    # need to merge to efficiently check for equality
+    return _comparison(==, merge(term_sum1), merge(term_sum2))
 end
-
-Base.:(==)(term_sum1::AbstractTermSum, term_sum2::AbstractTermSum) = isequal(term_sum1, term_sum2)
 
 function Base.isapprox(term_sum1::AbstractTermSum, term_sum2::AbstractTermSum; approx_kwargs...)
     termtype(term_sum1) == termtype(term_sum2) || return false
     coefftype(term_sum1) == coefftype(term_sum2) || return false
     length(term_sum1) == length(term_sum2) || return false
 
-    # call isapprox on all fields of the types
-    return all(isapprox(getfield(term_sum1, f), getfield(term_sum2, f); approx_kwargs...) for f in fieldnames(typeof(term_sum1)))
+    return _comparison(≈, merge(term_sum1), merge(term_sum2))
 end
 
-# Base.:≈(term_sum1::AbstractTermSum, term_sum2::AbstractTermSum) = isapprox(term_sum1, term_sum2)
+
+function _comparison(compfunc::f, term_sum1::AbstractTermSum, term_sum2::AbstractTermSum) where {f<:Function}
+    nsites(term_sum1) == nsites(term_sum2) || return false
+
+    # we don't strictly need to check the length of the term sums
+    # small values are allowed for terms that don't exist in both
+    for (pstr, coeff) in term_sum1
+        if !compfunc(getcoeff(term_sum2, pstr), coeff)
+            return false
+        end
+    end
+    for (pstr, coeff) in term_sum2
+        if !compfunc(getcoeff(term_sum1, pstr), coeff)
+            return false
+        end
+    end
+
+    return true
+end
