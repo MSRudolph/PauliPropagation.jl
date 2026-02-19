@@ -22,6 +22,14 @@ function swapsums!(prop_cache::AbstractPropagationCache)
     return prop_cache
 end
 
+function copyswapsums!(prop_cache::AbstractPropagationCache)
+    # instead of just swapping auxsum(prop_cache) and mainsum(prop_cache),
+    # we need to copy the mainsum into the aux sum and then swap the sums
+    copy!(auxsum(prop_cache), mainsum(prop_cache))
+    swapsums!(prop_cache)
+    return prop_cache
+end
+
 StorageType(prop_cache::AbstractPropagationCache) = StorageType(mainsum(prop_cache))
 
 nsites(prop_cache::AbstractPropagationCache) = nsites(mainsum(prop_cache))

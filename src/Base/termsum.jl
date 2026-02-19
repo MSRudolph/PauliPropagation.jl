@@ -139,6 +139,29 @@ function LinearAlgebra.norm(psum::AbstractTermSum, L::Real=2)
     return LinearAlgebra.norm((tonumber(coeff) for coeff in coefficients(psum)), L)
 end
 
+# Copy from one AbstractTermSum to another
+# They must be of the same typing
+function Base.copy!(dst_term_sum::TS, src_term_sum::TS) where {TS<:AbstractTermSum}
+    copy!(StorageType(dst_term_sum), dst_term_sum, src_term_sum)
+    return dst_term_sum
+end
+
+function Base.copy!(::StorageType, dst_term_sum::AbstractTermSum, src_term_sum::AbstractTermSum)
+    copy!(storage(dst_term_sum), storage(src_term_sum))
+    return dst_term_sum
+end
+
+function Base.copy!(::ArrayStorage, dst_term_sum::AbstractTermSum, src_term_sum::AbstractTermSum)
+    dst_terms = terms(dst_term_sum)
+    dst_coeffs = coefficients(dst_term_sum)
+    src_terms = terms(src_term_sum)
+    src_coeffs = coefficients(src_term_sum)
+
+    # in vectorbackend.jl
+    copy!(dst_terms, dst_coeffs, src_terms, src_coeffs)
+
+    return dst_term_sum
+end
 
 ### Adding, setting, and deleting
 """

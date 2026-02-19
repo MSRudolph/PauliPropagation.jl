@@ -8,6 +8,12 @@ function propagate!(circuit, term_sum::TS, params=nothing; kwargs...) where TS<:
     prop_cache = propagate!(circuit, PropagationCache(term_sum), params; kwargs...)
     # we expect that there exists a constructor TS(prop_cache) for the back conversion
     # by default implemented for some storage types
+
+    # if the original term_sum is not mainsum(prop_cache), we copy contents over
+    if term_sum !== mainsum(prop_cache)
+        copyswapsums!(prop_cache)
+    end
+
     return TS(prop_cache)
 end
 
