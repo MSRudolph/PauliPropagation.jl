@@ -10,15 +10,12 @@ abstract type StorageType end
 struct DictStorage <: StorageType end
 struct ArrayStorage <: StorageType end
 
-function StorageType(term_sum::AbstractTermSum)
-    if storage(term_sum) isa Dict
-        return DictStorage()
-    elseif storage(term_sum) isa Tuple{<:AbstractArray,<:AbstractArray}
-        return ArrayStorage()
-    else
-        return _thrownotimplemented(typeof(term_sum), :StorageType)
-    end
-end
+
+StorageType(term_sum::AbstractTermSum) = _storagetype(storage(term_sum))
+# storage types for common data structures
+_storagetype(::Dict) = PropagationBase.DictStorage()
+_storagetype(::Tuple{AbstractArray,AbstractArray}) = PropagationBase.ArrayStorage()
+_storagetype(x) = _thrownotimplemented(typeof(x), :StorageType)
 
 # storage() is expected to return the internal storage representation of the TermSum
 # often this is a Dict{TermType,CoeffType} but it can be anything
@@ -54,7 +51,7 @@ function getcoeff(term_sum::AbstractTermSum, trm)
     getcoeff(StorageType(term_sum), term_sum, trm)
 end
 
-function getcoeff(::Type{DictStorage}, term_sum::AbstractTermSum, trm)
+function getcoeff(::DictStorage, term_sum::AbstractTermSum, trm)
     term_dict = storage(term_sum)
     return get(term_dict, trm, zero(coefftype(term_sum)))
 end
