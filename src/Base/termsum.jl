@@ -269,11 +269,11 @@ Calls `mult!(StorageType(term_sum), term_sum, scalar)` internally.
 For custom behavior, overload `storage()` and/or `mult!` for the specific TermSum type.
 """
 function mult!(term_sum::AbstractTermSum, scalar::Number)
-    return mult!(StorageType(term_sum), term_sum, scalar)
+    return _mult!(StorageType(term_sum), term_sum, scalar)
 end
 
 
-function mult!(::DictStorage, term_sum::AbstractTermSum, scalar::Number)
+function _mult!(::DictStorage, term_sum::AbstractTermSum, scalar::Number)
     dict_storage = storage(term_sum)
     for (term, coeff) in dict_storage
         dict_storage[term] = coeff * scalar
@@ -281,14 +281,14 @@ function mult!(::DictStorage, term_sum::AbstractTermSum, scalar::Number)
     return term_sum
 end
 
-function mult!(::ArrayStorage, term_sum::AbstractTermSum, scalar::Number)
+function _mult!(::ArrayStorage, term_sum::AbstractTermSum, scalar::Number)
     terms_vec, coeffs_vec = storage(term_sum)
     coeffs_vec .*= scalar
     return term_sum
 end
 
 # super slow default
-function mult!(::StorageType, term_sum::AbstractTermSum, scalar::Number)
+function _mult!(::StorageType, term_sum::AbstractTermSum, scalar::Number)
     for (term, coeff) in zip(terms(term_sum), coefficients(term_sum))
         set!(term_sum, term, coeff * scalar)
     end
@@ -296,17 +296,17 @@ function mult!(::StorageType, term_sum::AbstractTermSum, scalar::Number)
 end
 
 function Base.delete!(term_sum::AbstractTermSum, term)
-    delete!(StorageType(term_sum), term_sum, term)
+    _delete!(StorageType(term_sum), term_sum, term)
     return term_sum
 end
 
-function Base.delete!(::DictStorage, term_sum::AbstractTermSum, term)
+function _delete!(::DictStorage, term_sum::AbstractTermSum, term)
     dict_storage = storage(term_sum)
     delete!(dict_storage, term)
     return term_sum
 end
 
-function Base.delete!(::ArrayStorage, term_sum::AbstractTermSum, term)
+function Base_delete!(::ArrayStorage, term_sum::AbstractTermSum, term)
     terms_vec, coeffs_vec = storage(term_sum)
     ind = findfirst(t -> t == term, terms_vec)
     if !isnothing(ind)
@@ -316,32 +316,32 @@ function Base.delete!(::ArrayStorage, term_sum::AbstractTermSum, term)
     return term_sum
 end
 
-function Base.delete!(::StorageType, term_sum::AbstractTermSum, term)
+function _delete!(::StorageType, term_sum::AbstractTermSum, term)
     # by default we set the coefficient to zero
     set!(term_sum, term, zero(coefftype(term_sum)))
     return term_sum
 end
 
 function Base.empty!(term_sum::AbstractTermSum)
-    return empty!(StorageType(term_sum), term_sum)
+    return _empty!(StorageType(term_sum), term_sum)
 end
 
-function Base.empty!(::DictStorage, term_sum::AbstractTermSum)
+function _empty!(::DictStorage, term_sum::AbstractTermSum)
     dict_storage = storage(term_sum)
     empty!(dict_storage)
     return term_sum
 end
 
-function Base.empty!(::ArrayStorage, term_sum::AbstractTermSum)
+function _empty!(::ArrayStorage, term_sum::AbstractTermSum)
     terms_vec, coeffs_vec = storage(term_sum)
     empty!(terms_vec)
     empty!(coeffs_vec)
     return term_sum
 end
 
-function Base.empty!(::StorageType, term_sum::AbstractTermSum)
+function _empty!(::StorageType, term_sum::AbstractTermSum)
     for term in terms(term_sum)
-        delete!(term_sum, term)
+        _delete!(StorageType(term_sum), term_sum, term)
     end
     return term_sum
 end

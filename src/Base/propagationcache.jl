@@ -81,6 +81,7 @@ activeindices(prop_cache::AbstractPropagationCache) = view(indices(prop_cache), 
 lastactiveindex(prop_cache::AbstractPropagationCache) = activeindices(prop_cache)[end]
 
 
+mult!(prop_cache::AbstractPropagationCache, scalar::Number) = mult!(mainsum(prop_cache), scalar)
 
 function Base.resize!(prop_cache::AbstractPropagationCache, new_size::Int)
     _thrownotimplemented(prop_cache, :resize!)
