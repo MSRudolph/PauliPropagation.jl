@@ -1,3 +1,7 @@
+function truncate(term_sum::AbstractTermSum; min_abs_coeff::Real=eps(), customtruncfunc::F=_alwaysfalse, kwargs...) where F<:Function
+    return truncate!(deepcopy(term_sum); min_abs_coeff, customtruncfunc, kwargs...)
+end
+
 function truncate!(term_sum::AbstractTermSum; min_abs_coeff::Real=eps(), customtruncfunc::F=_alwaysfalse, kwargs...) where F<:Function
     # bundle truncation functions 
     truncfunc = (pstr, coeff) -> truncatemincoeff(coeff, min_abs_coeff) || customtruncfunc(pstr, coeff)
