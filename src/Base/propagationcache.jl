@@ -15,6 +15,10 @@ auxsum(prop_cache::AbstractPropagationCache) = _thrownotimplemented(prop_cache, 
 setmainsum!(prop_cache::AbstractPropagationCache, new_mainsum) = _thrownotimplemented(prop_cache, :setmainsum!)
 setauxsum!(prop_cache::AbstractPropagationCache, new_auxsum) = _thrownotimplemented(prop_cache, :setauxsum!)
 
+function activesum(prop_cache::AbstractPropagationCache)
+    _thrownotimplemented(prop_cache, :activesum)
+end
+
 function swapsums!(prop_cache::AbstractPropagationCache)
     temp = mainsum(prop_cache)
     setmainsum!(prop_cache, auxsum(prop_cache))
