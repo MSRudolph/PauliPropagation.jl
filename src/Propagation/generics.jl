@@ -153,6 +153,7 @@ function PropagationBase.truncate!(psum::AbstractPauliSum; min_abs_coeff::Real=1
         return is_truncated
     end
 
-    term_sum = truncate!(truncfunc, psum; kwargs...)
-    return term_sum
+    psum = truncate!(truncfunc, psum; kwargs...)
+
+    return psum
 end

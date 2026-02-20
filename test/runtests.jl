@@ -38,6 +38,8 @@ using Random
 
     include("test_truncations.jl")
 
+    include("test_inplace.jl")
+
     include("test_numericalcertificates.jl")
 
     include("test_visualization.jl")

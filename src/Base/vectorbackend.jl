@@ -124,7 +124,7 @@ function filterviaflags!(flags, dst_indices, dst_terms, dst_coeffs, src_terms, s
 end
 
 
-function Base.copy!(dst_terms, dst_coeffs, src_terms, src_coeffs)
+function _copy!(dst_terms, dst_coeffs, src_terms, src_coeffs)
     @assert length(dst_terms) >= length(src_terms)
     @assert length(dst_coeffs) >= length(src_coeffs)
     AK.foreachindex(src_terms) do ii

@@ -142,23 +142,26 @@ end
 # Copy from one AbstractTermSum to another
 # They must be of the same typing
 function Base.copy!(dst_term_sum::TS, src_term_sum::TS) where {TS<:AbstractTermSum}
-    copy!(StorageType(dst_term_sum), dst_term_sum, src_term_sum)
+    _copy!(StorageType(dst_term_sum), dst_term_sum, src_term_sum)
     return dst_term_sum
 end
 
-function Base.copy!(::StorageType, dst_term_sum::AbstractTermSum, src_term_sum::AbstractTermSum)
+function _copy!(::StorageType, dst_term_sum::AbstractTermSum, src_term_sum::AbstractTermSum)
     copy!(storage(dst_term_sum), storage(src_term_sum))
     return dst_term_sum
 end
 
-function Base.copy!(::ArrayStorage, dst_term_sum::AbstractTermSum, src_term_sum::AbstractTermSum)
+function _copy!(::ArrayStorage, dst_term_sum::AbstractTermSum, src_term_sum::AbstractTermSum)
     dst_terms = terms(dst_term_sum)
     dst_coeffs = coefficients(dst_term_sum)
     src_terms = terms(src_term_sum)
     src_coeffs = coefficients(src_term_sum)
 
     # in vectorbackend.jl
-    copy!(dst_terms, dst_coeffs, src_terms, src_coeffs)
+    _copy!(dst_terms, dst_coeffs, src_terms, src_coeffs)
+
+    resize!(dst_term_sum, length(src_term_sum))
+    resize!(dst_terms, length(src_term_sum))
 
     return dst_term_sum
 end
