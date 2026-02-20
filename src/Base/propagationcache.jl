@@ -15,10 +15,22 @@ auxsum(prop_cache::AbstractPropagationCache) = _thrownotimplemented(prop_cache, 
 setmainsum!(prop_cache::AbstractPropagationCache, new_mainsum) = _thrownotimplemented(prop_cache, :setmainsum!)
 setauxsum!(prop_cache::AbstractPropagationCache, new_auxsum) = _thrownotimplemented(prop_cache, :setauxsum!)
 
+function activesum(prop_cache::AbstractPropagationCache)
+    _thrownotimplemented(prop_cache, :activesum)
+end
+
 function swapsums!(prop_cache::AbstractPropagationCache)
     temp = mainsum(prop_cache)
     setmainsum!(prop_cache, auxsum(prop_cache))
     setauxsum!(prop_cache, temp)
+    return prop_cache
+end
+
+function copyswapsums!(prop_cache::AbstractPropagationCache)
+    # instead of just swapping auxsum(prop_cache) and mainsum(prop_cache),
+    # we need to copy the mainsum into the aux sum and then swap the sums
+    copy!(auxsum(prop_cache), mainsum(prop_cache))
+    swapsums!(prop_cache)
     return prop_cache
 end
 
@@ -69,6 +81,7 @@ activeindices(prop_cache::AbstractPropagationCache) = view(indices(prop_cache), 
 lastactiveindex(prop_cache::AbstractPropagationCache) = activeindices(prop_cache)[end]
 
 
+mult!(prop_cache::AbstractPropagationCache, scalar::Number) = mult!(mainsum(prop_cache), scalar)
 
 function Base.resize!(prop_cache::AbstractPropagationCache, new_size::Int)
     _thrownotimplemented(prop_cache, :resize!)

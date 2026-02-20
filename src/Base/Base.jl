@@ -36,8 +36,10 @@ export
     setmainsum!,
     setauxsum!,
     swapsums!,
+    copyswapsums!,
     activesize,
     setactivesize!,
+    activesum,
     activeterms,
     activecoeffs,
     activeauxterms,
@@ -65,10 +67,10 @@ export propagate,
     requiresmerging
 
 include("./merge.jl")
-export merge!, mergefunc
+export merge, merge!, mergefunc
 
 include("./truncate.jl")
-export truncate!
+export truncate, truncate!
 
 
 include("./vectorbackend.jl")
