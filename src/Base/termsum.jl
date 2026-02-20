@@ -381,21 +381,13 @@ Base.:/(term_sum::AbstractTermSum, scalar) = term_sum * (one(scalar) / scalar)
 
 
 # check for equality by equaility on all fields
-function Base.isequal(term_sum1::AbstractTermSum, term_sum2::AbstractTermSum)
-    typeof(term_sum1) == typeof(term_sum2) || return false
-    termtype(term_sum1) == termtype(term_sum2) || return false
-    coefftype(term_sum1) == coefftype(term_sum2) || return false
-    length(term_sum1) == length(term_sum2) || return false
 
+function Base.:(==)(term_sum1::AbstractTermSum, term_sum2::AbstractTermSum)
     # need to merge to efficiently check for equality
     return _comparison(==, merge(term_sum1), merge(term_sum2))
 end
 
-function Base.isapprox(term_sum1::AbstractTermSum, term_sum2::AbstractTermSum; approx_kwargs...)
-    termtype(term_sum1) == termtype(term_sum2) || return false
-    coefftype(term_sum1) == coefftype(term_sum2) || return false
-    length(term_sum1) == length(term_sum2) || return false
-
+function Base.:(≈)(term_sum1::AbstractTermSum, term_sum2::AbstractTermSum; approx_kwargs...)
     return _comparison(≈, merge(term_sum1), merge(term_sum2))
 end
 
