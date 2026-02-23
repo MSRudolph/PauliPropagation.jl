@@ -3,41 +3,26 @@
 using Test
 
 function createpaulistring(nq)
-    symbol = rand([:I, :X, :Y, :Z])
-    qind = rand(1:nq)
-    coeff = randn()
-    PauliString(nq, symbol, qind, coeff)
+    # Create a random PauliString with nq qubits
 
-    symbols = rand([:I, :X, :Y, :Z], min(nq, 4))
-    qinds = shuffle(1:nq)[1:min(nq, 4)]
+    symbols = rand([:I, :X, :Y, :Z], nq)
+    qinds = shuffle(1:nq)[1:nq]
     coeff = randn()
-    pstr = PauliString(nq, symbols, qinds, coeff)
 
-    return pstr
+    return PauliString(nq, symbols, qinds, coeff)
+
 end
 
 function createpaulisum(nq)
-    PauliSum(nq)
 
-    pstr = createpaulistring(nq)
-    PauliSum(nq, pstr)
+    return PauliSum(createpaulistring(nq))
 
-    pstr = createpaulistring(nq)
-    psum = PauliSum(pstr)
-
-    return psum
 end
 
 function createvectorpaulisum(nq)
-    VectorPauliSum(nq)
 
-    pstr = createpaulistring(nq)
-    VectorPauliSum(nq, pstr)
+    return VectorPauliSum(createpaulistring(nq))
 
-    pstr = createpaulistring(nq)
-    psum = VectorPauliSum(pstr)
-
-    return psum
 end
 
 @testset "Add to PauliSum" begin
@@ -106,19 +91,29 @@ end
     @test tonumber(wrapped_pstr.coeff) == tonumber(pstr.coeff) == pstr.coeff
 end
 
-@testset "Conversions" begin
+@testset "PauliSum/VectorPauliSum Conversions" begin
     nq = rand(1:100)
 
-    pstr = createpaulistring(nq)
-    psum = PauliSum(pstr)
-    vpsum = VectorPauliSum(psum)
-    vpsum2 = VectorPauliSum(pstr)
-    @test vpsum == psum == vpsum2 # checks Pauli by Pauli
+    # Subtest for subtracting PauliSum
+    @testset "PauliSum to VectorPauliSum" begin    
+        pstr = createpaulistring(nq)
+        psum = PauliSum(pstr)
+        vpsum = VectorPauliSum(psum)
+        vpsum_from_str = VectorPauliSum(pstr)
+        @test vpsum == psum # checks Pauli by Pauli
+        @test vpsum_from_str == psum 
+        @test vpsum_from_str == vpsum
+    end
 
-    pstr2 = createpaulistring(nq)
-    vpsum = VectorPauliSum([pstr, pstr2, pstr])
-    psum = PauliSum(vpsum)
-    @test vpsum == psum
+    # Subtest for subtracting PauliSum
+    @testset "VectorPauliSum to PauliSums with Merging" begin    
+
+        pstr2 = createpaulistring(nq)
+        vpsum = VectorPauliSum([pstr, pstr2, pstr])
+        psum = PauliSum(vpsum)
+        @test vpsum == psum
+    end
+
 end
 
 # Test overloading methods for PauliSum
