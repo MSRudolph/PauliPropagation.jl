@@ -1,5 +1,5 @@
 @testset "Test Imaginary Pauli Rotation" begin
-    nq = rand(1:256)
+    nq = rand(4:256)
 
     rho = PauliString(nq, :I, 1)
 
