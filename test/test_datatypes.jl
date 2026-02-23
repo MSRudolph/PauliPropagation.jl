@@ -106,6 +106,20 @@ end
     @test tonumber(wrapped_pstr.coeff) == tonumber(pstr.coeff) == pstr.coeff
 end
 
+@testset "Conversions" begin
+    nq = rand(1:100)
+
+    pstr = createpaulistring(nq)
+    psum = PauliSum(pstr)
+    vpsum = VectorPauliSum(psum)
+    vpsum2 = VectorPauliSum(pstr)
+    @test vpsum == psum == vpsum2 # checks Pauli by Pauli
+
+    pstr2 = createpaulistring(nq)
+    vpsum = VectorPauliSum([pstr, pstr2, pstr])
+    psum = PauliSum(vpsum)
+    @test vpsum == psum
+end
 
 # Test overloading methods for PauliSum
 @testset "PauliSum Tests" begin

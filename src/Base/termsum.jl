@@ -131,6 +131,8 @@ end
 
 Calculate the norm of a Pauli sum `psum` with respect to the `L`-norm. 
 Calls `LinearAlgebra.norm(coefficients(psum))`.
+If `psum` contains duplicate terms, the coefficients are NOT merged before hand
+and the norm value will be affected.
 """
 function LinearAlgebra.norm(psum::AbstractTermSum, L::Real=2)
     if length(psum) == 0
