@@ -103,10 +103,9 @@ end
         @test vpsum == psum # checks Pauli by Pauli
         @test vpsum_from_str == psum 
         @test vpsum_from_str == vpsum
-    end
 
     # Subtest for subtracting PauliSum
-    @testset "VectorPauliSum to PauliSums with Merging" begin    
+        # VectorPauliSum to PauliSums with Merging
 
         pstr2 = createpaulistring(nq)
         vpsum = VectorPauliSum([pstr, pstr2, pstr])

@@ -135,6 +135,26 @@ using Test
         pstr2 = PauliString(nq, [:Y, :I], [1, 2], 1.0)
         @test commutator(pstr1, pstr2) == PauliString(nq, [:Z, :Y], [1, 2], 2im)
     end
+
+    @testset "VectorPauliSum commutator" begin
+        nq = 3
+        # VectorPauliSum commutator verify with PauliSum commutator
+        psum1 = PauliSum(nq)
+        add!(psum1, [:X, :Y], [1, 2], 1.5)
+        psum2 = PauliSum(nq)
+        add!(psum2, [:Y, :I], [1, 2], -2.0)
+
+        expected = commutator(psum1, psum2)
+        com_vec = commutator(VectorPauliSum(psum1), VectorPauliSum(psum2))
+        @test PauliSum(com_vec) == expected           
+        
+        vpsum = VectorPauliSum(3, [1, 2], [1., 1.])
+        vpsum2 = VectorPauliSum(3, [7], [0.25])
+        expected = commutator(PauliSum(vpsum), PauliSum(vpsum2))
+        com_vec = commutator(vpsum, vpsum2)
+        @test PauliSum(com_vec) == expected
+
+    end    
 end
 
 
