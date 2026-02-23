@@ -213,46 +213,6 @@ PropagationBase.set!
 # TODO: in-place pauliprod()
 
 
-"""
-    ==(psum1::AbstractPauliSum, psum2::AbstractPauliSum)
-Equality check for two `AbstractPauliSum`.
-Calls `isequal()` on the coefficients of the contained Pauli strings,
-which can be square complexity for Pauli sums with non-O(1) `getcoeff()` functions.
-"""
-function Base.:(==)(psum1::AbstractPauliSum, psum2::AbstractPauliSum)
-    return _comparison(isequal, psum1, psum2)
-end
-
-"""
-    ≈(psum1::AbstractPauliSum, psum2::AbstractPauliSum)
-
-Approximate equality check for two `AbstractPauliSum`.
-Calls `isapprox()` on the coefficients of the contained Pauli strings,
-which can be square complexity for Pauli sums with non-O(1) `getcoeff()` functions .
-"""
-function PropagationBase.:≈(psum1::AbstractPauliSum, psum2::AbstractPauliSum)
-    return _comparison(isapprox, psum1, psum2)
-end
-
-function _comparison(compfunc::f, psum1::AbstractPauliSum, psum2::AbstractPauliSum) where {f<:Function}
-    nqubits(psum1) == nqubits(psum2) || return false
-    # we don't strictly need to check the length of the dictionaries
-    # small values are allowed for Pauli strings that don't exist in both
-    # our solution is to check for approximate equality both ways
-    for (pstr, coeff) in zip(paulis(psum1), coefficients(psum1))
-        if !compfunc(getcoeff(psum2, pstr), coeff)
-            return false
-        end
-    end
-    for (pstr, coeff) in zip(paulis(psum2), coefficients(psum2))
-        if !compfunc(getcoeff(psum1, pstr), coeff)
-            return false
-        end
-    end
-
-    return true
-end
-
 
 """
     filter!(filterfunc::Function, psum::AbstractPauliSum)

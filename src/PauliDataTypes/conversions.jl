@@ -40,7 +40,7 @@ end
 Convert a `VectorPauliSum` to a `PauliSum`.
 Does not change `vpsum`.
 """
-PauliSum(vpsum::VectorPauliSum) = PauliSum(topaulistrings(vpsum))
+PauliSum(vpsum::VectorPauliSum) = PauliSum(nqubits(vpsum), Dict(zip(paulis(vpsum), coefficients(vpsum))))
 
 """
     VectorPauliSum(nq::Integer, pstr::PauliString)

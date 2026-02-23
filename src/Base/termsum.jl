@@ -10,15 +10,12 @@ abstract type StorageType end
 struct DictStorage <: StorageType end
 struct ArrayStorage <: StorageType end
 
-function StorageType(term_sum::AbstractTermSum)
-    if storage(term_sum) isa Dict
-        return DictStorage()
-    elseif storage(term_sum) isa Tuple{<:AbstractArray,<:AbstractArray}
-        return ArrayStorage()
-    else
-        return _thrownotimplemented(typeof(term_sum), :StorageType)
-    end
-end
+
+StorageType(term_sum::AbstractTermSum) = _storagetype(storage(term_sum))
+# storage types for common data structures
+_storagetype(::Dict) = PropagationBase.DictStorage()
+_storagetype(::Tuple{AbstractArray,AbstractArray}) = PropagationBase.ArrayStorage()
+_storagetype(x) = _thrownotimplemented(typeof(x), :StorageType)
 
 # storage() is expected to return the internal storage representation of the TermSum
 # often this is a Dict{TermType,CoeffType} but it can be anything
@@ -54,7 +51,7 @@ function getcoeff(term_sum::AbstractTermSum, trm)
     getcoeff(StorageType(term_sum), term_sum, trm)
 end
 
-function getcoeff(::Type{DictStorage}, term_sum::AbstractTermSum, trm)
+function getcoeff(::DictStorage, term_sum::AbstractTermSum, trm)
     term_dict = storage(term_sum)
     return get(term_dict, trm, zero(coefftype(term_sum)))
 end
@@ -142,6 +139,32 @@ function LinearAlgebra.norm(psum::AbstractTermSum, L::Real=2)
     return LinearAlgebra.norm((tonumber(coeff) for coeff in coefficients(psum)), L)
 end
 
+# Copy from one AbstractTermSum to another
+# They must be of the same typing
+function Base.copy!(dst_term_sum::TS, src_term_sum::TS) where {TS<:AbstractTermSum}
+    _copy!(StorageType(dst_term_sum), dst_term_sum, src_term_sum)
+    return dst_term_sum
+end
+
+function _copy!(::StorageType, dst_term_sum::AbstractTermSum, src_term_sum::AbstractTermSum)
+    copy!(storage(dst_term_sum), storage(src_term_sum))
+    return dst_term_sum
+end
+
+function _copy!(::ArrayStorage, dst_term_sum::AbstractTermSum, src_term_sum::AbstractTermSum)
+    dst_terms = terms(dst_term_sum)
+    dst_coeffs = coefficients(dst_term_sum)
+    src_terms = terms(src_term_sum)
+    src_coeffs = coefficients(src_term_sum)
+
+    # in vectorbackend.jl
+    _copy!(dst_terms, dst_coeffs, src_terms, src_coeffs)
+
+    resize!(dst_term_sum, length(src_term_sum))
+    resize!(dst_terms, length(src_term_sum))
+
+    return dst_term_sum
+end
 
 ### Adding, setting, and deleting
 """
@@ -249,11 +272,11 @@ Calls `mult!(StorageType(term_sum), term_sum, scalar)` internally.
 For custom behavior, overload `storage()` and/or `mult!` for the specific TermSum type.
 """
 function mult!(term_sum::AbstractTermSum, scalar::Number)
-    return mult!(StorageType(term_sum), term_sum, scalar)
+    return _mult!(StorageType(term_sum), term_sum, scalar)
 end
 
 
-function mult!(::DictStorage, term_sum::AbstractTermSum, scalar::Number)
+function _mult!(::DictStorage, term_sum::AbstractTermSum, scalar::Number)
     dict_storage = storage(term_sum)
     for (term, coeff) in dict_storage
         dict_storage[term] = coeff * scalar
@@ -261,14 +284,14 @@ function mult!(::DictStorage, term_sum::AbstractTermSum, scalar::Number)
     return term_sum
 end
 
-function mult!(::ArrayStorage, term_sum::AbstractTermSum, scalar::Number)
+function _mult!(::ArrayStorage, term_sum::AbstractTermSum, scalar::Number)
     terms_vec, coeffs_vec = storage(term_sum)
     coeffs_vec .*= scalar
     return term_sum
 end
 
 # super slow default
-function mult!(::StorageType, term_sum::AbstractTermSum, scalar::Number)
+function _mult!(::StorageType, term_sum::AbstractTermSum, scalar::Number)
     for (term, coeff) in zip(terms(term_sum), coefficients(term_sum))
         set!(term_sum, term, coeff * scalar)
     end
@@ -276,17 +299,17 @@ function mult!(::StorageType, term_sum::AbstractTermSum, scalar::Number)
 end
 
 function Base.delete!(term_sum::AbstractTermSum, term)
-    delete!(StorageType(term_sum), term_sum, term)
+    _delete!(StorageType(term_sum), term_sum, term)
     return term_sum
 end
 
-function Base.delete!(::DictStorage, term_sum::AbstractTermSum, term)
+function _delete!(::DictStorage, term_sum::AbstractTermSum, term)
     dict_storage = storage(term_sum)
     delete!(dict_storage, term)
     return term_sum
 end
 
-function Base.delete!(::ArrayStorage, term_sum::AbstractTermSum, term)
+function Base_delete!(::ArrayStorage, term_sum::AbstractTermSum, term)
     terms_vec, coeffs_vec = storage(term_sum)
     ind = findfirst(t -> t == term, terms_vec)
     if !isnothing(ind)
@@ -296,32 +319,32 @@ function Base.delete!(::ArrayStorage, term_sum::AbstractTermSum, term)
     return term_sum
 end
 
-function Base.delete!(::StorageType, term_sum::AbstractTermSum, term)
+function _delete!(::StorageType, term_sum::AbstractTermSum, term)
     # by default we set the coefficient to zero
     set!(term_sum, term, zero(coefftype(term_sum)))
     return term_sum
 end
 
 function Base.empty!(term_sum::AbstractTermSum)
-    return empty!(StorageType(term_sum), term_sum)
+    return _empty!(StorageType(term_sum), term_sum)
 end
 
-function Base.empty!(::DictStorage, term_sum::AbstractTermSum)
+function _empty!(::DictStorage, term_sum::AbstractTermSum)
     dict_storage = storage(term_sum)
     empty!(dict_storage)
     return term_sum
 end
 
-function Base.empty!(::ArrayStorage, term_sum::AbstractTermSum)
+function _empty!(::ArrayStorage, term_sum::AbstractTermSum)
     terms_vec, coeffs_vec = storage(term_sum)
     empty!(terms_vec)
     empty!(coeffs_vec)
     return term_sum
 end
 
-function Base.empty!(::StorageType, term_sum::AbstractTermSum)
+function _empty!(::StorageType, term_sum::AbstractTermSum)
     for term in terms(term_sum)
-        delete!(term_sum, term)
+        _delete!(StorageType(term_sum), term_sum, term)
     end
     return term_sum
 end
@@ -361,25 +384,32 @@ Base.:/(term_sum::AbstractTermSum, scalar) = term_sum * (one(scalar) / scalar)
 
 
 # check for equality by equaility on all fields
-function Base.isequal(term_sum1::AbstractTermSum, term_sum2::AbstractTermSum)
-    typeof(term_sum1) == typeof(term_sum2) || return false
-    termtype(term_sum1) == termtype(term_sum2) || return false
-    coefftype(term_sum1) == coefftype(term_sum2) || return false
-    length(term_sum1) == length(term_sum2) || return false
 
-    # call isequal on all fields of the types 
-    return all(isequal(getfield(term_sum1, f), getfield(term_sum2, f)) for f in fieldnames(typeof(term_sum1)))
+function Base.:(==)(term_sum1::AbstractTermSum, term_sum2::AbstractTermSum)
+    # need to merge to efficiently check for equality
+    return _comparison(==, merge(term_sum1), merge(term_sum2))
 end
 
-Base.:(==)(term_sum1::AbstractTermSum, term_sum2::AbstractTermSum) = isequal(term_sum1, term_sum2)
-
-function Base.isapprox(term_sum1::AbstractTermSum, term_sum2::AbstractTermSum; approx_kwargs...)
-    termtype(term_sum1) == termtype(term_sum2) || return false
-    coefftype(term_sum1) == coefftype(term_sum2) || return false
-    length(term_sum1) == length(term_sum2) || return false
-
-    # call isapprox on all fields of the types
-    return all(isapprox(getfield(term_sum1, f), getfield(term_sum2, f); approx_kwargs...) for f in fieldnames(typeof(term_sum1)))
+function Base.:(≈)(term_sum1::AbstractTermSum, term_sum2::AbstractTermSum; approx_kwargs...)
+    return _comparison(≈, merge(term_sum1), merge(term_sum2))
 end
 
-# Base.:≈(term_sum1::AbstractTermSum, term_sum2::AbstractTermSum) = isapprox(term_sum1, term_sum2)
+
+function _comparison(compfunc::f, term_sum1::AbstractTermSum, term_sum2::AbstractTermSum) where {f<:Function}
+    nsites(term_sum1) == nsites(term_sum2) || return false
+
+    # we don't strictly need to check the length of the term sums
+    # small values are allowed for terms that don't exist in both
+    for (pstr, coeff) in term_sum1
+        if !compfunc(getcoeff(term_sum2, pstr), coeff)
+            return false
+        end
+    end
+    for (pstr, coeff) in term_sum2
+        if !compfunc(getcoeff(term_sum1, pstr), coeff)
+            return false
+        end
+    end
+
+    return true
+end

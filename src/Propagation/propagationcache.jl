@@ -83,6 +83,14 @@ function VectorPauliPropagationCache(vpsum::PauliSum)
     return VectorPauliPropagationCache(VectorPauliSum(vpsum))
 end
 
+function PropagationBase.activesum(prop_cache::PauliPropagationCache)
+    return mainsum(prop_cache)
+end
+
+function PropagationBase.activesum(prop_cache::VectorPauliPropagationCache)
+    return VectorPauliSum(nqubits(prop_cache), activeterms(prop_cache), activecoeffs(prop_cache))
+end
+
 # convert back
 function VectorPauliSum(prop_cache::VectorPauliPropagationCache)
     vecpsum = deepcopy(mainsum(prop_cache))

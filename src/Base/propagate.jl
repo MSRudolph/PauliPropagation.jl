@@ -4,11 +4,12 @@ function propagate(circuit, term_sum::AbstractTermSum, parameters=nothing; kwarg
 end
 
 
-function propagate!(circuit, term_sum::TS, params=nothing; kwargs...) where TS<:AbstractTermSum
+function propagate!(circuit, term_sum::AbstractTermSum, params=nothing; kwargs...)
+
     prop_cache = propagate!(circuit, PropagationCache(term_sum), params; kwargs...)
-    # we expect that there exists a constructor TS(prop_cache) for the back conversion
-    # by default implemented for some storage types
-    return TS(prop_cache)
+
+    # extracts the original input term sum
+    return extractsum!(prop_cache, term_sum)
 end
 
 """
