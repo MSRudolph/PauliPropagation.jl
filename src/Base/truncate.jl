@@ -20,19 +20,8 @@ function truncate!(prop_cache::AbstractPropagationCache; min_abs_coeff::Real=eps
 end
 
 # this can can be a term sum or a propagation cache
-function truncate!(truncfunc::F, term_sum::AbstractTermSum; kwargs...) where F<:Function
-    new_term_sum = _truncate!(StorageType(term_sum), truncfunc, term_sum; kwargs...)
-
-    if term_sum !== new_term_sum
-        copy!(term_sum, new_term_sum)
-    end
-
-    return term_sum
-end
-
-
-function truncate!(truncfunc::F, prop_cache::AbstractPropagationCache; kwargs...) where F<:Function
-    return _truncate!(StorageType(prop_cache), truncfunc, prop_cache; kwargs...)
+function truncate!(truncfunc::F, term_sum::Union{AbstractTermSum,AbstractPropagationCache}; kwargs...) where F<:Function
+    return _truncate!(StorageType(term_sum), truncfunc, term_sum; kwargs...)
 end
 
 
@@ -67,13 +56,14 @@ function _truncate!(::ArrayStorage, truncfunc::F, prop_cache::AbstractPropagatio
     return prop_cache
 end
 
-function _truncate!(::ArrayStorage, truncfunc::F, term_sum::TS; kwargs...) where {F<:Function,TS<:AbstractTermSum}
+function _truncate!(::ArrayStorage, truncfunc::F, term_sum::AbstractTermSum; kwargs...) where F<:Function
     # convert to propagation cache for easier handling
     prop_cache = PropagationCache(term_sum)
 
     prop_cache = _truncate!(ArrayStorage(), truncfunc, prop_cache; kwargs...)
 
-    return TS(prop_cache)
+    # extracts the original input term sum
+    return extractsum!(prop_cache, term_sum)
 end
 
 

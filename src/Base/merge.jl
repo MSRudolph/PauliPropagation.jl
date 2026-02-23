@@ -15,16 +15,13 @@ function _merge!(::DictStorage, term_sum::AbstractTermSum)
     return term_sum
 end
 
-function _merge!(::ArrayStorage, term_sum::TS) where TS<:AbstractTermSum
+function _merge!(::ArrayStorage, term_sum::AbstractTermSum)
     prop_cache = PropagationCache(term_sum)
 
     merge!(prop_cache)
 
-    if term_sum !== mainsum(prop_cache)
-        copyswapsums!(prop_cache)
-    end
-
-    return TS(prop_cache)
+    # extracts the original input term sum
+    return extractsum!(prop_cache, term_sum)
 end
 
 # Merge auxsum into mainsum

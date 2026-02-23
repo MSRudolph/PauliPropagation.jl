@@ -33,6 +33,7 @@ export
     PropagationCache,
     mainsum,
     auxsum,
+    extractsum!,
     setmainsum!,
     setauxsum!,
     swapsums!,
