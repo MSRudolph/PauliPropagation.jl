@@ -4,18 +4,34 @@
 # Can be overloaded for different coefficient types.
 mergefunc(coeff1, coeff2) = coeff1 + coeff2
 
-# Merge `aux_psum` into `psum` using the `merge` function. `merge` can be overloaded for different coefficient types.
-# Then empty `aux_psum` for the next iteration.
-function Base.merge!(prop_cache::AbstractPropagationCache; kwargs...)
+Base.merge(obj) = merge!(deepcopy(obj))
 
+function Base.merge!(term_sum::TS) where TS<:AbstractTermSum
+    return _merge!(StorageType(term_sum), term_sum)
+end
+
+function _merge!(::DictStorage, term_sum::AbstractTermSum)
+    # Dicts are always already merged
+    return term_sum
+end
+
+function _merge!(::ArrayStorage, term_sum::AbstractTermSum)
+    prop_cache = PropagationCache(term_sum)
+
+    merge!(prop_cache)
+
+    # extracts the original input term sum
+    return extractsum!(prop_cache, term_sum)
+end
+
+# Merge auxsum into mainsum
+function Base.merge!(prop_cache::AbstractPropagationCache; kwargs...)
 
     prop_cache = _merge!(StorageType(prop_cache), prop_cache; kwargs...)
 
     return prop_cache
 end
 
-# Assumptions:
-# TODO
 function _merge!(::DictStorage, prop_cache::AbstractPropagationCache; kwargs...)
     term_sum1 = mainsum(prop_cache)
     term_sum2 = auxsum(prop_cache)

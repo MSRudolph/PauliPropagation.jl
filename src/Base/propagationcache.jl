@@ -9,16 +9,57 @@ abstract type AbstractPropagationCache end
 ## The interface to hook into with each library
 PropagationCache(thing::AbstractTermSum) = _thrownotimplemented(thing, :PropagationCache)
 
+"""
+    mainsum(prop_cache::AbstractPropagationCache)
+
+Returns the current main term sum from the propagation cache.
+It may be over-allocated and filled with trash terms.
+Use `extractsum!(prop_cache)` to get a properly-sized and valid term sum.
+"""
 mainsum(prop_cache::AbstractPropagationCache) = _thrownotimplemented(prop_cache, :mainsum)
+
+"""
+    auxsum(prop_cache::AbstractPropagationCache)
+
+Returns the current auxiliary term sum from the propagation cache.
+It may be over-allocated and filled with trash terms.
+"""
 auxsum(prop_cache::AbstractPropagationCache) = _thrownotimplemented(prop_cache, :auxsum)
 
 setmainsum!(prop_cache::AbstractPropagationCache, new_mainsum) = _thrownotimplemented(prop_cache, :setmainsum!)
 setauxsum!(prop_cache::AbstractPropagationCache, new_auxsum) = _thrownotimplemented(prop_cache, :setauxsum!)
 
+
+# An optional interface for returning the mainsum when it is safe to return it as a whole or as a view.
+# Should leave the sum linked to the cache, and the cache unperturbed.
+# This is concrete type dependent.
+function activesum(prop_cache::AbstractPropagationCache)
+    _thrownotimplemented(prop_cache, :activesum)
+end
+
+"""
+    swapsums!(prop_cache::AbstractPropagationCache)
+
+Swaps the mainsum and auxsum pointers on the propagation cache.
+"""
 function swapsums!(prop_cache::AbstractPropagationCache)
     temp = mainsum(prop_cache)
     setmainsum!(prop_cache, auxsum(prop_cache))
     setauxsum!(prop_cache, temp)
+    return prop_cache
+end
+
+"""
+    copyswapsums!(prop_cache::AbstractPropagationCache)
+    
+Copies the active contents of the mainsum into the auxsum and then calls swapsums!(prop_cache).
+This is useful for when the current auxsum is meant to carry the final result.
+"""
+function copyswapsums!(prop_cache::AbstractPropagationCache)
+    # instead of just swapping auxsum(prop_cache) and mainsum(prop_cache),
+    # we need to copy the mainsum into the aux sum and then swap the sums
+    copy!(auxsum(prop_cache), mainsum(prop_cache))
+    swapsums!(prop_cache)
     return prop_cache
 end
 
@@ -69,25 +110,62 @@ activeindices(prop_cache::AbstractPropagationCache) = view(indices(prop_cache), 
 lastactiveindex(prop_cache::AbstractPropagationCache) = activeindices(prop_cache)[end]
 
 
+mult!(prop_cache::AbstractPropagationCache, scalar::Number) = mult!(mainsum(prop_cache), scalar)
 
 function Base.resize!(prop_cache::AbstractPropagationCache, new_size::Int)
     _thrownotimplemented(prop_cache, :resize!)
 end
 
 ## Back-conversions 
+
+# effectively a out-of-place version of extractsum!()
 function (::Type{TS})(prop_cache::AbstractPropagationCache) where TS<:AbstractTermSum
-    return convert(TS, _cachetosum!(StorageType(prop_cache), prop_cache))
+    return convert(TS, extractsum!(deepcopy(prop_cache)))
 end
 
-_cachetosum!(::DictStorage, prop_cache::AbstractPropagationCache) = mainsum(prop_cache)
+"""
+    extractsum!(prop_cache::AbstractPropagationCache, which_sum::AbstractTermSum)
 
-function _cachetosum!(::ArrayStorage, prop_cache::AbstractPropagationCache)
-    # convert back to TermSum
-    term_sum = mainsum(prop_cache)
-    term_sum = resize!(term_sum, activesize(prop_cache))
-    return term_sum
+Extracts the indicated sum `which_sum` from the propagation cache. 
+This resizes the cache to the active size and returns the indicated sum.
+Further manipulating prop_cache or the returned sum may invalidate the other.
+If the indicated sum is the auxsum, active contents will be copied over from mainsum.
+If neither `mainsum(prop_cache)` nor `auxsum(prop_cache)` is indicated, an error is thrown. 
+"""
+function extractsum!(prop_cache::AbstractPropagationCache, which_sum::AbstractTermSum)
+    if which_sum !== mainsum(prop_cache) && which_sum !== auxsum(prop_cache)
+        throw(ArgumentError("Indicated sum is not part of the propagation cache."))
+    end
+
+    # if the indicated sum is not the mainsum, it is the auxsum
+    # copy contents over and extract 
+    if which_sum !== mainsum(prop_cache)
+        copyswapsums!(prop_cache)
+    end
+
+    return extractsum!(prop_cache)
 end
 
-function _cachetosum!(::Type{ST}, ::PC) where {ST<:StorageType,PC<:AbstractPropagationCache}
-    throw(ErrorException("cachetosum!(::$(ST), ::$(PC)) not implemented."))
+"""
+    extractsum!(prop_cache::AbstractPropagationCache)
+
+Extracts the mainsum from the propagation cache. 
+This resizes the cache to the active size and returns the mainsum.
+Further manipulating prop_cache or the returned sum may invalidate the other.
+"""
+function extractsum!(prop_cache::AbstractPropagationCache)
+    return _extractsum!(StorageType(prop_cache), prop_cache)
+end
+
+
+_extractsum!(::DictStorage, prop_cache::AbstractPropagationCache) = mainsum(prop_cache)
+
+function _extractsum!(::ArrayStorage, prop_cache::AbstractPropagationCache)
+    # resize the entire cache to retain validity
+    resize!(prop_cache, activesize(prop_cache))
+    return mainsum(prop_cache)
+end
+
+function _extractsum!(::Type{ST}, ::PC) where {ST<:StorageType,PC<:AbstractPropagationCache}
+    throw(ErrorException("extractsum!(::$(ST), ::$(PC)) not implemented."))
 end

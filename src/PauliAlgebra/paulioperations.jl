@@ -373,6 +373,37 @@ Calculate the commutator of a `PauliSum` and a `PauliString`.
 commutator(psum::PauliSum, pstr::PauliString) = commutator(psum, PauliSum(pstr))
 commutator(pstr::PauliString, psum::PauliSum) = commutator(PauliSum(pstr), psum)
 
+
+"""
+    commutator(vpsum1::VectorPauliSum, vpsum2::VectorPauliSum)
+
+Calculate the commutator of two `VectorPauliSum`s.
+Returns a `VectorPauliSum` with complex coefficients.
+
+# Example
+```julia
+vpsum = VectorPauliSum(3, [1, 2], [1.]) # 1.0 * X + 1.0 * Y
+vpsum2 = VectorPauliSum(3, [7], [0.25]) # 0.25 * ZX
+commutator(vpsum, vpsum2) # should return a VectorPauliSum with - 0.5 YX + 0.5 XX
+```
+"""
+function PauliPropagation.commutator(vpsum1::VectorPauliSum, vpsum2::VectorPauliSum)
+    nq = _checknumberofqubits(vpsum1, vpsum2)
+
+    TT = paulitype(vpsum1)
+    CT = promote_type(ComplexF64, coefftype(vpsum1), coefftype(vpsum2))
+    new_pauli_dict = Dict{TT,CT}()
+
+    for (pauli1, coeff1) in zip(vpsum1.terms, vpsum1.coeffs), (pauli2, coeff2) in zip(vpsum2.terms, vpsum2.coeffs)
+        if !commutes(pauli1, pauli2)
+            new_pstr, sign = commutator(pauli1, pauli2)
+            new_pauli_dict[new_pstr] = get(new_pauli_dict, new_pstr, zero(CT)) + convert(CT, sign * coeff1 * coeff2)
+        end
+    end
+
+    return VectorPauliSum(nq, collect(keys(new_pauli_dict)), collect(values(new_pauli_dict)))
+end
+
 """
     commutator(pstr1::Integer, pstr2::Integer)
 
