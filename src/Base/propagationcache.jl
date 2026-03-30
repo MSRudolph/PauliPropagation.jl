@@ -29,6 +29,41 @@ auxsum(prop_cache::AbstractPropagationCache) = _thrownotimplemented(prop_cache, 
 setmainsum!(prop_cache::AbstractPropagationCache, new_mainsum) = _thrownotimplemented(prop_cache, :setmainsum!)
 setauxsum!(prop_cache::AbstractPropagationCache, new_auxsum) = _thrownotimplemented(prop_cache, :setauxsum!)
 
+terms(prop_cache::AbstractPropagationCache) = _terms(StorageType(prop_cache), prop_cache)
+_terms(::DictStorage, prop_cache::AbstractPropagationCache) = terms(mainsum(prop_cache))
+_terms(::ArrayStorage, prop_cache::AbstractPropagationCache) = activeterms(prop_cache)
+
+coefficients(prop_cache::AbstractPropagationCache) = _coefficients(StorageType(prop_cache), prop_cache)
+_coefficients(::DictStorage, prop_cache::AbstractPropagationCache) = coefficients(mainsum(prop_cache))
+_coefficients(::ArrayStorage, prop_cache::AbstractPropagationCache) = activecoeffs(prop_cache)
+
+function termtype(prop_cache::AbstractPropagationCache)
+    mainTT = termtype(mainsum(prop_cache))
+    auxTT = termtype(auxsum(prop_cache))
+    if mainTT != auxTT
+        throw(ErrorException("Term types of mainsum(prop_cache) and auxsum(prop_cache) do not match."))
+    end
+    return mainTT
+end
+
+function coefftype(prop_cache::AbstractPropagationCache)
+    mainCT = coefftype(mainsum(prop_cache))
+    auxCT = coefftype(auxsum(prop_cache))
+    if mainCT != auxCT
+        throw(ErrorException("Coefficient types of mainsum(prop_cache) and auxsum(prop_cache) do not match."))
+    end
+    return mainCT
+end
+
+function numcoefftype(prop_cache::AbstractPropagationCache)
+    mainNCT = numcoefftype(mainsum(prop_cache))
+    auxNCT = numcoefftype(auxsum(prop_cache))
+    if mainNCT != auxNCT
+        throw(ErrorException("Numeric coefficient types of mainsum(prop_cache) and auxsum(prop_cache) do not match."))
+    end
+    return mainNCT
+end
+
 
 # An optional interface for returning the mainsum when it is safe to return it as a whole or as a view.
 # Should leave the sum linked to the cache, and the cache unperturbed.
@@ -110,7 +145,10 @@ activeindices(prop_cache::AbstractPropagationCache) = view(indices(prop_cache), 
 lastactiveindex(prop_cache::AbstractPropagationCache) = activeindices(prop_cache)[end]
 
 
-mult!(prop_cache::AbstractPropagationCache, scalar::Number) = mult!(mainsum(prop_cache), scalar)
+function mult!(prop_cache::AbstractPropagationCache, scalar::Number)
+    mult!(mainsum(prop_cache), scalar)
+    return prop_cache
+end
 
 function Base.resize!(prop_cache::AbstractPropagationCache, new_size::Int)
     _thrownotimplemented(prop_cache, :resize!)

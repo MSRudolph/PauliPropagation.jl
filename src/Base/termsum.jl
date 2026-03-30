@@ -26,15 +26,15 @@ Base.length(term_sum::AbstractTermSum) = length(terms(term_sum))
 nsites(term_sum::TS) where TS<:AbstractTermSum = _thrownotimplemented(TS, :nsites)
 
 terms(::StorageType, term_sum::TS) where TS<:AbstractTermSum = _thrownotimplemented(TS, :terms)
-terms(term_sum::AbstractTermSum) = terms(StorageType(term_sum), term_sum)
-terms(::DictStorage, term_sum::AbstractTermSum) = keys(storage(term_sum))
-terms(::ArrayStorage, term_sum::AbstractTermSum) = storage(term_sum)[1]
+terms(term_sum::AbstractTermSum) = _terms(StorageType(term_sum), term_sum)
+_terms(::DictStorage, term_sum::AbstractTermSum) = keys(storage(term_sum))
+_terms(::ArrayStorage, term_sum::AbstractTermSum) = storage(term_sum)[1]
 
 
 coefficients(::StorageType, term_sum::TS) where TS<:AbstractTermSum = _thrownotimplemented(TS, :coefficients)
-coefficients(term_sum::AbstractTermSum) = coefficients(StorageType(term_sum), term_sum)
-coefficients(::DictStorage, term_sum::AbstractTermSum) = values(storage(term_sum))
-coefficients(::ArrayStorage, term_sum::AbstractTermSum) = storage(term_sum)[2]
+coefficients(term_sum::AbstractTermSum) = _coefficients(StorageType(term_sum), term_sum)
+_coefficients(::DictStorage, term_sum::AbstractTermSum) = values(storage(term_sum))
+_coefficients(::ArrayStorage, term_sum::AbstractTermSum) = storage(term_sum)[2]
 coeffs(term_sum::AbstractTermSum) = coefficients(term_sum)
 
 # receives the object
@@ -48,19 +48,19 @@ numcoefftype(::Type{T}) where T = _thrownotimplemented(T, :numcoefftype)
 
 
 function getcoeff(term_sum::AbstractTermSum, trm)
-    getcoeff(StorageType(term_sum), term_sum, trm)
+    return _getcoeff(StorageType(term_sum), term_sum, trm)
 end
 
-function getcoeff(::DictStorage, term_sum::AbstractTermSum, trm)
+function _getcoeff(::DictStorage, term_sum::AbstractTermSum, trm)
     term_dict = storage(term_sum)
     return get(term_dict, trm, zero(coefftype(term_sum)))
 end
 
 # default implementation
-function getcoeff(::ST, term_sum::AbstractTermSum, trm) where {ST<:StorageType}
+function _getcoeff(::ST, term_sum::AbstractTermSum, trm) where {ST<:StorageType}
     # TODO: GPU kernel for this
     val = zero(coefftype(term_sum))
-    for (term, coeff) in zip(terms(term_sum), coefficients(term_sum))
+    for (term, coeff) in term_sum
         if term == trm
             val += coeff
         end
@@ -71,23 +71,23 @@ end
 # this assumes everything is merged and de-duplicated
 # may result in wrong results if not
 function getmergedcoeff(term_sum::AbstractTermSum, trm)
-    return getmergedcoeff(StorageType(term_sum), term_sum, trm)
+    return _getmergedcoeff(StorageType(term_sum), term_sum, trm)
 end
 
 # for the DictStorage, this is the same as getcoeff
-function getmergedcoeff(::DictStorage, term_sum::AbstractTermSum, trm)
-    return getcoeff(DictStorage(), term_sum, trm)
+function _getmergedcoeff(::DictStorage, term_sum::AbstractTermSum, trm)
+    return _getcoeff(DictStorage(), term_sum, trm)
 end
 
 # everywhere else, we do a linear search
-function getmergedcoeff(::StorageType, term_sum::AbstractTermSum, trm)
+function _getmergedcoeff(::ArrayStorage, term_sum::AbstractTermSum, trm)
     terms_vec, coeffs_vec = storage(term_sum)
-    for (term, coeff) in zip(terms_vec, coeffs_vec)
-        if term == trm
-            return coeff
-        end
+    i = findfirst(t -> t == trm, terms_vec)
+    if isnothing(i)
+        return zero(coefftype(term_sum))
+    else
+        return coeffs_vec[i]
     end
-    return zero(coefftype(term_sum))
 end
 
 
