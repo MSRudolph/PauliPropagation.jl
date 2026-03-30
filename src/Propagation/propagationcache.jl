@@ -11,9 +11,9 @@ abstract type AbstractPauliPropagationCache <: AbstractPropagationCache end
 nqubits(prop_cache::AbstractPauliPropagationCache) = nqubits(mainsum(prop_cache))
 PropagationBase.nsites(prop_cache::AbstractPauliPropagationCache) = nqubits(prop_cache)
 
-paulitype(prop_cache::AbstractPauliPropagationCache) = paulitype(mainsum(prop_cache))
-PropagationBase.coefftype(prop_cache::AbstractPauliPropagationCache) = coefftype(mainsum(prop_cache))
-PropagationBase.numcoefftype(prop_cache::AbstractPauliPropagationCache) = numcoefftype(mainsum(prop_cache))
+paulis(prop_cache::AbstractPauliPropagationCache) = terms(prop_cache)
+paulitype(prop_cache::AbstractPauliPropagationCache) = termtype(prop_cache)
+
 
 # fallback for Pauli sums
 function PropagationBase.PropagationCache(psum::AbstractPauliSum)
@@ -45,6 +45,10 @@ end
 function PauliPropagationCache(psum)
     aux_psum = similar(psum)
     return PauliPropagationCache(psum, aux_psum)
+end
+
+function PropagationBase.activesum(prop_cache::PauliPropagationCache)
+    return mainsum(prop_cache)
 end
 
 ###
@@ -83,10 +87,6 @@ function VectorPauliPropagationCache(vpsum::PauliSum)
     return VectorPauliPropagationCache(VectorPauliSum(vpsum))
 end
 
-function PropagationBase.activesum(prop_cache::PauliPropagationCache)
-    return mainsum(prop_cache)
-end
-
 function PropagationBase.activesum(prop_cache::VectorPauliPropagationCache)
     return VectorPauliSum(nqubits(prop_cache), activeterms(prop_cache), activecoeffs(prop_cache))
 end
@@ -109,8 +109,6 @@ PropagationBase.setactivesize!(prop_cache::VectorPauliPropagationCache, new_size
 PropagationBase.indices(prop_cache::VectorPauliPropagationCache) = prop_cache.indices
 PropagationBase.flags(prop_cache::VectorPauliPropagationCache) = prop_cache.flags
 
-paulis(prop_cache) = activeterms(prop_cache)
-PropagationBase.coefficients(prop_cache) = activecoeffs(prop_cache)
 
 function Base.show(io::IO, prop_cache::VectorPauliPropagationCache)
     println(io, "VectorPropagationCache with $(prop_cache.active_size) terms:")
