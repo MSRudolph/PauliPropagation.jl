@@ -22,26 +22,26 @@ If the `pstr.term` bitmask is `0x00`, it signifies the identity operator across 
 `pstr.term` value (representing a non-identity Pauli operator), the trace is `0.0`.
 
 # Arguments
-- `pstr::PauliString{TT, CT}`: The Pauli string to trace. 
+- `pstr::PauliString`: The Pauli string to trace. 
 
 # Returns
 - `CT`: The trace value of the `PauliString`.
 """
-function LinearAlgebra.tr(pstr::PauliString{TT, CT}) where {TT, CT}
+function LinearAlgebra.tr(pstr::PauliString{TT,CT}) where {TT,CT}
     pstr.term == zero(TT) ? pstr.coeff * CT(2.0^pstr.nqubits) : zero(CT)
 end
 
 """
-    LinearAlgebra.tr(psum::PauliSum)
+    LinearAlgebra.tr(psum::AbstractPauliSum)
 
-Compute the trace of a `PauliSum` operator.
+Compute the trace of an `AbstractPauliSum` operator.
 
 The trace is a linear operation: Tr(A + B) = Tr(A) + Tr(B). Since individual non-identity
 PauliString terms have a trace of zero (as per tr(::PauliString)), only the coefficient
 of the identity operator contributes to the total trace of a PauliSum.
 
 The coefficient of the identity term (0x00) is retrieved from this mapping using get(psum.terms, 0x00, 0). 
-This coefficient is then multiplied by 2^psum.nqubits (the dimension of the Hilbert space). 
+This coefficient is then multiplied by 2^nqubits(psum) (the dimension of the Hilbert space). 
 If the identity term (0x00) is not explicitly present in psum.terms, its coefficient is implicitly zero,
 resulting in a total trace of 0.0.
 
@@ -51,8 +51,8 @@ resulting in a total trace of 0.0.
 # Returns
 `CT`: The trace value of the PauliSum.
 """
-function LinearAlgebra.tr(psum::PauliSum{TT, CT}) where {TT, CT}
-    get(psum.terms, zero(TT), zero(CT)) * CT(2.0^psum.nqubits)
+function LinearAlgebra.tr(psum::AbstractPauliSum)
+    return getcoeff(psum, zero(paulitype(psum))) * convert(coefftype(psum), 2^nqubits(psum))
 end
 
 """
@@ -61,13 +61,13 @@ end
 Wrapper for `LinearAlgebra.tr(pstr::PauliString)`.
 
 # Arguments
-- `pstr::PauliString{TT, CT}`: The Pauli string to trace. 
+- `pstr::PauliString`: The Pauli string to trace. 
 
 # Returns
 - `CT`: The trace value of the `PauliString`.
 """
-function trace(pstr::PauliString{TT, CT}) where {TT, CT}
-    LinearAlgebra.tr(pstr)
+function trace(pstr::PauliString)
+    return LinearAlgebra.tr(pstr)
 end
 
 """
@@ -81,8 +81,8 @@ Wrapper for `LinearAlgebra.tr(psum::PauliSum)`.
 # Returns
 `CT`: The trace value of the PauliSum.
 """
-function trace(psum::PauliSum{TT, CT}) where {TT, CT}
-    LinearAlgebra.tr(psum)
+function trace(psum::AbstractPauliSum)
+    return LinearAlgebra.tr(psum)
 end
 
 # TODO: generate these definitions with Macro's instead? Easier to maintain and less error-prone
@@ -341,6 +341,7 @@ end
 
 
 ## Commutator
+# TODO: implement commutator and pauliprod for VectorPauliSum
 """
     commutator(psum1::PauliSum, psum2::PauliSum)
     
@@ -371,6 +372,37 @@ Calculate the commutator of a `PauliSum` and a `PauliString`.
 """
 commutator(psum::PauliSum, pstr::PauliString) = commutator(psum, PauliSum(pstr))
 commutator(pstr::PauliString, psum::PauliSum) = commutator(PauliSum(pstr), psum)
+
+
+"""
+    commutator(vpsum1::VectorPauliSum, vpsum2::VectorPauliSum)
+
+Calculate the commutator of two `VectorPauliSum`s.
+Returns a `VectorPauliSum` with complex coefficients.
+
+# Example
+```julia
+vpsum = VectorPauliSum(3, [1, 2], [1.]) # 1.0 * X + 1.0 * Y
+vpsum2 = VectorPauliSum(3, [7], [0.25]) # 0.25 * ZX
+commutator(vpsum, vpsum2) # should return a VectorPauliSum with - 0.5 YX + 0.5 XX
+```
+"""
+function PauliPropagation.commutator(vpsum1::VectorPauliSum, vpsum2::VectorPauliSum)
+    nq = _checknumberofqubits(vpsum1, vpsum2)
+
+    TT = paulitype(vpsum1)
+    CT = promote_type(ComplexF64, coefftype(vpsum1), coefftype(vpsum2))
+    new_pauli_dict = Dict{TT,CT}()
+
+    for (pauli1, coeff1) in zip(vpsum1.terms, vpsum1.coeffs), (pauli2, coeff2) in zip(vpsum2.terms, vpsum2.coeffs)
+        if !commutes(pauli1, pauli2)
+            new_pstr, sign = commutator(pauli1, pauli2)
+            new_pauli_dict[new_pstr] = get(new_pauli_dict, new_pstr, zero(CT)) + convert(CT, sign * coeff1 * coeff2)
+        end
+    end
+
+    return VectorPauliSum(nq, collect(keys(new_pauli_dict)), collect(values(new_pauli_dict)))
+end
 
 """
     commutator(pstr1::Integer, pstr2::Integer)
@@ -450,7 +482,7 @@ psum_identity = PauliSum(PauliString(3, [:I], [1]))
 pauliprod(psum, psum_identity) # Psum * I = Psum
 ```
 
-"""    
+"""
 function pauliprod(psum1::PauliSum, psum2::PauliSum)
 
     _checktermtype(psum1, psum2)
@@ -490,17 +522,17 @@ function _calculatesignexponent(pauli1::PauliType, pauli2::PauliType)
     pauli1_2 = pauli1 & mask_right
     pauli2_1 = (pauli2 >> 1) & mask_right
     pauli2_2 = pauli2 & mask_right
-   
+
     #make sure neither pauli is the identity
     not_identity_pauli1 = pauli1_1 | pauli1_2
     not_identity_pauli2 = pauli2_1 | pauli2_2
-   
+
     #make sure paulis aren't the same
     not_same = (pauli1_1 ⊻ pauli2_1) | (pauli1_2 ⊻ pauli2_2)
 
     #determine if the paulis commute (should return 0 if they do)
     not_commuting = not_identity_pauli1 & not_identity_pauli2 & not_same
-   
+
     #use not_commuting as a mask to get the "don't cares" in the karnaugh map to always be 0
     #while the right side of the next line came from karnaugh map of the truth table for
     #the levi cevita symbol
@@ -512,9 +544,10 @@ function _calculatesignexponent(pauli1::PauliType, pauli2::PauliType)
     # which gives (a & ~d) | (~a & d) | (~b & ~c)
     # you can then recognize that (a & ~d) | (~a & d) = a ⊻ b
     # where pauli1 = ab, and pauli2 = cd.
-    negative_sign = not_commuting & ((pauli1_1 ⊻ pauli2_2) 
-                                     | (~pauli1_2 & ~pauli2_1))
-    positive_sign = not_commuting & (~negative_sign) 
+    negative_sign = not_commuting & ((pauli1_1 ⊻ pauli2_2)
+                                     |
+                                     (~pauli1_2 & ~pauli2_1))
+    positive_sign = not_commuting & (~negative_sign)
     # You can use modular addition to achieve addition of the exponent,
     # since it is cyclic, and the global phase can be determined by the number
     # of 1's in each expression.
@@ -523,7 +556,7 @@ function _calculatesignexponent(pauli1::PauliType, pauli2::PauliType)
 end
 
 #speeds up pauliprod by a factor of 2 since we know we only want integer powers
-const  impowers = [1, im, -1, -im]
+const impowers = [1, im, -1, -im]
 function _impow(power::Integer)
     ind = (power % 4) + 1
     return impowers[ind]

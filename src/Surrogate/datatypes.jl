@@ -53,6 +53,8 @@ struct NodePathProperties <: PathProperties
     freq::Int
 end
 
+PropagationBase.numcoefftype(::Type{NodePathProperties}) = Float64
+
 
 # Pretty print for PauliFreqTracker
 Base.show(io::IO, pth::NodePathProperties) = print(io, "NodePathProperties($(typeof(pth.node)), nsins=$(pth.nsins), ncos=$(pth.ncos), freq=$(pth.freq))")
@@ -69,7 +71,7 @@ NodePathProperties(node::CircuitNode) = NodePathProperties(node, 0, 0, 0)
 Get the cummulative coefficient of a `NodePathProperties` node.
 This assumes that the surrogate has already been evaluated.
 """
-tonumber(path::NodePathProperties) = path.node.cummulative_value
+PropagationBase.tonumber(path::NodePathProperties) = path.node.cummulative_value
 
 
 """
@@ -107,7 +109,7 @@ function setcummulativevalue(node::CircuitNode, val)
     return
 end
 
-function set!(psum::Dict{TT,NodePathProperties}, pstr::TT, path::NodePathProperties) where {TT}
+function PropagationBase.set!(psum::Dict{TT,NodePathProperties}, pstr::TT, path::NodePathProperties) where {TT}
     psum[pstr] = path
     return psum
 end

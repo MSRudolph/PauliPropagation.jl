@@ -56,6 +56,7 @@ makedocs(
         # these 'lower-level' files also exist, and will
         # be grouped under an 'API' section in the navbar
         "API" => [
+            "api/PauliDataTypes.md",
             "api/PauliAlgebra.md",
             "api/Gates.md",
             "api/Circuits.md",
@@ -96,7 +97,7 @@ deploydocs(
     # - changes to the dev branch should update the /dev/ sub-domain; this seems
     #   gratuitous since specified above and since irrelevant to Github releases,
     #   but it is present in the deploydocs() doc without elaboration. Grr!
-    versions = ["stable" => "v^", "v#.#.#", "dev" => "dev"]
+    versions=["stable" => "v^", "v#.#.#", "dev" => "dev"]
 )
 
 

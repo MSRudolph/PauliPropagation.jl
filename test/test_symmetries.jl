@@ -34,6 +34,9 @@ end
     merged_psum = translationmerge(input_psum)
     @test merged_psum == expected_psum
 
+    merged_vecpsum = translationmerge(VectorPauliSum(input_psum))
+    @test PauliSum(merged_vecpsum) == expected_psum
+
 end
 
 @testset "Full shiftup 2D translation merging" begin
@@ -49,5 +52,8 @@ end
 
     # test merging with shiftup
     @test translationmerge(input_psum, nx, ny) == expected_psum
+
+    merged_vecpsum = translationmerge(VectorPauliSum(input_psum), nx, ny)
+    @test PauliSum(merged_vecpsum) == expected_psum
 
 end

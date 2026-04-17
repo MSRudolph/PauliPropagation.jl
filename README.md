@@ -31,18 +31,6 @@ Pkg.add(url="https://github.com/MSRudolph/PauliPropagation.jl.git", rev="branchn
 where you can use the keyword `rev="branchname"` to install development versions of the package.
 We don't recommend using branches other than `main` or `dev`.
 
-### Clone the repository and install locally 
-Navigate to a local directory where you want to clone this repository into and run the following in a terminal
-```bash
-git clone git@github.com:MSRudolph/PauliPropagation.jl.git
-```
-Inside this cloned repository, you can now freely import `PauliPropagation` or install it into your environment.\
-Alternatively, you can push the relative path to the cloned repository to the Julia package load path called `LOAD_PATH` via
-```julia
-rel_path = "your/relative/path/PauliPropagation"
-push!(LOAD_PATH,rel_path);
-```
-This may require that you have no global installation of `PauliPropagation` in your enviroment.
 
 ### A note on installing Julia 
 It is recommended to install julia using `juliaup` with instructions from [here](https://github.com/JuliaLang/juliaup). Then, Julia's _long-term support_ version (currently a `1.10` version) can be installed via
@@ -139,10 +127,10 @@ Therefore, the trace is equivalent to the sum over the coefficients of Pauli str
 ```
 
 ## Important Notes and Caveats
-- Circuits are specified in the _Schrödinger_ picture, as if operated upon states. Behind the scenes, `propagate()` will (by default) apply the _adjoint_ circuit upon the passed `PauliSum` which is treated as the observable operator.
-- Schrödinger propagation is planned but not yet supported _except_ through manually passing the _adjoint_ of the intended circuit to `propagate()`. This is often easy. For instance, with the circuit order reversed, angles in `PauliRotation` gates are negated, and `CliffordGate` are passed to `transposecliffordmap()`.
+- Circuits are specified in the _Schrödinger_ picture, as if operated upon states. Behind the scenes, `propagate()` will (by default) apply the _adjoint_ circuit upon the passed `PauliSum` which is treated as the observable operator. The default can be changed by passing `heisenberg=false` to `propagate()`, though it will not make simulating dense quantum states efficient. 
+- Schrödinger propagation via `heisenberg=false` is supported since version `0.7`, but not for all gates. So far, we natively support `PauliRotation`, `CliffordGate`, and `<:PauliNoise` gates. `ImaginaryPauliRotation` is _only_ supported with `heisenberg=false`.
 - While Pauli propagation can, in principle, be used for _extended_ stabilizer simulation, we do not currently support sub-exponential strong simulation of stabilizer states.
-- Sampling quantum states is currently not supported.
+- Sampling quantum states is currently not supported, but is coming soon.
 - Many underlying data structures and functions can be used for other purposes involving Pauli operators.
 
 All of the above can be addressed by writing the additional missing code due to the nice extensibility of Julia.
@@ -150,9 +138,8 @@ All of the above can be addressed by writing the additional missing code due to 
 ## Upcoming Features
 This package is still work-in-progress. You will probably find certain features that you would like to have and that are currently missing.\
 Here are some features that we want to implement in the future. Feel free to contribute!
-- **Multi-threading and improved scalability**. Currently, PauliPropagation.jl works uses a single CPU thread and may run your hardware out of memory. Future versions should be even faster and with options to trade-off computational runtime and memory requirements. 
-- **Easier Schrödinger picture propagation**. Currently, the default is Heisenberg and there is no easy way to transpose the gates.
-- **A fast and flexible Surrogate version**. Currently, we provide a version of the Pauli propagation Surrogate that is _good_ and _works_, at least for Pauli gates and Clifford gates. Stay tuned for a whole lot more.
+- **GPU acceleration**. Since version `0.7`, we provide a PauliPropagationCUDA extension in `ext/`. So far, it only works with `PauliRotation` gates and is not yet maximally performant. 
+- **Stochastic evolution**. Propagation methods are mainly memory-limited. We aim to change this and introduce time vs memory trade-offs.
 
 ## How to contribute
 We have a Slack channel `#pauli-propagation` in the [Julia Slack](https://join.slack.com/t/julialang/shared_invite/zt-2zljxdwnl-kSXbwuwFHeERyxSD3iFJdQ).
@@ -187,7 +174,8 @@ If you are publishing research using `PauliPropagation.jl`, please cite this lib
 ```
 
 ## Related publications
-Some of the developers of this package are co-authors in the following papers using Pauli propagation and (at least parts of) this code:
+Some of the developers of this package are co-authors in the following papers using Pauli propagation and (at least parts of) this code.
+If you are using our package, please consider citing some of these works:
 - [Classical simulations of noisy variational quantum circuits](https://arxiv.org/abs/2306.05400)
 - [Classical surrogate simulation of quantum systems with LOWESA](https://arxiv.org/abs/2308.09109)
 - [Quantum Convolutional Neural Networks are (Effectively) Classically Simulable](https://arxiv.org/abs/2408.12739)
@@ -195,5 +183,6 @@ Some of the developers of this package are co-authors in the following papers us
 - [Efficient quantum-enhanced classical simulation for patches of quantum landscapes](https://arxiv.org/abs/2411.19896)
 - [Simulating quantum circuits with arbitrary local noise using Pauli Propagation](https://arxiv.org/abs/2501.13101)
 - [Leveraging Symmetry Merging in Pauli Propagation](https://arxiv.org/abs/2512.12094)
+- [Thermal State Simulation with Pauli and Majorana Propagation](https://www.arxiv.org/abs/2602.04878)
   
 And more are coming up.
